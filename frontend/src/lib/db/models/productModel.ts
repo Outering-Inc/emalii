@@ -1,13 +1,13 @@
 import { Document, Model, model, models, Schema } from 'mongoose'
-import { IProductInput } from '@/src/types'
+import { ProductInput } from '@/src/types'
 
-export interface IProduct extends Document, IProductInput {
+export interface Product extends Document, ProductInput {
   _id: string
   createdAt: Date
   updatedAt: Date
 }
 
-const productSchema = new Schema<IProduct>(
+const productSchema = new Schema<Product>(
   {
     name: {
       type: String,
@@ -105,7 +105,7 @@ productSchema.index({
 
 // Avoid recompiling model in Next.js hot reload
 const ProductModel =
-  (models.Product as Model<IProduct>) ||
-  model<IProduct>('Product', productSchema)
+  (models.Product as Model<Product>) ||
+  model<Product>('Product', productSchema)
 
 export default ProductModel

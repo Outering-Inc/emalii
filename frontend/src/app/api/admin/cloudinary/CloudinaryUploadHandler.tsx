@@ -3,15 +3,21 @@
 
 import { useState } from "react";
 
+interface CloudinaryUploadHandlerProps {
+  previewImages?: string[]; // optional if using onUploaded
+  setPreviewImages?: (urls: string[]) => void;
+  setValue?: any;
+  multiple?: boolean; // true = multiple upload, false = single
+  onUploaded?: (url: string) => void; // callback for single upload
+}
+
 export default function CloudinaryUploadHandler({
-  previewImages,
+  previewImages = [],
   setPreviewImages,
   setValue,
-}: {
-  previewImages: string[];
-  setPreviewImages: (urls: string[]) => void;
-  setValue: any;
-}) {
+  multiple = true,
+  onUploaded,
+}: CloudinaryUploadHandlerProps) {
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -19,10 +25,12 @@ export default function CloudinaryUploadHandler({
     if (!files) return;
 
     setUploading(true);
-    const uploadedUrls: string[] = [...previewImages];
+
+    // Start with existing previewImages if multiple, otherwise empty array
+    const uploadedUrls: string[] = multiple ? [...previewImages] : [];
 
     for (const file of Array.from(files)) {
-      // FIXED — CALL WITH POST
+      // Get signature from backend
       const sigRes = await fetch("/api/admin/cloudinary/cloudinary-sign", {
         method: "POST",
       });
@@ -57,11 +65,17 @@ export default function CloudinaryUploadHandler({
         continue;
       }
 
-      uploadedUrls.push(uploaded.secure_url);
+      if (multiple) {
+        uploadedUrls.push(uploaded.secure_url); // multiple upload
+      } else {
+        uploadedUrls[0] = uploaded.secure_url; // single upload
+        if (onUploaded) onUploaded(uploaded.secure_url); // trigger callback for single upload
+      }
     }
 
-    setPreviewImages(uploadedUrls);
-    setValue("images", uploadedUrls);
+    // Update state if setPreviewImages is provided
+    if (setPreviewImages) setPreviewImages(uploadedUrls);
+    if (setValue) setValue("images", uploadedUrls);
 
     setUploading(false);
   };
@@ -71,13 +85,13 @@ export default function CloudinaryUploadHandler({
       <input
         type="file"
         accept="image/*"
-        multiple
+        multiple={multiple}
         onChange={handleUpload}
         className="file-input file-input-bordered w-full max-w-md"
       />
 
       {uploading && (
-        <p className="text-primary my-2">Uploading images… please wait.</p>
+        <p className="text-primary my-2">Uploading image… please wait.</p>
       )}
     </div>
   );

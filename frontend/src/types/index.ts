@@ -10,7 +10,8 @@ import {
   UserInputSchema, 
   UserNameSchema, 
   UserSignInSchema,
-  UserSignUpSchema
+  UserSignUpSchema,
+  UserUpdateSchema
  } from "@/src/lib/validation/validator";
 import { z } from "zod";
 
@@ -49,7 +50,7 @@ export type ReviewDetails = ReviewInput & {
 
 
 
-// ------------------ Default Values ------------------
+// ------------------Product Default Values ------------------
 export const ProductUpdateDefaultValues: ProductEditFormType = {
   _id: "",
   name: "",
@@ -58,6 +59,16 @@ export const ProductUpdateDefaultValues: ProductEditFormType = {
   countInStock: 0,
   description: "",
   images: [],
+};
+
+// ------------------ Users Default Values ------------------
+export const UserUpdateDefaultValues: UserEditFormType = {
+  _id: "",
+  name: "",
+  email: "",
+  password: "",
+  role : "user", // choose a sensible default
+  image: "",
 };
 
 
@@ -101,6 +112,9 @@ export type ShippingAddress = z.infer<typeof ShippingAddressSchema>
 
 // ------------------ Users ------------------
 export type UserInput = z.infer<typeof UserInputSchema>
+export type UserEditFormType = z.infer<typeof UserUpdateSchema>;
+export type UserUpdateInput = Partial<UserInput> & { _id: string };
+
 export type UserSignIn = z.infer<typeof UserSignInSchema>
 export type UserSignUp = z.infer<typeof UserSignUpSchema>
 export type UserName = z.infer<typeof UserNameSchema>

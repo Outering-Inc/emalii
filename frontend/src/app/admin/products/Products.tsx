@@ -6,23 +6,14 @@ import { formatId, truncateProductName } from "@/src/lib/utils/utils";
 import useSWR from "swr";
 import useSWRMutation from "swr/mutation";
 import Link from "next/link";
-import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/src/components/ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table";
 import Pagination from "@/src/components/shared/common/pagination";
+import { useToast } from "@/src/hooks/client/use-toast";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-// Expected API response:
-// { data: IProduct[], totalPages: number }
 interface ProductsResponse {
   data: Product[];
   totalPages: number;
@@ -30,6 +21,7 @@ interface ProductsResponse {
 
 export default function AdminProductsPage() {
   const router = useRouter();
+  const { toast } = useToast(); // custom toast
 
   const { data, error, isLoading, mutate } = useSWR<ProductsResponse>(
     "/api/admin/products",
@@ -41,7 +33,9 @@ export default function AdminProductsPage() {
   const { trigger: deleteProduct } = useSWRMutation(
     "/api/admin/products",
     async (url, { arg }: { arg: { productId: string } }) => {
-      const toastId = toast.loading("Deleting product...");
+      // Show loading toast and keep the id
+      const { id } = toast({ title: "Deleting product...", open: true });
+
       const res = await fetch(`${url}/${arg.productId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
@@ -50,10 +44,10 @@ export default function AdminProductsPage() {
       const body = await res.json();
 
       if (res.ok) {
-        toast.success("Product deleted", { id: toastId });
-        mutate(); // Refresh product list after deletion
+        toast({ id, title: "Product deleted", open: true }); // update toast
+        mutate(); // refresh product list
       } else {
-        toast.error(body.message || "Delete failed", { id: toastId });
+        toast({ id, title: body.message || "Delete failed", open: true }); // update toast
       }
     }
   );
@@ -62,16 +56,22 @@ export default function AdminProductsPage() {
   const { trigger: createProduct, isMutating: isCreating } = useSWRMutation(
     "/api/admin/products",
     async (url) => {
+      const { id } = toast({ title: "Creating product...", open: true });
+
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
 
       const data = await res.json();
-      if (!res.ok) return toast.error(data.message);
 
-      toast.success("Product created");
-      mutate(); // Refresh product list to include the new product
+      if (!res.ok) {
+        toast({ id, title: data.message || "Failed to create product", open: true });
+        return;
+      }
+
+      toast({ id, title: "Product created successfully", open: true });
+      mutate(); // refresh product list
       router.push(`/admin/products/${data.product._id}`);
     }
   );
