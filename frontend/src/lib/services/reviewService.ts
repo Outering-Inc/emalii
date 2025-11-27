@@ -1,5 +1,6 @@
 'use server'
 
+import { cache } from 'react'
 import mongoose from 'mongoose'
 import { revalidatePath } from 'next/cache'
 
@@ -18,19 +19,14 @@ import { PAGE_SIZE } from '../constants'
 import ReviewModel from '../db/models/reviewModel'
 
 
-
-//import { getSetting } from './setting.actions'
-
-
-
 // CREATE
-export async function createUpdateReview({
+const createUpdateReview = cache(async({
   data,
   path,
 }: {
   data: ReviewInput
   path: string
-}) {
+}) => {
   try {
 
     const session = await auth
@@ -74,9 +70,9 @@ export async function createUpdateReview({
       message: formatError(error)
      }
   }
- }
+ })
 
- const updateProductReview = async (productId: string) => {
+ const updateProductReview = cache(async (productId: string) => {
   //Calculate the new average rating,number of reviews and rating distribution
   const result = await ReviewModel.aggregate([
     { $match: {product: new mongoose.Types.ObjectId(productId)} },
@@ -114,10 +110,10 @@ export async function createUpdateReview({
    
   )
    
-}   
+})   
   
 
-export async function getReviews({
+const getReviews = cache(async({
   productId,
   limit,
   page,
@@ -125,7 +121,7 @@ export async function getReviews({
   productId: string
   limit?: number
   page: number
-}) {
+}) => {
   
   limit = limit || PAGE_SIZE
   await dbConnect()
@@ -142,7 +138,7 @@ export async function getReviews({
     data: JSON.parse(JSON.stringify(reviews)) as ReviewDetails[],
     totalPages: reviewsCount === 0 ? 1 : Math.ceil(reviewsCount / limit),
   }
-}
+})
 
 
 export const getReviewByProductId = async ({
@@ -161,3 +157,11 @@ export const getReviewByProductId = async ({
   })
   return review ? (JSON.parse(JSON.stringify(review)) as ReviewDetails) : null
 }
+
+const reviewService = {
+ createUpdateReview,
+ updateProductReview,
+ getReviews,
+ getReviewByProductId
+}
+export default reviewService
