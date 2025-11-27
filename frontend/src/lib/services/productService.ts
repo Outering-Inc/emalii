@@ -1,5 +1,6 @@
 'use server'
 
+import { cache } from 'react'
 import dbConnect from '../db/dbConnect'
 import ProductModel, { Product } from '../db/models/productModel'
 
@@ -34,25 +35,25 @@ const PAGE_SIZE = 10
 // =========================
 
 // ADMIN: all products
-export async function getAllProductsForAdmin() {
+const getAllProductsForAdmin = cache(async() => {
   await dbConnect()
   return ProductModel.find({ isPublished: true }).distinct('category')
-}
+})
 
 // all categories
-export async function getAllCategories() {
+const getAllCategories = cache(async() => {
   await dbConnect()
   return ProductModel.find({ isPublished: true }).distinct('category')
-}
+})
 
 // products for card
-export async function getProductsForCard({
+const getProductsForCard = cache(async({
   tag,
   limit = 4,
 }: {
   tag: string
   limit?: number
-}) {
+}) => {
   await dbConnect()
   const products = await ProductModel.find(
     { tags: { $in: [tag] }, isPublished: true },
@@ -69,16 +70,16 @@ export async function getProductsForCard({
     href: string
     image: string
   }[]
-}
+})
 
 // products by tag
-export async function getProductsByTag({
+const getProductsByTag = cache(async({
   tag,
   limit = 10,
 }: {
   tag: string
   limit?: number
-}) {
+}) => {
   await dbConnect()
   const products = await ProductModel.find({
     tags: { $in: [tag] },
@@ -88,27 +89,27 @@ export async function getProductsByTag({
     .limit(limit)
 
   return JSON.parse(JSON.stringify(products)) as Product[]
-}
+})
 
 // product by slug
-export async function getProductBySlug(slug: string) {
+const  getProductBySlug = cache(async(slug: string) => {
   await dbConnect()
   const product = await ProductModel.findOne({ slug, isPublished: true })
   if (!product) throw new Error('Product not found')
   return JSON.parse(JSON.stringify(product)) as Product
-}
+})
 
 
 // product by Id
-export async function getProductById(id: string) {
+const getProductById = cache(async(id: string) =>{
   await dbConnect()
   const product = await ProductModel.findById(id).lean();
   if (!product) throw new Error('Product not found')
   return JSON.parse(JSON.stringify(product)) as Product
-}
+})
 
-// related products
-export async function getRelatedProductsByCategory({
+// Related products
+const getRelatedProductsByCategory = cache(async ({
   category,
   productId,
   limit = PAGE_SIZE,
@@ -118,7 +119,7 @@ export async function getRelatedProductsByCategory({
   productId: string
   limit?: number
   page: number
-}) {
+}) => {
   await dbConnect()
   const skipAmount = (page - 1) * limit
   const conditions = { isPublished: true, category, _id: { $ne: productId } }
@@ -133,12 +134,12 @@ export async function getRelatedProductsByCategory({
     data: JSON.parse(JSON.stringify(products)) as Product[],
     totalPages: Math.ceil(total / limit),
   }
-}
+})
 
 // =========================
 //   MAIN SEARCH ACTION
 // =========================
-export async function getAllProducts({
+const getAllProducts = cache(async ({
   query,
   limit,
   page,
@@ -147,7 +148,7 @@ export async function getAllProducts({
   price,
   rating,
   sort,
-}: GetAllProductsParams): Promise<GetAllProductsResult> {
+}: GetAllProductsParams): Promise<GetAllProductsResult> => {
   const perPage = limit ?? PAGE_SIZE
   await dbConnect()
 
@@ -219,12 +220,12 @@ export async function getAllProducts({
     from: perPage * (page - 1) + 1,
     to: perPage * (page - 1) + products.length,
   }
-}
+})
 
 // =========================
 //      TAGS
 // =========================
-export async function getAllTags() {
+const getAllTags = cache(async() => {
   const tags = await ProductModel.aggregate([
     { $unwind: '$tags' },
     { $group: { _id: null, uniqueTags: { $addToSet: '$tags' } } },
@@ -241,10 +242,10 @@ export async function getAllTags() {
           .join(' ')
       ) as string[]) || []
   )
-}
+})
 
 
-export async function getSearchResults(query: string, page = 1, limit = 12) {
+const getSearchResults = cache(async(query: string, page = 1, limit = 12) => { 
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/api/products?q=${encodeURIComponent(
       query
@@ -257,4 +258,140 @@ export async function getSearchResults(query: string, page = 1, limit = 12) {
   }
 
   return res.json();
+})
+
+
+//-- ------implementing admin product services--------------------
+
+export const revalidate = 3600
+
+const getLatest = cache(async () => {
+  await dbConnect()
+  const products = await ProductModel.find({}).sort({ _id: -1 }).limit(6).lean()
+  return products as Product[]
+})
+
+const getFeatured = cache(async () => {
+  await dbConnect()
+  const products = await ProductModel.find({ isFeatured: true }).limit(3).lean()
+  return products as Product[]
+})
+
+const getBySlug = cache(async (slug: string) => {
+  await dbConnect()
+  const product = await ProductModel.findOne({ slug }).lean()
+  return product as Product
+})
+
+
+const getByQuery = cache(
+  async ({
+    q,
+    category,
+    sort,
+    price,
+    rating,
+    page = '1',
+  }: {
+    q: string
+    category: string
+    price: string
+    rating: string
+    sort: string
+    page: string
+  }) => {
+    await dbConnect()
+
+    const queryFilter =
+      q && q !== 'all'
+        ? {
+            name: {
+              $regex: q,
+              $options: 'i',
+            },
+          }
+        : {}
+    const categoryFilter = category && category !== 'all' ? { category } : {}
+    const ratingFilter =
+      rating && rating !== 'all'
+        ? {
+            rating: {
+              $gte: Number(rating),
+            },
+          }
+        : {}
+    // 10-50
+    const priceFilter =
+      price && price !== 'all'
+        ? {
+            price: {
+              $gte: Number(price.split('-')[0]),
+              $lte: Number(price.split('-')[1]),
+            },
+          }
+        : {}
+    const order: Record<string, 1 | -1> =
+      sort === 'lowest'
+        ? { price: 1 }
+        : sort === 'highest'
+        ? { price: -1 }
+        : sort === 'toprated'
+        ? { rating: -1 }
+        : { _id: -1 }
+
+    const categories = await ProductModel.find().distinct('category')
+    const products = await ProductModel.find(
+      {
+        ...queryFilter,
+        ...categoryFilter,
+        ...priceFilter,
+        ...ratingFilter,
+      },
+      '-reviews'
+    )
+      .sort(order)
+      .skip(PAGE_SIZE * (Number(page) - 1))
+      .limit(PAGE_SIZE)
+      .lean()
+
+    const countProducts = await ProductModel.countDocuments({
+      ...queryFilter,
+      ...categoryFilter,
+      ...priceFilter,
+      ...ratingFilter,
+    })
+
+    return {
+      products: products as Product[],
+      countProducts,
+      page,
+      pages: Math.ceil(countProducts / PAGE_SIZE),
+      categories,
+    }
+  }
+)
+
+const getCategories = cache(async () => {
+  await dbConnect()
+  const categories = await ProductModel.find().distinct('category')
+  return categories
+})
+
+const productService = {
+  getProductById,
+  getProductBySlug,
+  getLatest,
+  getFeatured,
+  getBySlug,
+  getByQuery,
+  getCategories,
+  getAllCategories,
+  getSearchResults,
+  getProductsByTag,
+  getAllTags,
+  getAllProducts,
+  getRelatedProductsByCategory,
+  getProductsForCard,
+  getAllProductsForAdmin,
 }
+export default productService
