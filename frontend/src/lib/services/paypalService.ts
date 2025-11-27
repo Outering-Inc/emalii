@@ -6,9 +6,10 @@ import { sendPurchaseReceipt } from "@/src/emails"
 import { paypal } from "../payments/paypal/paypal"
 import { revalidatePath } from "next/cache"
 import { formatError } from "../utils/utils"
+import { cache } from "react"
 
 // Create PayPal Order
-export async function createPayPalOrder(orderId: string) {
+const createPayPalOrder = cache(async (orderId: string) => {
     await dbConnect()
     try {
       const order = await Order.findById(orderId)
@@ -32,13 +33,13 @@ export async function createPayPalOrder(orderId: string) {
     } catch (err) {
       return { success: false, message: formatError(err) }
     }
-  }
+  })
   
   // ApprovePayPalOrder
-  export async function approvePayPalOrder(
+  const approvePayPalOrder = cache(async(
     orderId: string,
     data: { orderID: string } //data inside paypal
-  ) {
+  )  => {
     await dbConnect()
     try {
       const order = await Order.findById(orderId).populate('user', 'email')
@@ -70,5 +71,10 @@ export async function createPayPalOrder(orderId: string) {
     } catch (err) {
       return { success: false, message: formatError(err) }
     }
-  }
+  })
   
+  const paypalService = {
+    createPayPalOrder,
+    approvePayPalOrder,
+}
+export default paypalService
