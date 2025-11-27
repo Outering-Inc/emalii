@@ -1,5 +1,5 @@
 'use server'
-
+import { cache } from 'react'
 import bcrypt from 'bcryptjs'
 import { auth ,signIn, signOut } from '../auth'
 import { UserName, UserSignIn, UserSignUp } from '@/src/types'
@@ -13,7 +13,7 @@ import { formatError } from '../utils/utils'
 
 
 // CREATE
-export async function registerUser(userSignUp: UserSignUp) {
+const registerUser = cache(async(userSignUp: UserSignUp) => {
   try {
     const user = await UserSignUpSchema.parseAsync({
       name: userSignUp.name,
@@ -31,10 +31,10 @@ export async function registerUser(userSignUp: UserSignUp) {
   } catch (error) {
     return { success: false, error: formatError(error) }
   }
-}
+})
 
 
-export async function updateUserName(user: UserName) {
+const updateUserName = cache(async(user: UserName) => {
   try {
     await dbConnect() //connect to database
     const session = await auth() //get session by calling auth function
@@ -50,22 +50,30 @@ export async function updateUserName(user: UserName) {
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
-}
+})
 
 
 // SignInWithCredentials
-export async function signInWithCredentials(user: UserSignIn) {
+const signInWithCredentials = cache(async(user: UserSignIn) => {
   return await signIn('credentials', { ...user, redirect: false })
-}
+})
 
 // SignInWithGoogle
-export const SignInWithGoogle = async () => {
+const SignInWithGoogle = cache(async () => {
   await signIn('google')
-}
+})
 
 // SignOut
-export const SignOut = async () => {
+const SignOut = cache(async () => {
   const redirectTo = await signOut({ redirect: false })
   redirect(redirectTo.redirect)
-}
+})
 
+const userService = {
+  registerUser,
+  updateUserName,
+  signInWithCredentials,
+  SignInWithGoogle,
+  SignOut
+}
+export default userService
