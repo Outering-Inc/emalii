@@ -9,7 +9,7 @@ import { formatError } from "../utils/utils"
 import { cache } from "react"
 
 // Create PayPal Order
-const createPayPalOrder = cache(async (orderId: string) => {
+export const createPayPalOrder = cache(async (orderId: string) => {
     await dbConnect()
     try {
       const order = await Order.findById(orderId)
@@ -36,7 +36,7 @@ const createPayPalOrder = cache(async (orderId: string) => {
   })
   
   // ApprovePayPalOrder
-  const approvePayPalOrder = cache(async(
+  export const approvePayPalOrder = cache(async(
     orderId: string,
     data: { orderID: string } //data inside paypal
   )  => {
@@ -73,8 +73,3 @@ const createPayPalOrder = cache(async (orderId: string) => {
     }
   })
   
-  const paypalService = {
-    createPayPalOrder,
-    approvePayPalOrder,
-}
-export default paypalService

@@ -3,11 +3,10 @@ import { HomeCard } from '@/src/components/shared/home/home-card'
 import { HomeCarousel } from '@/src/components/shared/home/home-carousel'
 import ProductSlider from '@/src/components/shared/product/product-slider'
 import { Card, CardContent } from '@/src/components/ui/card'
-
-import {
-  getProductsForCard,
-  getAllCategories,
-  getProductsByTag,
+import { 
+  getAllCategories, 
+  getProductsByTag, 
+  getProductsForCard 
 } from '@/src/lib/services/productService'
 import data from '@/src/lib/data'
 import { toSlug } from '@/src/lib/utils/utils'

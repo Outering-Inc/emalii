@@ -20,7 +20,7 @@ import ReviewModel from '../db/models/reviewModel'
 
 
 // CREATE
-const createUpdateReview = cache(async({
+export const createUpdateReview = cache(async({
   data,
   path,
 }: {
@@ -72,7 +72,7 @@ const createUpdateReview = cache(async({
   }
  })
 
- const updateProductReview = cache(async (productId: string) => {
+ export const updateProductReview = cache(async (productId: string) => {
   //Calculate the new average rating,number of reviews and rating distribution
   const result = await ReviewModel.aggregate([
     { $match: {product: new mongoose.Types.ObjectId(productId)} },
@@ -112,8 +112,8 @@ const createUpdateReview = cache(async({
    
 })   
   
-
-const getReviews = cache(async({
+// GET REVIEWS BY PRODUCT ID
+export const getReviews = cache(async({
   productId,
   limit,
   page,
@@ -141,7 +141,8 @@ const getReviews = cache(async({
 })
 
 
-export const getReviewByProductId = async ({
+// GET REVIEW BY PRODUCT ID AND USER ID
+ export const getReviewByProductId = cache(async ({
   productId,
 }: {
   productId: string
@@ -156,12 +157,5 @@ export const getReviewByProductId = async ({
     user: session?.user?.id, //user is the current user
   })
   return review ? (JSON.parse(JSON.stringify(review)) as ReviewDetails) : null
-}
+})
 
-const reviewService = {
- createUpdateReview,
- updateProductReview,
- getReviews,
- getReviewByProductId
-}
-export default reviewService

@@ -4,17 +4,21 @@ import Link from "next/link"
 import Pagination from "@/src/components/shared/common/pagination"
 import ProductCard from "@/src/components/shared/product/product-card"
 import { Button } from "@/src/components/ui/button"
-import {
-  getAllCategories,
-  getAllProducts,
-  getAllTags,
-} from "@/src/lib/services/productService"
-import { IProduct } from "@/src/lib/db/models/productModel"
+import { Product } from "@/src/lib/db/models/productModel"
 import ProductSortSelector from "@/src/components/shared/product/product-sort-selector"
 import { getFilterUrl, toSlug } from "@/src/lib/utils/utils"
 import Rating from "@/src/components/shared/product/rating"
 import CollapsibleOnMobile from "@/src/components/shared/common/collapsible-on-mobile"
+
+import { 
+  getAllCategories,
+   getAllProducts, 
+   getAllTags 
+  } from "@/src/lib/services/productService"
 import { getImageSearchResults } from "@/src/lib/services/searchService"
+
+
+
 
 const sortOrders = [
   { value: "price-low-to-high", name: "Price: Low to high" },
@@ -107,7 +111,7 @@ export default async function SearchPage(props: {
   const tags = await getAllTags()
 
   let data: {
-    products: IProduct[]
+    products: Product[]
     totalPages: number
     totalProducts: number
     from: number
@@ -285,7 +289,7 @@ export default async function SearchPage(props: {
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {data.products.length === 0 && <div>No product found</div>}
-            {data.products.map((product: IProduct) => (
+            {data.products.map((product: Product) => (
               <ProductCard key={product._id} product={product} />
             ))}
           </div>

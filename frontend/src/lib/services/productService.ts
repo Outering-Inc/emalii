@@ -35,19 +35,19 @@ const PAGE_SIZE = 10
 // =========================
 
 // ADMIN: all products
-const getAllProductsForAdmin = cache(async() => {
+export const getAllProductsForAdmin = cache(async() => {
   await dbConnect()
   return ProductModel.find({ isPublished: true }).distinct('category')
 })
 
 // all categories
-const getAllCategories = cache(async() => {
+export const getAllCategories = cache(async() => {
   await dbConnect()
   return ProductModel.find({ isPublished: true }).distinct('category')
 })
 
 // products for card
-const getProductsForCard = cache(async({
+export const getProductsForCard = cache(async({
   tag,
   limit = 4,
 }: {
@@ -73,7 +73,7 @@ const getProductsForCard = cache(async({
 })
 
 // products by tag
-const getProductsByTag = cache(async({
+export const getProductsByTag = cache(async({
   tag,
   limit = 10,
 }: {
@@ -92,7 +92,7 @@ const getProductsByTag = cache(async({
 })
 
 // product by slug
-const  getProductBySlug = cache(async(slug: string) => {
+export const  getProductBySlug = cache(async(slug: string) => {
   await dbConnect()
   const product = await ProductModel.findOne({ slug, isPublished: true })
   if (!product) throw new Error('Product not found')
@@ -101,7 +101,7 @@ const  getProductBySlug = cache(async(slug: string) => {
 
 
 // product by Id
-const getProductById = cache(async(id: string) =>{
+export const getProductById = cache(async(id: string) =>{
   await dbConnect()
   const product = await ProductModel.findById(id).lean();
   if (!product) throw new Error('Product not found')
@@ -109,7 +109,7 @@ const getProductById = cache(async(id: string) =>{
 })
 
 // Related products
-const getRelatedProductsByCategory = cache(async ({
+export const getRelatedProductsByCategory = cache(async ({
   category,
   productId,
   limit = PAGE_SIZE,
@@ -139,7 +139,7 @@ const getRelatedProductsByCategory = cache(async ({
 // =========================
 //   MAIN SEARCH ACTION
 // =========================
-const getAllProducts = cache(async ({
+export const getAllProducts = cache(async ({
   query,
   limit,
   page,
@@ -225,7 +225,7 @@ const getAllProducts = cache(async ({
 // =========================
 //      TAGS
 // =========================
-const getAllTags = cache(async() => {
+export const getAllTags = cache(async() => {
   const tags = await ProductModel.aggregate([
     { $unwind: '$tags' },
     { $group: { _id: null, uniqueTags: { $addToSet: '$tags' } } },
@@ -245,7 +245,7 @@ const getAllTags = cache(async() => {
 })
 
 
-const getSearchResults = cache(async(query: string, page = 1, limit = 12) => { 
+export const getSearchResults = cache(async(query: string, page = 1, limit = 12) => { 
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/api/products?q=${encodeURIComponent(
       query
@@ -261,30 +261,29 @@ const getSearchResults = cache(async(query: string, page = 1, limit = 12) => {
 })
 
 
-//-- ------implementing admin product services--------------------
 
-export const revalidate = 3600
 
-const getLatest = cache(async () => {
+
+export const getLatest = cache(async () => {
   await dbConnect()
   const products = await ProductModel.find({}).sort({ _id: -1 }).limit(6).lean()
   return products as Product[]
 })
 
-const getFeatured = cache(async () => {
+export const getFeatured = cache(async () => {
   await dbConnect()
   const products = await ProductModel.find({ isFeatured: true }).limit(3).lean()
   return products as Product[]
 })
 
-const getBySlug = cache(async (slug: string) => {
+export const getBySlug = cache(async (slug: string) => {
   await dbConnect()
   const product = await ProductModel.findOne({ slug }).lean()
   return product as Product
 })
 
 
-const getByQuery = cache(
+export const getByQuery = cache(
   async ({
     q,
     category,
@@ -371,27 +370,9 @@ const getByQuery = cache(
   }
 )
 
-const getCategories = cache(async () => {
+export const getCategories = cache(async () => {
   await dbConnect()
   const categories = await ProductModel.find().distinct('category')
   return categories
 })
 
-const productService = {
-  getProductById,
-  getProductBySlug,
-  getLatest,
-  getFeatured,
-  getBySlug,
-  getByQuery,
-  getCategories,
-  getAllCategories,
-  getSearchResults,
-  getProductsByTag,
-  getAllTags,
-  getAllProducts,
-  getRelatedProductsByCategory,
-  getProductsForCard,
-  getAllProductsForAdmin,
-}
-export default productService

@@ -1,5 +1,5 @@
 import { Button } from '@/src/components/ui/button'
-import { IProduct } from '@/src/lib/db/models/productModel'
+import { Product } from '@/src/lib/db/models/productModel'
 import Link from 'next/link'
 
 export default function SelectVariant({
@@ -7,7 +7,7 @@ export default function SelectVariant({
   size,
   color,
 }: {
-  product: IProduct
+  product: Product
   color: string
   size: string
 }) {

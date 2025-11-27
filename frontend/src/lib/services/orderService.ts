@@ -15,7 +15,7 @@ import User from '../db/models/userModel'
 
 
 // CREATE ORDER FROM CART
-export const createOrder = async (clientSideCart: Cart) => {
+export const createOrder = cache(async (clientSideCart: Cart) => {
   try {
     await dbConnect()
     const session = await auth()
@@ -33,7 +33,7 @@ export const createOrder = async (clientSideCart: Cart) => {
   } catch (error) {
     return { success: false, message: formatError(error) }
   }
-}
+})
 
  const createOrderFromCart = cache(async (
   clientSideCart: Cart,
@@ -63,7 +63,7 @@ export const createOrder = async (clientSideCart: Cart) => {
 })
 
 //Get Order by Id
-const getOrderById = cache(async(orderId: string): Promise<OrderList> => {
+export const getOrderById = cache(async(orderId: string): Promise<OrderList> => {
   await dbConnect()
   const order = await OrderModel.findById(orderId)
   return JSON.parse(JSON.stringify(order))
@@ -72,7 +72,7 @@ const getOrderById = cache(async(orderId: string): Promise<OrderList> => {
 //Define Dser create Order plugin here
 
 // Calculate delivery date and price
- const calcDeliveryDateAndPrice = cache(async ({
+ export const calcDeliveryDateAndPrice = cache(async ({
   items,
   shippingAddress,
   deliveryDateIndex,
@@ -121,7 +121,7 @@ const getOrderById = cache(async(orderId: string): Promise<OrderList> => {
 
 
 // GET MY ORDERS WITH PAGINATION
-const getMyOrders = cache(async({
+export const getMyOrders = cache(async({
   limit,
   page,
 }: {
@@ -153,7 +153,7 @@ const getMyOrders = cache(async({
 
 
 // GET ORDERS SUMMARY Using Aggregation Pipeline from Mongodb
-const getOrderSummary = cache(async(date: DateRange) => {
+export const getOrderSummary = cache(async(date: DateRange) => {
   await dbConnect()
 
   const ordersCount = await OrderModel.countDocuments({
@@ -247,7 +247,7 @@ const getOrderSummary = cache(async(date: DateRange) => {
 
 // GET ALL ORDERS SUMMARY Using Drizzle Pipeline from postgresql
 
-const getSalesChartData = cache(async(date: DateRange) => {
+export const getSalesChartData = cache(async(date: DateRange) => {
   const result = await OrderModel.aggregate([
     {
       $match: {
@@ -289,7 +289,7 @@ const getSalesChartData = cache(async(date: DateRange) => {
 })
 
 //getTopSalesProducts pipeline
-const getTopSalesProducts = cache(async(date: DateRange) => {
+export const getTopSalesProducts = cache(async(date: DateRange) => {
   const result = await OrderModel.aggregate([
     {
       $match: {
@@ -341,7 +341,7 @@ const getTopSalesProducts = cache(async(date: DateRange) => {
 })
 
 //getTopSalesCategories pipeline
-const getTopSalesCategories = cache(async(date: DateRange, limit = 5) => {
+export const getTopSalesCategories = cache(async(date: DateRange, limit = 5) => {
   const result = await OrderModel.aggregate([
     {
       $match: {
@@ -369,15 +369,3 @@ const getTopSalesCategories = cache(async(date: DateRange, limit = 5) => {
   return result
 })
 
-const orderService = {
-  getOrderById,
-  createOrder,
-  createOrderFromCart,
-  getTopSalesCategories,
-  getTopSalesProducts,
-  getSalesChartData,
-  getMyOrders,
-  getOrderSummary,
-  calcDeliveryDateAndPrice,
-}
-export default orderService

@@ -22,7 +22,7 @@ export interface GetProductsByTextSearchResult {
 /** ---------------------------------------------------
  *  GET PRODUCTS BY TEXT SEARCH
  *  --------------------------------------------------- */
-const getProductsByTextSearch = cache(async({
+export const getProductsByTextSearch = cache(async({
   query,
   category,
   tag,
@@ -104,7 +104,7 @@ export interface GetProductsByTextSearchParams {
 
 
 // ✅ DRY helper to handle image search through API route
-const getImageSearchResults = cache(async(): Promise<Product[]>  => {
+export const getImageSearchResults = cache(async(): Promise<Product[]>  => {
   try {
     if (typeof window === "undefined") return []
 
@@ -130,8 +130,3 @@ const getImageSearchResults = cache(async(): Promise<Product[]>  => {
   }
 })
 
-const searchService = {
-  getProductsByTextSearch,
-  getImageSearchResults
-}
-export default searchService

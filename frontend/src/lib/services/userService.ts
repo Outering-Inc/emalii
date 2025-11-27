@@ -13,7 +13,7 @@ import { formatError } from '../utils/utils'
 
 
 // CREATE
-const registerUser = cache(async(userSignUp: UserSignUp) => {
+export const registerUser = cache(async(userSignUp: UserSignUp) => {
   try {
     const user = await UserSignUpSchema.parseAsync({
       name: userSignUp.name,
@@ -34,7 +34,7 @@ const registerUser = cache(async(userSignUp: UserSignUp) => {
 })
 
 
-const updateUserName = cache(async(user: UserName) => {
+export const updateUserName = cache(async(user: UserName) => {
   try {
     await dbConnect() //connect to database
     const session = await auth() //get session by calling auth function
@@ -54,26 +54,18 @@ const updateUserName = cache(async(user: UserName) => {
 
 
 // SignInWithCredentials
-const signInWithCredentials = cache(async(user: UserSignIn) => {
+export const signInWithCredentials = cache(async(user: UserSignIn) => {
   return await signIn('credentials', { ...user, redirect: false })
 })
 
 // SignInWithGoogle
-const SignInWithGoogle = cache(async () => {
+export const SignInWithGoogle = cache(async () => {
   await signIn('google')
 })
 
 // SignOut
-const SignOut = cache(async () => {
+export const SignOut = cache(async () => {
   const redirectTo = await signOut({ redirect: false })
   redirect(redirectTo.redirect)
 })
 
-const userService = {
-  registerUser,
-  updateUserName,
-  signInWithCredentials,
-  SignInWithGoogle,
-  SignOut
-}
-export default userService

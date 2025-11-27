@@ -24,7 +24,7 @@ function isPopulatedUser(user: unknown): user is User {
 }
 
 // CREATE MPESA ORDER
-const createMpesaOrder = cache(async(orderId: string) => {
+export const createMpesaOrder = cache(async(orderId: string) => {
   await dbConnect();
   try {
     const order = await Order.findById(orderId);
@@ -66,7 +66,7 @@ const createMpesaOrder = cache(async(orderId: string) => {
 });
 
 // APPROVE MPESA ORDER
-const approveMpesaOrder = cache(async(
+export const approveMpesaOrder = cache(async(
   orderId: string,
   data: { orderID: string }
 ) => {
@@ -106,8 +106,3 @@ const approveMpesaOrder = cache(async(
   }
 });
 
-const mpesaService = {
-  createMpesaOrder,
-  approveMpesaOrder,
-}
-export default mpesaService

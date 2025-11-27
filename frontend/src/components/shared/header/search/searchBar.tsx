@@ -19,16 +19,17 @@ import {
 } from "@/src/components/ui/hover-card";
 import { Button } from "@/src/components/ui/button";
 import { APP_NAME } from "@/src/lib/constants";
-import { getAllCategories } from "@/src/lib/services/productService";
 import Image from "next/image";
 import ImageUpload from "./imageUpload";
 import LoadingOverlay from "../../common/loading-overlay";
+import { getAllCategories } from "@/src/lib/services/productService";
 
 interface Suggestion {
   id: string;
   name: string;
   image?: string | null;
 }
+
 
 export default function SearchBar() {
   const [categories, setCategories] = useState<string[]>([]);
