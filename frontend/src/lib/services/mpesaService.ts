@@ -1,6 +1,7 @@
 // File: lib/actions/mpesa.actions.ts
 'use server';
 
+import { cache } from 'react'
 import mongoose from 'mongoose';
 import dbConnect from '../db/dbConnect';
 
@@ -22,7 +23,8 @@ function isPopulatedUser(user: unknown): user is User {
   return typeof user === 'object' && user !== null && '_id' in user;
 }
 
-export async function createMpesaOrder(orderId: string) {
+// CREATE MPESA ORDER
+const createMpesaOrder = cache(async(orderId: string) => {
   await dbConnect();
   try {
     const order = await Order.findById(orderId);
@@ -61,12 +63,13 @@ export async function createMpesaOrder(orderId: string) {
     console.error('createMpesaOrder Error:', err);
     return { success: false, message: formatError(err) };
   }
-}
+});
 
-export async function approveMpesaOrder(
+// APPROVE MPESA ORDER
+const approveMpesaOrder = cache(async(
   orderId: string,
   data: { orderID: string }
-) {
+) => {
   await dbConnect();
 
   try {
@@ -101,5 +104,10 @@ export async function approveMpesaOrder(
       message: formatError(err),
     };
   }
-}
+});
 
+const mpesaService = {
+  createMpesaOrder,
+  approveMpesaOrder,
+}
+export default mpesaService
