@@ -1,9 +1,10 @@
 'use server'
 
-//import { connectToDatabase } from '@/src/lib/db/dbConnect'
-import Product, { IProduct } from '@/src/lib/db/models/productModel'
+import { cache } from 'react'
+import ProductModel, { Product } from '../db/models/productModel'
 import { FilterQuery, SortOrder, FlattenMaps, Types } from 'mongoose'
 import dbConnect from '../db/dbConnect'
+
 
 type SortOption = 'priceLowHigh' | 'priceHighLow' | 'newest' | 'bestSelling'
 
@@ -11,7 +12,7 @@ type SortOption = 'priceLowHigh' | 'priceHighLow' | 'newest' | 'bestSelling'
  *  INTERFACE: Returned shape of getProductsByTextSearch
  *  --------------------------------------------------- */
 export interface GetProductsByTextSearchResult {
-  products: (FlattenMaps<IProduct> & { _id: string })[]
+  products: (FlattenMaps<Product> & { _id: string })[]
   totalProducts: number
   from: number
   to: number
@@ -21,7 +22,7 @@ export interface GetProductsByTextSearchResult {
 /** ---------------------------------------------------
  *  GET PRODUCTS BY TEXT SEARCH
  *  --------------------------------------------------- */
-export async function getProductsByTextSearch({
+const getProductsByTextSearch = cache(async({
   query,
   category,
   tag,
@@ -39,10 +40,10 @@ export async function getProductsByTextSearch({
   sort?: SortOption
   page?: number
   limit?: number
-}): Promise<GetProductsByTextSearchResult> {
+}): Promise<GetProductsByTextSearchResult> => {
   await dbConnect()
 
-  const filters: FilterQuery<IProduct> = {}
+  const filters: FilterQuery<Product> = {}
   if (query) filters.$text = { $search: query }
   if (category && category !== 'all') filters.category = category
   if (tag && tag !== 'all') filters.tags = tag
@@ -69,15 +70,15 @@ export async function getProductsByTextSearch({
       break
   }
 
-  const totalProducts = await Product.countDocuments(filters)
+  const totalProducts = await ProductModel.countDocuments(filters)
   const totalPages = Math.ceil(totalProducts / limit)
   const skip = (page - 1) * limit
 
-  const rawProducts = await Product.find(filters)
+  const rawProducts = await ProductModel.find(filters)
     .sort(sortOption)
     .skip(skip)
     .limit(limit)
-    .lean<FlattenMaps<IProduct>[]>()
+    .lean<FlattenMaps<Product>[]>()
 
   const products = rawProducts.map((p) => ({
     ...p,
@@ -91,11 +92,11 @@ export async function getProductsByTextSearch({
     to: skip + products.length,
     totalPages,
   }
-}
+})
 
 /** Optional: keep your existing params interface */
 export interface GetProductsByTextSearchParams {
-  products: IProduct[]
+  products: Product[]
   total: number
   page: number
   pages: number
@@ -103,7 +104,7 @@ export interface GetProductsByTextSearchParams {
 
 
 // ✅ DRY helper to handle image search through API route
-export async function getImageSearchResults(): Promise<IProduct[]> {
+const getImageSearchResults = cache(async(): Promise<Product[]>  => {
   try {
     if (typeof window === "undefined") return []
 
@@ -127,4 +128,10 @@ export async function getImageSearchResults(): Promise<IProduct[]> {
     console.error("Image search error", err)
     return []
   }
+})
+
+const searchService = {
+  getProductsByTextSearch,
+  getImageSearchResults
 }
+export default searchService
