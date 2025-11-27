@@ -1,12 +1,12 @@
-import { IReviewInput } from '@/src/types'
+import { ReviewInput } from '@/src/types'
 import { Document, Model, model, models, Schema } from 'mongoose'
 
-export interface IReview extends Document, IReviewInput {
+export interface Review extends Document, ReviewInput {
   _id: string
   createdAt: Date
   updatedAt: Date
 }
-const reviewSchema = new Schema<IReview>(
+const reviewSchema = new Schema<Review>(
   {
     user: {
       type: Schema.Types.ObjectId as unknown as typeof String,
@@ -42,6 +42,6 @@ const reviewSchema = new Schema<IReview>(
 )
 
 const ReviewModel =
-  (models.Review as Model<IReview>) || model<IReview>('Review', reviewSchema)
+  (models.Review as Model<Review>) || model<Review>('Review', reviewSchema)
 
 export default ReviewModel
