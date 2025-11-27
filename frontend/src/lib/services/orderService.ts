@@ -1,5 +1,5 @@
 'use server'
-
+import { cache } from 'react'
 import dbConnect from '../db/dbConnect'
 import {   Cart, OrderList, OrderItem, ShippingAddress   } from '@/src/types'
 import { formatError, round2 } from '../utils/utils'
@@ -35,7 +35,7 @@ export const createOrder = async (clientSideCart: Cart) => {
   }
 }
 
-export const createOrderFromCart = async (
+ const createOrderFromCart = cache(async (
   clientSideCart: Cart,
   userId: string
 ) => {
@@ -60,19 +60,19 @@ export const createOrderFromCart = async (
     expectedDeliveryDate: cart.expectedDeliveryDate,
   })
   return await OrderModel.create(order)
-}
+})
 
 //Get Order by Id
-export async function getOrderById(orderId: string): Promise<OrderList> {
+const getOrderById = cache(async(orderId: string): Promise<OrderList> => {
   await dbConnect()
   const order = await OrderModel.findById(orderId)
   return JSON.parse(JSON.stringify(order))
-}
+})
 
 //Define Dser create Order plugin here
 
-// CALCULATE DELIVERY DATE
-export const calcDeliveryDateAndPrice = async ({
+// Calculate delivery date and price
+ const calcDeliveryDateAndPrice = cache(async ({
   items,
   shippingAddress,
   deliveryDateIndex,
@@ -117,17 +117,17 @@ export const calcDeliveryDateAndPrice = async ({
     taxPrice,
     totalPrice,
   }
-}
+})
 
 
-
-export async function getMyOrders({
+// GET MY ORDERS WITH PAGINATION
+const getMyOrders = cache(async({
   limit,
   page,
 }: {
   limit?: number
   page: number
-}) {
+}) => {
   
   limit = limit || PAGE_SIZE
   await dbConnect()
@@ -148,12 +148,12 @@ export async function getMyOrders({
     data: JSON.parse(JSON.stringify(orders)), //convert order to plain javascript object
     totalPages: Math.ceil(ordersCount / limit),
   }
-}
+})
 
 
 
 // GET ORDERS SUMMARY Using Aggregation Pipeline from Mongodb
-export async function getOrderSummary(date: DateRange) {
+const getOrderSummary = cache(async(date: DateRange) => {
   await dbConnect()
 
   const ordersCount = await OrderModel.countDocuments({
@@ -243,11 +243,11 @@ export async function getOrderSummary(date: DateRange) {
     topSalesProducts: JSON.parse(JSON.stringify(topSalesProducts)),
     latestOrders: JSON.parse(JSON.stringify(latestOrders)) as OrderList[],
   }
-}
+})
 
 // GET ALL ORDERS SUMMARY Using Drizzle Pipeline from postgresql
 
-async function getSalesChartData(date: DateRange) {
+const getSalesChartData = cache(async(date: DateRange) => {
   const result = await OrderModel.aggregate([
     {
       $match: {
@@ -286,10 +286,10 @@ async function getSalesChartData(date: DateRange) {
   ])
 
   return result
-}
+})
 
 //getTopSalesProducts pipeline
-async function getTopSalesProducts(date: DateRange) {
+const getTopSalesProducts = cache(async(date: DateRange) => {
   const result = await OrderModel.aggregate([
     {
       $match: {
@@ -338,10 +338,10 @@ async function getTopSalesProducts(date: DateRange) {
   ])
 
   return result
-}
+})
 
 //getTopSalesCategories pipeline
-async function getTopSalesCategories(date: DateRange, limit = 5) {
+const getTopSalesCategories = cache(async(date: DateRange, limit = 5) => {
   const result = await OrderModel.aggregate([
     {
       $match: {
@@ -367,4 +367,17 @@ async function getTopSalesCategories(date: DateRange, limit = 5) {
   ])
 
   return result
+})
+
+const orderService = {
+  getOrderById,
+  createOrder,
+  createOrderFromCart,
+  getTopSalesCategories,
+  getTopSalesProducts,
+  getSalesChartData,
+  getMyOrders,
+  getOrderSummary,
+  calcDeliveryDateAndPrice,
 }
+export default orderService
