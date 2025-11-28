@@ -1,4 +1,5 @@
 "use server"
+import { PAGE_SIZE } from "@/src/lib/constants"
 import dbConnect from "@/src/lib/db/dbConnect"
 import UserModel, { User } from "@/src/lib/db/models/userModel"
 import { formatError } from "@/src/lib/utils/utils"
@@ -50,5 +51,29 @@ export async function deleteUser(id: string) {
     return { success: false, message: formatError(error) }
   }
 }
+
+// GET ALL USERS
+export async function getAllUsers({
+  limit,
+  page,
+}: {
+  limit?: number
+  page: number
+}) {
+  limit = limit || PAGE_SIZE
+  await dbConnect()
+
+  const skipAmount = (Number(page) - 1) * limit
+  const users = await UserModel.find()
+    .sort({ createdAt: 'desc' })
+    .skip(skipAmount)
+    .limit(limit)
+  const usersCount = await UserModel.countDocuments()
+  return {
+    data: JSON.parse(JSON.stringify(users)) as User[],
+    totalPages: Math.ceil(usersCount / limit),
+  }
+}
+
 
 
