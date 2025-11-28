@@ -61,17 +61,6 @@ export const ProductUpdateDefaultValues: ProductEditFormType = {
   images: [],
 };
 
-// ------------------ Users Default Values ------------------
-export const UserUpdateDefaultValues: UserEditFormType = {
-  _id: "",
-  name: "",
-  email: "",
-  password: "",
-  role : "user", // choose a sensible default
-  image: "",
-};
-
-
 
 // ------------------ Products ------------------
 export type ProductInput = z.infer<typeof ProductInputSchema>

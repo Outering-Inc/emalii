@@ -37,6 +37,7 @@ import { ProductUpdateSchema } from "@/src/lib/validation/validator";
 import { toast } from "@/src/hooks/client/use-toast";
 
 
+
 // Fetcher
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 

@@ -4,11 +4,12 @@ import bcrypt from 'bcryptjs'
 import { auth ,signIn, signOut } from '../auth'
 import { UserName, UserSignIn, UserSignUp } from '@/src/types'
 import { redirect } from 'next/navigation'
-import { UserSignUpSchema } from '../validation/validator'
+import { UserSignUpSchema, UserUpdateSchema } from '../validation/validator'
 import dbConnect from '../db/dbConnect'
-import User from '../db/models/userModel'
+import UserModel, { User } from '../db/models/userModel'
 import { formatError } from '../utils/utils'
-
+import { revalidatePath } from 'next/cache'
+import z from 'zod'
 
 
 
@@ -23,32 +24,13 @@ export const registerUser = cache(async(userSignUp: UserSignUp) => {
     })
 
     await dbConnect()
-    await User.create({
+    await UserModel.create({
       ...user,
       password: await bcrypt.hash(user.password, 5),
     })
     return { success: true, message: 'User created successfully' }
   } catch (error) {
     return { success: false, error: formatError(error) }
-  }
-})
-
-
-export const updateUserName = cache(async(user: UserName) => {
-  try {
-    await dbConnect() //connect to database
-    const session = await auth() //get session by calling auth function
-    const currentUser = await User.findById(session?.user?.id)
-    if (!currentUser) throw new Error('User not found')
-    currentUser.name = user.name
-    const updatedUser = await currentUser.save()
-    return {
-      success: true,
-      message: 'User updated successfully',
-      data: JSON.parse(JSON.stringify(updatedUser)),
-    }
-  } catch (error) {
-    return { success: false, message: formatError(error) }
   }
 })
 
@@ -68,4 +50,68 @@ export const SignOut = cache(async () => {
   const redirectTo = await signOut({ redirect: false })
   redirect(redirectTo.redirect)
 })
+
+
+export const updateUserName = cache(async(user: UserName) => {
+  try {
+    await dbConnect() //connect to database
+    const session = await auth() //get session by calling auth function
+    const currentUser = await UserModel.findById(session?.user?.id)
+    if (!currentUser) throw new Error('User not found')
+    currentUser.name = user.name
+    const updatedUser = await currentUser.save()
+    return {
+      success: true,
+      message: 'User updated successfully',
+      data: JSON.parse(JSON.stringify(updatedUser)),
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+})
+
+// GET USER BY ID
+export async function getUserById(userId: string) {
+  await dbConnect()
+  const user = await UserModel.findById(userId)
+  if (!user) throw new Error('User not found')
+  return JSON.parse(JSON.stringify(user)) as User
+}
+
+// UPDATE USER
+export async function updateUser(user: z.infer<typeof UserUpdateSchema>) {
+  try {
+    await dbConnect()
+    const dbUser = await UserModel.findById(user._id)
+    if (!dbUser) throw new Error('User not found')
+    dbUser.name = user.name
+    dbUser.email = user.email
+    dbUser.role = user.role
+    const updatedUser = await dbUser.save()
+    revalidatePath('/admin/users')
+    return {
+      success: true,
+      message: 'User updated successfully',
+      data: JSON.parse(JSON.stringify(updatedUser)),
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+// DELETE USER
+export async function deleteUser(id: string) {
+  try {
+    await dbConnect()
+    const res = await UserModel.findByIdAndDelete(id)
+    if (!res) throw new Error('Use not found')
+    revalidatePath('/admin/users')
+    return {
+      success: true,
+      message: 'User deleted successfully',
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
 

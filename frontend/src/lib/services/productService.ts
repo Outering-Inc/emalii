@@ -244,7 +244,7 @@ export const getAllTags = cache(async() => {
   )
 })
 
-
+//GET SEARCH RESULTS FROM EXTERNAL API
 export const getSearchResults = cache(async(query: string, page = 1, limit = 12) => { 
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/api/products?q=${encodeURIComponent(
@@ -263,7 +263,7 @@ export const getSearchResults = cache(async(query: string, page = 1, limit = 12)
 
 
 
-
+//Get latest products
 export const getLatest = cache(async () => {
   await dbConnect()
   const products = await ProductModel.find({}).sort({ _id: -1 }).limit(6).lean()

@@ -10,6 +10,9 @@ export const APP_DESCRIPTION =
     process.env.NEXT_PUBLIC_APP_DESCRIPTION || 
     'Marketplace app,build with Next.js, Tailwind CSS, and MongoDB'  
 
+//User roles    
+export const User_ROLES = ['SuperAdmin', 'Admin', 'User', 'Manager', 'Support'] 
+
 export const APP_COPYRIGHT = process.env.NEXT_PUBLIC_APP_COPYRIGHT || `Copyright © ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.`    
 
 export const PAGE_SIZE = Number(process.env.NEXT_PUBLIC_PAGE_SIZE || 10)   

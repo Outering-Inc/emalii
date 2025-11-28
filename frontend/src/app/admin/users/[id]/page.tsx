@@ -1,17 +1,38 @@
-//import AdminLayout from '@/components/admin/AdminLayout'
-import AdminLayout from '@/src/components/shared/admin/adminLayout'
-import UserForm from './UserForm'
+import { notFound } from 'next/navigation'
 
-export function generateMetadata({ params }: { params: { id: string } }) {
-  return {
-    title: `Edit User ${params.id}`,
-  }
+import Link from 'next/link'
+import { Metadata } from 'next'
+import { getUserById } from '@/src/app/api/admin/users/[id]/route'
+import UserEditForm from './UserEditForm'
+
+export const metadata: Metadata = {
+  title: 'Edit User',
 }
 
-export default function UserEditPage({ params }: { params: { id: string } }) {
+export default async function UserEditPage(props: {
+  params: Promise<{
+    id: string
+  }>
+}) {
+  const params = await props.params
+
+  const { id } = params
+
+  const user = await getUserById(id)
+  if (!user) notFound()
   return (
-    <AdminLayout activeItem="users">
-      <UserForm userId={params.id} />
-    </AdminLayout>
+    <main className='max-w-6xl mx-auto p-4'>
+      <div className='flex mb-4'>
+        <Link href='/admin/users'>Users</Link>
+        <span className='mx-1'>›</span>
+        <Link href={`/admin/users/${user._id}`}>{user._id}
+            Edit User <span className='text-sm text-gray-500'>({user.name})</span>
+        </Link>
+      </div>
+
+      <div className='my-8'>
+        <UserEditForm user={user} />
+      </div>
+    </main>
   )
 }

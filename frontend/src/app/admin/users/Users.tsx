@@ -101,7 +101,7 @@ export default function Users() {
                 <TableCell>{formatId(user._id)}</TableCell>
                 <TableCell>{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell>{user.role === 'admin' ? 'YES' : 'NO'}</TableCell>
+                <TableCell>{user.role === 'Admin' ? 'YES' : 'NO'}</TableCell>
                 <TableCell className="flex gap-2">
                   <Link
                     href={`/admin/users/${user._id}`}

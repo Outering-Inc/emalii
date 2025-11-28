@@ -25,9 +25,7 @@ const UserName = z
 
 const Email = z.string().min(1, 'Email is required').email('Email is invalid')
 const Password = z.string().min(3, 'Password must be at least 3 characters')
-const UserRole = z.enum(["admin", "user" ], {
-  required_error: "Role is required",
-})
+const UserRole = z.string().min(1, 'role is required')
 
 
 export const UserInputSchema = z.object({
@@ -47,6 +45,16 @@ export const UserInputSchema = z.object({
     country: z.string().min(1, 'Country is required'),
     phone: z.string().min(1, 'Phone number is required'),
   }),
+})
+
+export const UserUpdateSchema = UserInputSchema.pick({
+  name: true,
+  email: true,
+  password: true,
+  image: true,
+  role: true,
+}).extend({
+  _id: z.string(), // required when updating
 })
 
 export const UserSignInSchema = z.object({
@@ -178,12 +186,3 @@ export const ProductUpdateSchema = ProductInputSchema.pick({
   _id: z.string(), // required when updating
 })
 
-export const UserUpdateSchema = UserInputSchema.pick({
-  name: true,
-  email: true,
-  password: true,
-  image: true,
-  role: true,
-}).extend({
-  _id: z.string(), // required when updating
-})

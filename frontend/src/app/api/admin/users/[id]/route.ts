@@ -1,124 +1,54 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { auth } from '@/src/lib/auth'
-import dbConnect from '@/src/lib/db/dbConnect'
-import UserModel from '@/src/lib/db/models/userModel'
+"use server"
+import dbConnect from "@/src/lib/db/dbConnect"
+import UserModel, { User } from "@/src/lib/db/models/userModel"
+import { formatError } from "@/src/lib/utils/utils"
+import { UserUpdateSchema } from "@/src/lib/validation/validator"
+import { revalidatePath } from "next/cache"
+import z from "zod"
 
-// GET /api/admin/users/[id]
-export const GET = auth(async (...args: any) => {
-  const [req, { params }] = args
-  if (!req.auth || req.auth.user?.role !== "Admin") {
-    return Response.json(
-      { message: 'unauthorized' },
-      {
-        status: 401,
-      }
-    )
-  }
+// GET USER BY ID
+export async function getUserById(userId: string) {
   await dbConnect()
-  const user = await UserModel.findById(params.id)
-  console.log('Fetched user:', user);
-  if (!user) {
-    return Response.json(
-      { message: 'user not found' },
-      {
-        status: 404,
-      }
-    )
-  }
-  return Response.json(user)
-}) as any
+  const user = await UserModel.findById(userId)
+  if (!user) throw new Error('User not found')
+  return JSON.parse(JSON.stringify(user)) as User
+}
 
-// PUT /api/admin/users/[id]
-export const PUT = auth(async (...p: any) => {
-  const [req, { params }] = p
-  if (!req.auth || req.auth.user?.role !== "Admin") {
-    return Response.json(
-      { message: 'unauthorized' },
-      {
-        status: 401,
-      }
-    )
-  }
-
-  const { name, email, role, image, password } = await req.json();
-
+// UPDATE USER
+export async function updateUser(user: z.infer<typeof UserUpdateSchema>) {
   try {
     await dbConnect()
-    const user = await UserModel.findById(params.id)
-    if (user) {
-      user.name = name;
-      user.email = email;
-      user.image = image;
-      user.role = role;
-     
-      if (password && password.trim().length > 0) {
-      user.password = password; // if hashed in middleware, keep it
+    const dbUser = await UserModel.findById(user._id)
+    if (!dbUser) throw new Error('User not found')
+    dbUser.name = user.name
+    dbUser.email = user.email
+    dbUser.role = user.role
+    const updatedUser = await dbUser.save()
+    revalidatePath('/admin/users')
+    return {
+      success: true,
+      message: 'User updated successfully',
+      data: JSON.parse(JSON.stringify(updatedUser)),
     }
-
-
-
-      const updatedUser = await user.save()
-      return Response.json({
-        message: 'User updated successfully',
-        user: updatedUser,
-      })
-    } else {
-      return Response.json(
-        { message: 'User not found' },
-        {
-          status: 404,
-        }
-      )
-    }
-  } catch (err: any) {
-    return Response.json(
-      { message: err.message },
-      {
-        status: 500,
-      }
-    )
+  } catch (error) {
+    return { success: false, message: formatError(error) }
   }
-}) as any
+}
 
-// DELETE /api/admin/users/[id]
-export const DELETE = auth(async (...args: any) => {
-  const [req, { params }] = args
-  if (!req.auth || req.auth.user?.role !== "Admin") {
-    return Response.json(
-      { message: 'unauthorized' },
-      {
-        status: 401,
-      }
-    )
-  }
-
+// DELETE USER
+export async function deleteUser(id: string) {
   try {
     await dbConnect()
-    const user = await UserModel.findById(params.id)
-    if (user) {
-      if (user.role === "admin")
-        return Response.json(
-          { message: 'User is admin' },
-          {
-            status: 400,
-          }
-        )
-      await user.deleteOne()
-      return Response.json({ message: 'User deleted successfully' })
-    } else {
-      return Response.json(
-        { message: 'User not found' },
-        {
-          status: 404,
-        }
-      )
+    const res = await UserModel.findByIdAndDelete(id)
+    if (!res) throw new Error('Use not found')
+    revalidatePath('/admin/users')
+    return {
+      success: true,
+      message: 'User deleted successfully',
     }
-  } catch (err: any) {
-    return Response.json(
-      { message: err.message },
-      {
-        status: 500,
-      }
-    )
+  } catch (error) {
+    return { success: false, message: formatError(error) }
   }
-}) as any
+}
+
+
