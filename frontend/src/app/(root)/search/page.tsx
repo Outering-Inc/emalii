@@ -295,7 +295,7 @@ export default async function SearchPage(props: {
           </div>
 
           {data.totalPages > 1 && (
-            <Pagination page={Number(page)} totalPages={data.totalPages} queryParams={params} />
+              <Pagination page={page} totalPages={data.totalPages} />
           )}
         </div>
       </div>

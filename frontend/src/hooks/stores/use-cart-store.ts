@@ -72,7 +72,7 @@ const useCartStore = create<CartState>()(
           }
         }
 
-        const updatedItems = existItem
+        const updatedCartItems = existItem
           ? items.map((x) =>
               x.product === item.product &&
               x.color === item.color &&
@@ -85,15 +85,15 @@ const useCartStore = create<CartState>()(
         set({
           cart: {
             ...get().cart,
-            items: updatedItems,
+            items: updatedCartItems,
             ...(await calcDeliveryDateAndPrice({
-              items: updatedItems,
+              items: updatedCartItems,
               shippingAddress,
             })),
           },
         })
 
-        const foundItem = updatedItems.find(
+        const foundItem = updatedCartItems.find(
           (x) =>
             x.product === item.product &&
             x.color === item.color &&

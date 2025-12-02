@@ -1,56 +1,55 @@
 'use client'
-
-import Link from 'next/link'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import React from 'react'
+
+import { formUrlQuery } from '@/src/lib/utils/utils'
+import { Button } from '../../ui/button'
 
 type PaginationProps = {
-  page: number
+  page: number | string
   totalPages: number
-  queryParams?: Record<string, string | number | undefined>
+  urlParamName?: string
 }
 
-export default function Pagination({ page, totalPages, queryParams = {} }: PaginationProps) {
-  if (totalPages <= 1) return null
+const Pagination = ({ page, totalPages, urlParamName }: PaginationProps) => {
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
-  // helper to generate new URLs with query params
-  const createUrl = (newPage: number) => {
-    const params = new URLSearchParams()
+  const onClick = (btnType: string) => {
+    const pageValue = btnType === 'next' ? Number(page) + 1 : Number(page) - 1
 
-    Object.entries(queryParams).forEach(([key, value]) => {
-      if (value !== undefined && value !== 'all' && value !== '') {
-        params.set(key, String(value))
-      }
+    const newUrl = formUrlQuery({
+      params: searchParams.toString(),
+      key: urlParamName || 'page',
+      value: pageValue.toString(),
     })
 
-    params.set('page', String(newPage))
-    return `/search?${params.toString()}`
+    router.push(newUrl, { scroll: true })
   }
-
   return (
-    <div className="flex items-center gap-2">
-      {/* Previous */}
-      {page > 1 && (
-        <Link
-          href={createUrl(page - 1)}
-          className="px-4 py-2 border rounded flex items-center gap-2 hover:bg-accent"
-        >
-          <ChevronLeft size={18} /> Previous
-        </Link>
-      )}
-
-      <span>
-        Page {page} of {totalPages}
-      </span>
-
-      {/* Next */}
-      {page < totalPages && (
-        <Link
-          href={createUrl(page + 1)}
-          className="px-4 py-2 border rounded flex items-center gap-2 hover:bg-accent"
-        >
-          Next <ChevronRight size={18} />
-        </Link>
-      )}
+    <div className='flex items-center gap-2'>
+      <Button
+        size='lg'
+        variant='outline'
+        className='w-28'
+        onClick={() => onClick('prev')}
+        disabled={Number(page) <= 1}
+      >
+        <ChevronLeft /> Previous
+      </Button>
+      Page {page} of {totalPages}
+      <Button
+        size='lg'
+        variant='outline'
+        className='w-28'
+        onClick={() => onClick('next')}
+        disabled={Number(page) >= totalPages}
+      >
+        Next <ChevronRight />
+      </Button>
     </div>
   )
 }
+
+export default Pagination
