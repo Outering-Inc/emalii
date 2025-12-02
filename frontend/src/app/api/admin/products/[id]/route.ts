@@ -1,71 +1,135 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+"use server"
 
-import { auth } from "@/src/lib/auth"
-import { getProductById } from "@/src/lib/services/productService"
-import ProductModel from "@/src/lib/db/models/productModel"
+import { PAGE_SIZE } from "@/src/lib/constants"
+import dbConnect from "@/src/lib/db/dbConnect"
+import ProductModel, { Product } from "@/src/lib/db/models/productModel"
+import { formatError } from "@/src/lib/utils/utils"
+import { ProductInputSchema, ProductUpdateSchema } from "@/src/lib/validation/validator"
+import { ProductInput } from "@/src/types"
+import { revalidatePath } from "next/cache"
+import z from "zod"
 
-/* ──────────────────────────────── */
-/* GET /api/admin/products/[id]     */
-/* ──────────────────────────────── */
-export const GET = auth(async (...args: any) => {
-  const [req, { params }] = args
-
-  if (!req.auth || req.auth.user?.role !== "Admin") {
-    return Response.json({ message: "unauthorized" }, { status: 401 })
-  }
-
+// ADMIN CREATE PRODUCT
+export async function adminCreateProduct(data: ProductInput) {
   try {
-    const product = await getProductById(params.id) // ✅ Use helper
-    return Response.json(product)
-  } catch (err: any) {
-    return Response.json({ message: err.message }, { status: 404 })
-  }
-}) as any
-
-/* ──────────────────────────────── */
-/* PUT /api/admin/products/[id]     */
-/* ──────────────────────────────── */
-export const PUT = auth(async (...args: any) => {
-  const [req, { params }] = args
-
-  if (!req.auth || req.auth.user?.role !== "Admin") {
-    return Response.json({ message: "unauthorized" }, { status: 401 })
-  }
-
-  const body = await req.json()
-
-  try {
-    // ✅ Get existing product
-    const product = await getProductById(params.id) 
-    if (!product) {
-      return Response.json({ message: "Product not found" }, { status: 404 })
+    const product = ProductInputSchema.parse(data)
+    await dbConnect()
+    await ProductModel.create(product)
+    revalidatePath('/admin/products')
+    return {
+      success: true,
+      message: 'Product created successfully',
     }
-
-    // ✅ Update product using Mongoose
-    const updated = await ProductModel.findByIdAndUpdate(params.id, body, { new: true })
-    return Response.json(updated)
-  } catch (err: any) {
-    return Response.json({ message: err.message }, { status: 500 })
+  } catch (error) {
+    return { success: false, message: formatError(error) }
   }
-}) as any
+}
 
-/* ──────────────────────────────── */
-/* DELETE /api/admin/products/[id]  */
-/* ──────────────────────────────── */
-export const DELETE = auth(async (...args: any) => {
-  const [req, { params }] = args
-
-  if (!req.auth || req.auth.user?.role !== "Admin") {
-    return Response.json({ message: "unauthorized" }, { status: 401 })
-  }
-
+//ADMIN UPDATE PRODUCT
+export async function adminUpdateProduct(data: z.infer<typeof ProductUpdateSchema>) {
   try {
-    // ✅ Ensure product exists before deleting
-    await getProductById(params.id) 
-    await ProductModel.findByIdAndDelete(params.id)
-
-    return Response.json({ message: "Product deleted successfully" })
-  } catch (err: any) {
-    return Response.json({ message: err.message }, { status: 404 })
+    const product = ProductUpdateSchema.parse(data)
+    await dbConnect()
+    await ProductModel.findByIdAndUpdate(product._id, product)
+    revalidatePath('/admin/products')
+    return {
+      success: true,
+      message: 'Product updated successfully',
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
   }
-}) as any
+}
+
+
+// ADMIN DELETE PRODUCT
+export async function adminDeleteProduct(id: string) {
+  try {
+    await dbConnect()
+    const res = await ProductModel.findByIdAndDelete(id)
+    if (!res) throw new Error('Product not found')
+    revalidatePath('/admin/products')
+    return {
+      success: true,
+      message: 'Product deleted successfully',
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+
+// ADMIN GET ALL PRODUCTS
+export async function adminGetAllProducts({
+  query,
+  page = 1,
+  sort = 'latest',
+  limit,
+}: {
+  query: string
+  page?: number
+  sort?: string
+  limit?: number
+}) {
+  await dbConnect()
+
+  const pageSize = limit || PAGE_SIZE
+  const queryFilter =
+    query && query !== 'all'
+      ? {
+          name: {
+            $regex: query,
+            $options: 'i',
+          },
+        }
+      : {}
+
+  const order: Record<string, 1 | -1> =
+    sort === 'best-selling'
+      ? { numSales: -1 }
+      : sort === 'price-low-to-high'
+        ? { price: 1 }
+        : sort === 'price-high-to-low'
+          ? { price: -1 }
+          : sort === 'avg-customer-review'
+            ? { avgRating: -1 }
+            : { _id: -1 }
+  const products = await ProductModel.find({
+    ...queryFilter,
+  })
+    .sort(order)
+    .skip(pageSize * (Number(page) - 1))
+    .limit(pageSize)
+    .lean()
+
+  const countProducts = await ProductModel.countDocuments({
+    ...queryFilter,
+  })
+  return {
+    products: JSON.parse(JSON.stringify(products)) as Product[],
+    totalPages: Math.ceil(countProducts / pageSize),
+    totalProducts: countProducts,
+    from: pageSize * (Number(page) - 1) + 1,
+    to: pageSize * (Number(page) - 1) + products.length,
+  }
+}
+
+
+// ADMIN GET ALL TAGS
+export async function getAllTags() {
+  const tags = await ProductModel.aggregate([
+    { $unwind: '$tags' },
+    { $group: { _id: null, uniqueTags: { $addToSet: '$tags' } } },
+    { $project: { _id: 0, uniqueTags: 1 } },
+  ])
+  return (
+    (tags[0]?.uniqueTags
+      .sort((a: string, b: string) => a.localeCompare(b))
+      .map((x: string) =>
+        x
+          .split('-')
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ')
+      ) as string[]) || []
+  )
+}

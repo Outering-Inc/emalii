@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation'
-
 import Link from 'next/link'
 import { Metadata } from 'next'
-import { getUserById } from '@/src/app/api/admin/users/[id]/route'
+
 import UserEditForm from './UserEditForm'
+import { adminGetUserById } from '@/src/app/api/admin/users/[id]/route'
 
 export const metadata: Metadata = {
   title: 'Edit User',
@@ -18,7 +18,7 @@ export default async function UserEditPage(props: {
 
   const { id } = params
 
-  const user = await getUserById(id)
+  const user = await adminGetUserById(id)
   if (!user) notFound()
   return (
     <main className='max-w-6xl mx-auto p-4'>

@@ -25,7 +25,7 @@ const UserName = z
 
 const Email = z.string().min(1, 'Email is required').email('Email is invalid')
 const Password = z.string().min(3, 'Password must be at least 3 characters')
-const UserRole = z.string().min(1, 'role is required')
+const UserRole = z.string().min(1, 'Role is required')
 
 
 export const UserInputSchema = z.object({
@@ -164,25 +164,32 @@ export const ProductInputSchema = z.object({
   isPublished: z.boolean(),
   price: Price('Price'),
   listPrice: Price('List price'),
-  countInStock: z.coerce.number().int().nonnegative('Count in stock must be non-negative'),
+  countInStock: z.coerce
+    .number()
+    .int()
+    .nonnegative('count in stock must be a non-negative number'),
   tags: z.array(z.string()).default([]),
   sizes: z.array(z.string()).default([]),
   colors: z.array(z.string()).default([]),
-  avgRating: z.coerce.number().min(0).max(5),
-  numReviews: z.coerce.number().int().nonnegative(),
-  ratingDistribution: z.array(z.object({ rating: z.number(), count: z.number() })).max(5),
+  avgRating: z.coerce
+    .number()
+    .min(0, 'Average rating must be at least 0')
+    .max(5, 'Average rating must be at most 5'),
+  numReviews: z.coerce
+    .number()
+    .int()
+    .nonnegative('Number of reviews must be a non-negative number'),
+  ratingDistribution: z
+    .array(z.object({ rating: z.number(), count: z.number() }))
+    .max(5),
   reviews: z.array(ReviewInputSchema).default([]),
-  numSales: z.coerce.number().int().nonnegative(),
+  numSales: z.coerce
+    .number()
+    .int()
+    .nonnegative('Number of sales must be a non-negative number'),
 })
 
-export const ProductUpdateSchema = ProductInputSchema.pick({
-  name: true,
-  slug: true,
-  price: true,
-  countInStock: true,
-  description: true,
-  images: true,
-}).extend({
-  _id: z.string(), // required when updating
+export const ProductUpdateSchema = ProductInputSchema.extend({
+  _id: z.string(),
 })
 

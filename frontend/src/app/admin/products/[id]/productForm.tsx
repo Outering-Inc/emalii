@@ -1,0 +1,375 @@
+'use client'
+
+import { zodResolver } from '@hookform/resolvers/zod'
+
+import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { Button } from '@/src/components/ui/button'
+import { Card, CardContent } from '@/src/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/src/components/ui/form'
+import { Input } from '@/src/components/ui/input'
+import { Textarea } from '@/src/components/ui/textarea'
+import { useToast } from '@/src/hooks/client/use-toast'
+import { Checkbox } from '@/src/components/ui/checkbox'
+import { Product } from '@/src/lib/db/models/productModel'
+import { adminCreateProduct, adminUpdateProduct } from '@/src/app/api/admin/products/[id]/route'
+
+import { ProductInput  } from '@/src/types'
+import { ProductInputSchema, ProductUpdateSchema } from '@/src/lib/validation/validator'
+import { toSlug } from '@/src/lib/utils/utils'
+import z from 'zod'
+import { useEffect, useState } from 'react'
+import CloudinaryUploadHandler from '@/src/app/api/cloudinary/CloudinaryUploadHandler'
+import ProductPreview from '@/src/components/shared/product/productPreview'
+
+
+
+const productDefaultValues: ProductInput =
+  process.env.NODE_ENV === 'development'
+    ? {
+        name: 'Sample Product',
+        slug: 'sample-product',
+        category: 'Sample Category',
+        images: ['/images/p11-1.jpg'],
+        brand: 'Sample Brand',
+        description: 'This is a sample description of the product.',
+        price: 99.99,
+        listPrice: 0,
+        countInStock: 15,
+        numReviews: 0,
+        avgRating: 0,
+        numSales: 0,
+        isPublished: false,
+        tags: [],
+        sizes: [],
+        colors: [],
+        ratingDistribution: [],
+        reviews: [],
+      }
+    : {
+        name: '',
+        slug: '',
+        category: '',
+        images: [],
+        brand: '',
+        description: '',
+        price: 0,
+        listPrice: 0,
+        countInStock: 0,
+        numReviews: 0,
+        avgRating: 0,
+        numSales: 0,
+        isPublished: false,
+        tags: [],
+        sizes: [],
+        colors: [],
+        ratingDistribution: [],
+        reviews: [],
+      }
+
+const ProductForm = ({
+  type,
+  product,
+  productId,
+}: {
+  type: 'Create' | 'Update'
+  product?: Product 
+  productId?: string
+}) => {
+  const router = useRouter()
+    // Preview images
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const schema = type === 'Update' ? ProductUpdateSchema : ProductInputSchema;
+
+ const form = useForm<
+    z.input<typeof schema>,
+    unknown,
+    z.output<typeof schema>
+  >({
+    resolver: zodResolver(schema),
+    defaultValues: type === 'Update' && product ? product : productDefaultValues,
+  });
+
+    const {  reset, setValue  } = form;
+  
+    // Populate form once product is loaded
+    useEffect(() => {
+      if (!product) return;
+      console.log('ProductForm product:', product);
+      const payload = product;
+      console.log('ProductForm payload:', payload);
+  
+      reset({
+        ...productDefaultValues,
+        ...payload,
+        images: payload.images ?? [],
+      });
+  
+      setPreviewImages(payload.images ?? []);
+    }, [product, reset]);
+
+  const { toast } = useToast()
+  async function onSubmit(values: ProductInput) {
+    if (type === 'Create') {
+      const res = await adminCreateProduct(values)
+      if (!res.success) {
+        toast({
+          variant: 'destructive',
+          description: res.message,
+        })
+      } else {
+        toast({
+          description: res.message,
+        })
+        router.push(`/admin/products`)
+      }
+    }
+    if (type === 'Update') {
+      if (!productId) {
+        router.push(`/admin/products`)
+        return
+      }
+      const res = await adminUpdateProduct({ ...values, _id: productId })
+      if (!res.success) {
+        toast({
+          variant: 'destructive',
+          description: res.message,
+        })
+      } else {
+        router.push(`/admin/products`)
+      }
+    }
+  }
+
+   const removeImage = (url: string) => {
+    const updated = previewImages.filter((img: string) => img !== url);
+    setPreviewImages(updated);
+    setValue("images", updated);
+  };
+  
+
+  return (
+    <Form {...form}>
+      <form
+        method='post'
+        onSubmit={form.handleSubmit(onSubmit)}
+        className='space-y-8'
+      >
+        <div className='flex flex-col gap-5 md:flex-row'>
+          <FormField
+            control={form.control}
+            name='name'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder='Enter product name' {...field} />
+                </FormControl>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='slug'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>Slug</FormLabel>
+
+                <FormControl>
+                  <div className='relative'>
+                    <Input
+                      placeholder='Enter product slug'
+                      className='pl-8'
+                      {...field}
+                    />
+                    <button
+                      type='button'
+                      onClick={() => {
+                        form.setValue('slug', toSlug(form.getValues('name')))
+                      }}
+                      className='absolute right-2 top-2.5'
+                    >
+                      Generate
+                    </button>
+                  </div>
+                </FormControl>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className='flex flex-col gap-5 md:flex-row'>
+          <FormField
+            control={form.control}
+            name='category'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>Category</FormLabel>
+                <FormControl>
+                  <Input placeholder='Enter category' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='brand'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>Brand</FormLabel>
+                <FormControl>
+                  <Input placeholder='Enter product brand' {...field} />
+                </FormControl>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div className='flex flex-col gap-5 md:flex-row'>
+          <FormField
+            control={form.control}
+            name='listPrice'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>List Price</FormLabel>
+                <FormControl>
+                  <Input placeholder='Enter product list price' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name='price'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>Net Price</FormLabel>
+                <FormControl>
+                  <Input placeholder='Enter product price' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name='countInStock'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>Count In Stock</FormLabel>
+                <FormControl>
+                  <Input
+                    type='number'
+                    placeholder='Enter product count in stock'
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className='flex flex-col gap-5 md:flex-row'>
+          <FormField
+            control={form.control}
+            name='images'
+            render={() => (
+              <FormItem className='w-full'>
+                <Card>
+                  <CardContent className='space-y-2 mt-2 min-h-48'>
+                    <div className='flex justify-start items-center space-x-2'>
+                      <FormLabel>Images</FormLabel>
+                        <CloudinaryUploadHandler
+                            previewImages={previewImages}
+                            setPreviewImages={setPreviewImages}
+                            setValue={setValue}
+                        />
+                      <FormControl>
+                        <ProductPreview
+                          previewImages={previewImages}
+                          removeImage={removeImage}
+                         />
+                      </FormControl>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div>
+          <FormField
+            control={form.control}
+            name='description'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder='Tell us a little bit about yourself'
+                    className='resize-none'
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>
+                  You can <span>@mention</span> other users and organizations to
+                  link to them.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <div>
+          <FormField
+            control={form.control}
+            name='isPublished'
+            render={({ field }) => (
+              <FormItem className='space-x-2 items-center'>
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <FormLabel>Is Published?</FormLabel>
+              </FormItem>
+            )}
+          />
+        </div>
+        <div>
+          <Button
+            type='submit'
+            size='lg'
+            disabled={form.formState.isSubmitting}
+            className='button col-span-2 w-full'
+          >
+            {form.formState.isSubmitting ? 'Submitting...' : `${type} Product `}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  )
+}
+
+export default ProductForm

@@ -13,11 +13,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/src/components/ui/table'
-
-import { deleteUser, getAllUsers } from '../../api/admin/users/[id]/route'
+import { adminDeleteUser, adminGetAllUsers } from '../../api/admin/users/[id]/route'
 import { User } from '@/src/lib/db/models/userModel'
 import { formatId } from '@/src/lib/utils/utils'
-
 
 
 export const metadata: Metadata = {
@@ -32,7 +30,7 @@ export default async function AdminUser(props: {
   if (session?.user.role !== 'Admin')
     throw new Error('Admin permission required')
   const page = Number(searchParams.page) || 1
-  const users = await getAllUsers({
+  const users = await adminGetAllUsers({
     page,
   })
   return (
@@ -65,7 +63,7 @@ export default async function AdminUser(props: {
                   <Button asChild variant='outline' size='sm'>
                     <Link href={`/admin/users/${user._id}`}>Edit</Link>
                   </Button>
-                  <DeleteDialog id={user._id} action={deleteUser} />
+                  <DeleteDialog id={user._id} action={adminDeleteUser} />
                 </TableCell>
               </TableRow>
             ))}

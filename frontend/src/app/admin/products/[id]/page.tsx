@@ -1,6 +1,7 @@
 import AdminLayout from '@/src/components/shared/admin/adminLayout'
+import ProductForm from './productForm'
 
-import ProductEditForm from './ProductEditForm'
+//import ProductEditForm from './ProductEditForm'
 
 export function generateMetadata({ params }: { params: { id: string } }) {
   return {
@@ -14,8 +15,8 @@ export default function ProductEditPage({
   params: { id: string }
 }) {
   return (
-    <AdminLayout activeItem="products">
-      <ProductEditForm productId={params.id} />
+    <AdminLayout>
+      <ProductForm type='Update' productId={params.id} />
     </AdminLayout>
   )
 }

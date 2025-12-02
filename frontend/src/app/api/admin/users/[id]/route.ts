@@ -7,16 +7,16 @@ import { UserUpdateSchema } from "@/src/lib/validation/validator"
 import { revalidatePath } from "next/cache"
 import z from "zod"
 
-// GET USER BY ID
-export async function getUserById(userId: string) {
+// ADMIN GET USER BY ID
+export async function adminGetUserById(userId: string) {
   await dbConnect()
   const user = await UserModel.findById(userId)
   if (!user) throw new Error('User not found')
   return JSON.parse(JSON.stringify(user)) as User
 }
 
-// UPDATE USER
-export async function updateUser(user: z.infer<typeof UserUpdateSchema>) {
+// ADMIN UPDATE USER
+export async function adminUpdateUser(user: z.infer<typeof UserUpdateSchema>) {
   try {
     await dbConnect()
     const dbUser = await UserModel.findById(user._id)
@@ -36,8 +36,8 @@ export async function updateUser(user: z.infer<typeof UserUpdateSchema>) {
   }
 }
 
-// DELETE USER
-export async function deleteUser(id: string) {
+// ADMIN DELETE USER
+export async function adminDeleteUser(id: string) {
   try {
     await dbConnect()
     const res = await UserModel.findByIdAndDelete(id)
@@ -52,8 +52,8 @@ export async function deleteUser(id: string) {
   }
 }
 
-// GET ALL USERS
-export async function getAllUsers({
+//ADMIN GET ALL USERS
+export async function adminGetAllUsers({
   limit,
   page,
 }: {

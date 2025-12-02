@@ -23,11 +23,11 @@ import {
   SelectValue,
 } from '@/src/components/ui/select'
 import { useToast } from '@/src/hooks/client/use-toast'
-import { updateUser } from '@/src/app/api/admin/users/[id]/route'
+import { Card, CardContent } from '@/src/components/ui/card'
 import { User_ROLES } from '@/src/lib/constants'
 import { User } from '@/src/lib/db/models/userModel'
 import { UserUpdateSchema } from '@/src/lib/validation/validator'
-import { Card, CardContent } from '@/src/components/ui/card'
+import { adminUpdateUser } from '@/src/app/api/admin/users/[id]/route'
 
 
 const UserEditForm = ({ user }: { user: User }) => {
@@ -41,7 +41,7 @@ const UserEditForm = ({ user }: { user: User }) => {
   const { toast } = useToast()
   async function onSubmit(values: z.infer<typeof UserUpdateSchema>) {
     try {
-      const res = await updateUser({
+      const res = await adminUpdateUser({
         ...values,
         _id: user._id,
       })

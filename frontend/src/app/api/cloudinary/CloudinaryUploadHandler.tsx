@@ -31,7 +31,7 @@ export default function CloudinaryUploadHandler({
 
     for (const file of Array.from(files)) {
       // Get signature from backend
-      const sigRes = await fetch("/api/admin/cloudinary/cloudinary-sign", {
+      const sigRes = await fetch("/api/cloudinary/cloudinary-sign", {
         method: "POST",
       });
 

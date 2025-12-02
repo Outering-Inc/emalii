@@ -1,14 +1,14 @@
 
 import AdminLayout from '@/src/components/shared/admin/adminLayout'
-import Products from './Products'
+import ProductList from './productList'
 
 export const metadata = {
   title: 'Admin Products',
 }
 const AdminProductsPage = () => {
   return (
-    <AdminLayout activeItem="products">
-      <Products />
+    <AdminLayout >
+      <ProductList />
     </AdminLayout>
   )
 }

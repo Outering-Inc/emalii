@@ -50,24 +50,13 @@ export type ReviewDetails = ReviewInput & {
 
 
 
-// ------------------Product Default Values ------------------
-export const ProductUpdateDefaultValues: ProductEditFormType = {
-  _id: "",
-  name: "",
-  slug: "",
-  price: 0,
-  countInStock: 0,
-  description: "",
-  images: [],
-};
+
 
 
 // ------------------ Products ------------------
 export type ProductInput = z.infer<typeof ProductInputSchema>
-export type ProductEditFormType = z.infer<typeof ProductUpdateSchema>;
-export type ProductUpdateInput = Partial<ProductInput> & { _id: string };
-
-
+export type ProductUpdateInput = z.infer<typeof ProductUpdateSchema>
+ 
  
 
 
@@ -112,3 +101,63 @@ export type UserName = z.infer<typeof UserNameSchema>
 export type MpesaTransactionInput = z.infer<typeof MpesaInputSchema>
 
 
+
+// ------------------Product Default Values ------------------
+export const ProductUpdateDefaultValues: ProductEditFormType = {
+  _id: "",
+  name: "",
+  slug: "",
+  price: 0,
+  countInStock: 0,
+  description: "",
+  images: [],
+};
+
+export type ProductEditFormType = z.infer<typeof ProductUpdateSchema>;
+export type ProductEditType = z.infer<typeof ProductUpdateSchema>;
+
+
+export const ProductDefaultValues: ProductEditType =
+  process.env.NODE_ENV === 'development'
+    ? {
+        _id: '',
+        name: 'Sample Product',
+        slug: 'sample-product',
+        category: 'Sample Category',
+        images: ['/images/p11-1.jpg'],
+        brand: 'Sample Brand',
+        description: 'This is a sample description of the product.',
+        price: 99.99,
+        listPrice: 0,
+        countInStock: 15,
+        numReviews: 0,
+        avgRating: 0,
+        numSales: 0,
+        isPublished: false,
+        tags: [],
+        sizes: [],
+        colors: [],
+        ratingDistribution: [],
+        reviews: [],
+      }
+    : {
+        _id: '',
+        name: '',
+        slug: '',
+        category: '',
+        images: [],
+        brand: '',
+        description: '',
+        price: 0,
+        listPrice: 0,
+        countInStock: 0,
+        numReviews: 0,
+        avgRating: 0,
+        numSales: 0,
+        isPublished: false,
+        tags: [],
+        sizes: [],
+        colors: [],
+        ratingDistribution: [],
+        reviews: [],
+      }

@@ -1,7 +1,8 @@
 "use client"
 
+import CloudinaryUploadHandler from "@/src/app/api/cloudinary/CloudinaryUploadHandler"
 import { Avatar, AvatarImage, AvatarFallback } from "@/src/components/ui/avatar"
-import CloudinaryUploadHandler from "@/src/app/api/admin/cloudinary/CloudinaryUploadHandler"
+
 
 interface AvatarUploadProps {
   value: string
