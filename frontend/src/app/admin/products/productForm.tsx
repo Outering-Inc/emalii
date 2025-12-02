@@ -26,11 +26,9 @@ import { ProductInput  } from '@/src/types'
 import { ProductInputSchema, ProductUpdateSchema } from '@/src/lib/validation/validator'
 import { toSlug } from '@/src/lib/utils/utils'
 import z from 'zod'
-import { useEffect, useState } from 'react'
-import CloudinaryUploadHandler from '@/src/app/api/cloudinary/CloudinaryUploadHandler'
-import ProductPreview from '@/src/components/shared/product/productPreview'
 
-
+import Image from 'next/image'
+import { UploadButton } from '@/src/lib/uploadthing'
 
 const productDefaultValues: ProductInput =
   process.env.NODE_ENV === 'development'
@@ -85,8 +83,7 @@ const ProductForm = ({
   productId?: string
 }) => {
   const router = useRouter()
-    // Preview images
-  const [previewImages, setPreviewImages] = useState<string[]>([]);
+   
   const schema = type === 'Update' ? ProductUpdateSchema : ProductInputSchema;
 
  const form = useForm<
@@ -98,24 +95,7 @@ const ProductForm = ({
     defaultValues: type === 'Update' && product ? product : productDefaultValues,
   });
 
-    const {  reset, setValue  } = form;
-  
-    // Populate form once product is loaded
-    useEffect(() => {
-      if (!product) return;
-      console.log('ProductForm product:', product);
-      const payload = product;
-      console.log('ProductForm payload:', payload);
-  
-      reset({
-        ...productDefaultValues,
-        ...payload,
-        images: payload.images ?? [],
-      });
-  
-      setPreviewImages(payload.images ?? []);
-    }, [product, reset]);
-
+   
   const { toast } = useToast()
   async function onSubmit(values: ProductInput) {
     if (type === 'Create') {
@@ -148,13 +128,7 @@ const ProductForm = ({
       }
     }
   }
-
-   const removeImage = (url: string) => {
-    const updated = previewImages.filter((img: string) => img !== url);
-    setPreviewImages(updated);
-    setValue("images", updated);
-  };
-  
+  const images = form.watch('images')
 
   return (
     <Form {...form}>
@@ -292,20 +266,33 @@ const ProductForm = ({
             name='images'
             render={() => (
               <FormItem className='w-full'>
+                <FormLabel>Images</FormLabel>
                 <Card>
                   <CardContent className='space-y-2 mt-2 min-h-48'>
                     <div className='flex justify-start items-center space-x-2'>
-                      <FormLabel>Images</FormLabel>
-                        <CloudinaryUploadHandler
-                            previewImages={previewImages}
-                            setPreviewImages={setPreviewImages}
-                            setValue={setValue}
+                      {images.map((image: string) => (
+                        <Image
+                          key={image}
+                          src={image}
+                          alt='product image'
+                          className='w-20 h-20 object-cover object-center rounded-sm'
+                          width={100}
+                          height={100}
                         />
+                      ))}
                       <FormControl>
-                        <ProductPreview
-                          previewImages={previewImages}
-                          removeImage={removeImage}
-                         />
+                        <UploadButton
+                          endpoint='imageUploader'
+                          onClientUploadComplete={(res: { url: string }[]) => {
+                            form.setValue('images', [...images, res[0].url])
+                          }}
+                          onUploadError={(error: Error) => {
+                            toast({
+                              variant: 'destructive',
+                              description: `ERROR! ${error.message}`,
+                            })
+                          }}
+                        />
                       </FormControl>
                     </div>
                   </CardContent>

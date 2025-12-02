@@ -1,5 +1,6 @@
 "use server"
 
+import { cache } from "react"
 import { PAGE_SIZE } from "@/src/lib/constants"
 import dbConnect from "@/src/lib/db/dbConnect"
 import ProductModel, { Product } from "@/src/lib/db/models/productModel"
@@ -8,6 +9,15 @@ import { ProductInputSchema, ProductUpdateSchema } from "@/src/lib/validation/va
 import { ProductInput } from "@/src/types"
 import { revalidatePath } from "next/cache"
 import z from "zod"
+
+
+//ADMIN GET PRODUCT BY ID
+export const adminGetProductById = cache(async(id: string) =>{
+  await dbConnect()
+  const product = await ProductModel.findById(id).lean();
+  if (!product) throw new Error('Product not found')
+  return JSON.parse(JSON.stringify(product)) as Product
+})
 
 // ADMIN CREATE PRODUCT
 export async function adminCreateProduct(data: ProductInput) {

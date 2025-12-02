@@ -1,9 +1,10 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Metadata } from 'next'
+import UserEditForm from '../userForm'
 
-import UserEditForm from './UserEditForm'
 import { adminGetUserById } from '@/src/app/api/admin/users/[id]/route'
+
 
 export const metadata: Metadata = {
   title: 'Edit User',
