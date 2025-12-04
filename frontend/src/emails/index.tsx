@@ -1,7 +1,9 @@
 import { Resend } from 'resend';
 import PurchaseReceiptEmail from './purchase-receipt';
-import { IOrder } from '@/src/lib/db/models/orderModel';
+import { Order } from '../lib/db/models/orderModel';
 import { SENDER_EMAIL, SENDER_NAME } from '@/src/lib/constants';
+import AskReviewOrderItemsEmail from './askReviewOrderItems';
+
 
 
 // Initialize Resend with API Key
@@ -11,7 +13,7 @@ const resend = new Resend(process.env.RESEND_API_KEY as string);
 export const sendPurchaseReceipt = async ({
   order,
 }: {
-  order: IOrder;
+  order: Order;
 }) => {
   await resend.emails.send({
     from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
@@ -25,7 +27,7 @@ export const sendPurchaseReceipt = async ({
 export const sendAskReviewOrderItems = async ({
   order,
 }: {
-  order: IOrder;
+  order: Order;
 }) => {
   const oneDayFromNow = new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString();
 
@@ -33,7 +35,7 @@ export const sendAskReviewOrderItems = async ({
     from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
     to: (order.user as { email: string }).email,
     subject: 'Order Confirmation',
-    react: <PurchaseReceiptEmail order={order} />, // Send the review request email with the same React component
+    react: <AskReviewOrderItemsEmail order={order} />, // Send the review request email with the same React component
     scheduledAt: oneDayFromNow,
   });
 };

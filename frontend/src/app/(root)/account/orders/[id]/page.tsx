@@ -3,7 +3,7 @@ import React from 'react'
 
 import { auth } from '@/src/lib/auth'
 import { getOrderById } from '@/src/lib/services/orderService'
-import OrderDetailsForm from '@/src/components/shared/order/orderDetail'
+import OrderDetailsForm from '@/src/components/shared/order/orderDetailForm'
 import Link from 'next/link'
 import { formatId } from '@/src/lib/utils/utils'
 

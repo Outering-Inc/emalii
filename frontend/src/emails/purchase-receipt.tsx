@@ -15,13 +15,13 @@ import {
   } from '@react-email/components'
   
 import { formatCurrency } from '@/src/lib/utils/utils'
-import { IOrder } from '@/src/lib/db/models/orderModel'
 import { SERVER_URL } from '@/src/lib/constants'
+import { Order } from '../lib/db/models/orderModel'
 
  
  
   type OrderInformationProps = {
-    order: IOrder
+    order: Order
   }
   
   PurchaseReceiptEmail.PreviewProps = {
@@ -62,7 +62,7 @@ import { SERVER_URL } from '@/src/lib/constants'
       paymentMethod: 'PayPal',
       expectedDeliveryDate: new Date(),
       isDelivered: true,
-    } as IOrder,
+    } as Order,
   } satisfies OrderInformationProps
   const dateFormatter = new Intl.DateTimeFormat('en', { dateStyle: 'medium' })
   

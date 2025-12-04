@@ -1,52 +1,42 @@
 import { notFound } from 'next/navigation'
 import React from 'react'
 
-import { auth } from '@/src/lib/auth'
-import { getOrderById } from '@/src/lib/services/orderService'
-import OrderDetailsForm from '@/src/components/shared/order/orderDetail'
+
 import Link from 'next/link'
-import { formatId } from '@/src/lib/utils/utils'
+import { auth } from '@/src/lib/auth'
+import { adminGetOrderById } from '@/src/app/api/admin/orders/[id]/route'
+import OrderDetailsForm from '@/src/components/shared/order/orderDetailForm'
 
-
-
-export async function generateMetadata(props: {
-  params: Promise<{ id: string }>
-}) {
-  const params = await props.params
-
-  return {
-    title: `Order ${formatId(params.id)}`,
-  }
+export const metadata = {
+  title: 'Admin Order Details',
 }
 
-export default async function OrderDetailsPage(props: {
+const AdminOrderDetailsPage = async (props: {
   params: Promise<{
     id: string
   }>
-}) {
+}) => {
   const params = await props.params
-    //Get id in url
+
   const { id } = params
 
-  const order = await getOrderById(id)
+  const order = await adminGetOrderById(id)
   if (!order) notFound()
 
   const session = await auth()
 
   return (
-    <>
-      <div className='flex gap-2'>
-        <Link href='/account'>Your Account</Link>
-        <span>›</span>
-        <Link href='/account/orders'>Your Orders</Link>
-        <span>›</span>
-        <span>Order {formatId(order._id)}</span>
+    <main className='max-w-6xl mx-auto p-4'>
+      <div className='flex mb-4'>
+        <Link href='/admin/orders'>Orders</Link> <span className='mx-1'>›</span>
+        <Link href={`/admin/orders/${order._id}`}>{order._id}</Link>
       </div>
-      <h1 className='h1-bold py-4'>Order {formatId(order._id)}</h1>
       <OrderDetailsForm
-        orderId={order._id}
+        order={order}
         isAdmin={session?.user?.role === 'Admin' || false}
       />
-    </>
+    </main>
   )
 }
+
+export default AdminOrderDetailsPage

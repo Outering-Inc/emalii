@@ -20,7 +20,7 @@ const DashboardPage = async () => {
 
   // Render page inside AdminLayout
   return (
-    <AdminLayout activeItem="dashboard">
+    <AdminLayout >
       <Dashboard />
     </AdminLayout>
   )
