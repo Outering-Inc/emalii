@@ -1,6 +1,6 @@
  'use server'
  
-import dbConnect from "../db/dbConnect"
+import { connectToDatabase } from "../db/dbConnect"
 import Order from "../db/models/orderModel"
 import { sendPurchaseReceipt } from "@/src/emails"
 import { paypal } from "../payments/paypal/paypal"
@@ -8,9 +8,10 @@ import { revalidatePath } from "next/cache"
 import { formatError } from "../utils/utils"
 import { cache } from "react"
 
+
 // Create PayPal Order
 export const createPayPalOrder = cache(async (orderId: string) => {
-    await dbConnect()
+    await connectToDatabase()
     try {
       const order = await Order.findById(orderId)
       if (order) {
@@ -40,7 +41,7 @@ export const createPayPalOrder = cache(async (orderId: string) => {
     orderId: string,
     data: { orderID: string } //data inside paypal
   )  => {
-    await dbConnect()
+    await connectToDatabase()
     try {
       const order = await Order.findById(orderId).populate('user', 'email')
       if (!order) throw new Error('Order not found')

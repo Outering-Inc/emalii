@@ -1,6 +1,6 @@
 // /types/product.ts
 
-import { IProduct } from "@/src/lib/db/models/productModel"
+import { Product } from "@/src/lib/db/models/productModel"
 
 export interface GetAllProductsParams {
   query: string
@@ -11,14 +11,14 @@ export interface GetAllProductsParams {
 }
 
 export interface GetAllProductsResult {
-  products: IProduct[]
+  products: Product[]
   total: number
   page: number
   pages: number
 }
 
 export interface GetProductsByTextSearchParams {
-  products: IProduct[]
+  products: Product[]
   total: number
   page: number
   pages: number

@@ -3,7 +3,8 @@
 import { cache } from 'react'
 import ProductModel, { Product } from '../db/models/productModel'
 import { FilterQuery, SortOrder, FlattenMaps, Types } from 'mongoose'
-import dbConnect from '../db/dbConnect'
+import { connectToDatabase } from '../db/dbConnect'
+
 
 
 type SortOption = 'priceLowHigh' | 'priceHighLow' | 'newest' | 'bestSelling'
@@ -41,7 +42,7 @@ export const getProductsByTextSearch = cache(async({
   page?: number
   limit?: number
 }): Promise<GetProductsByTextSearchResult> => {
-  await dbConnect()
+  await connectToDatabase()
 
   const filters: FilterQuery<Product> = {}
   if (query) filters.$text = { $search: query }

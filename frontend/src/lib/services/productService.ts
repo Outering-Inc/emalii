@@ -1,9 +1,8 @@
 'use server'
 
 import { cache } from 'react'
-import dbConnect from '../db/dbConnect'
+import { connectToDatabase } from '../db/dbConnect'
 import ProductModel, { Product } from '../db/models/productModel'
-
 
 // =========================
 //      TYPES & CONSTANTS
@@ -36,13 +35,13 @@ const PAGE_SIZE = 10
 
 // ADMIN: all products
 export const getAllProductsForAdmin = cache(async() => {
-  await dbConnect()
+  await connectToDatabase()
   return ProductModel.find({ isPublished: true }).distinct('category')
 })
 
 // all categories
 export const getAllCategories = cache(async() => {
-  await dbConnect()
+  await connectToDatabase()
   return ProductModel.find({ isPublished: true }).distinct('category')
 })
 
@@ -54,7 +53,7 @@ export const getProductsForCard = cache(async({
   tag: string
   limit?: number
 }) => {
-  await dbConnect()
+  await connectToDatabase()
   const products = await ProductModel.find(
     { tags: { $in: [tag] }, isPublished: true },
     {
@@ -80,7 +79,7 @@ export const getProductsByTag = cache(async({
   tag: string
   limit?: number
 }) => {
-  await dbConnect()
+  await connectToDatabase()
   const products = await ProductModel.find({
     tags: { $in: [tag] },
     isPublished: true,
@@ -93,7 +92,7 @@ export const getProductsByTag = cache(async({
 
 // product by slug
 export const  getProductBySlug = cache(async(slug: string) => {
-  await dbConnect()
+  await connectToDatabase()
   const product = await ProductModel.findOne({ slug, isPublished: true })
   if (!product) throw new Error('Product not found')
   return JSON.parse(JSON.stringify(product)) as Product
@@ -102,7 +101,7 @@ export const  getProductBySlug = cache(async(slug: string) => {
 
 // product by Id
 export const getProductById = cache(async(id: string) =>{
-  await dbConnect()
+  await connectToDatabase()
   const product = await ProductModel.findById(id).lean();
   if (!product) throw new Error('Product not found')
   return JSON.parse(JSON.stringify(product)) as Product
@@ -120,7 +119,7 @@ export const getRelatedProductsByCategory = cache(async ({
   limit?: number
   page: number
 }) => {
-  await dbConnect()
+  await connectToDatabase()
   const skipAmount = (page - 1) * limit
   const conditions = { isPublished: true, category, _id: { $ne: productId } }
 
@@ -150,7 +149,7 @@ export const getAllProducts = cache(async ({
   sort,
 }: GetAllProductsParams): Promise<GetAllProductsResult> => {
   const perPage = limit ?? PAGE_SIZE
-  await dbConnect()
+  await connectToDatabase()
 
   // filters
   const queryFilter =
@@ -265,19 +264,19 @@ export const getSearchResults = cache(async(query: string, page = 1, limit = 12)
 
 //Get latest products
 export const getLatest = cache(async () => {
-  await dbConnect()
+  await connectToDatabase()
   const products = await ProductModel.find({}).sort({ _id: -1 }).limit(6).lean()
   return products as Product[]
 })
 
 export const getFeatured = cache(async () => {
-  await dbConnect()
+  await connectToDatabase()
   const products = await ProductModel.find({ isFeatured: true }).limit(3).lean()
   return products as Product[]
 })
 
 export const getBySlug = cache(async (slug: string) => {
-  await dbConnect()
+  await connectToDatabase()
   const product = await ProductModel.findOne({ slug }).lean()
   return product as Product
 })
@@ -299,7 +298,7 @@ export const getByQuery = cache(
     sort: string
     page: string
   }) => {
-    await dbConnect()
+    await connectToDatabase()
 
     const queryFilter =
       q && q !== 'all'
@@ -371,7 +370,7 @@ export const getByQuery = cache(
 )
 
 export const getCategories = cache(async () => {
-  await dbConnect()
+  await connectToDatabase()
   const categories = await ProductModel.find().distinct('category')
   return categories
 })

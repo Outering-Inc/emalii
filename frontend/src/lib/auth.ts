@@ -2,16 +2,12 @@ import { MongoDBAdapter } from '@auth/mongodb-adapter'
 import Google from 'next-auth/providers/google'
 import bcrypt from 'bcryptjs'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import dbConnect from './db/dbConnect'
+import { connectToDatabase } from './db/dbConnect'
 import client from './db/client'
 import UserModel from './db/models/userModel'
 
 import NextAuth, { type DefaultSession } from 'next-auth'
 import authConfig from '@/auth.config'
-
-
-
-
 
 declare module 'next-auth' {
   interface Session {
@@ -47,7 +43,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { type: 'password' },
       },
       async authorize(credentials) {
-        await dbConnect()
+        await connectToDatabase()
         if (credentials == null) return null
 
         const user = await UserModel.findOne({ email: credentials.email })
@@ -75,7 +71,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     jwt: async ({ token, user, trigger, session }) => {
       if (user) {
         if (!user.name) {
-          await dbConnect()
+          await connectToDatabase()
           await UserModel.findByIdAndUpdate(user.id, {
             name: user.name || user.email!.split('@')[0],
             role: 'user',

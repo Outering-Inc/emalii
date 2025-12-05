@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import dbConnect from '@/src/lib/db/dbConnect';
+import { connectToDatabase } from '@/src/lib/db/dbConnect';
 import MpesaTransaction from '@/src/lib/db/models/mpesaModel';
 import MpesaCheckoutMapping from '@/src/lib/db/models/mpesaCheckout.model';
 import Order from '@/src/lib/db/models/orderModel';
@@ -20,7 +20,7 @@ const callbackSchema = z.object({
 });
 
 export async function POST(req: Request) {
-  await dbConnect();
+  await connectToDatabase();
 
   try {
     const body = await req.json();

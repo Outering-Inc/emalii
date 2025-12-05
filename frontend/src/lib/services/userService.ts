@@ -5,11 +5,12 @@ import { auth ,signIn, signOut } from '../auth'
 import { UserName, UserSignIn, UserSignUp } from '@/src/types'
 import { redirect } from 'next/navigation'
 import { UserSignUpSchema, UserUpdateSchema } from '../validation/validator'
-import dbConnect from '../db/dbConnect'
+import { connectToDatabase } from '../db/dbConnect'
 import UserModel, { User } from '../db/models/userModel'
 import { formatError } from '../utils/utils'
 import { revalidatePath } from 'next/cache'
 import z from 'zod'
+
 
 
 
@@ -23,7 +24,7 @@ export const registerUser = cache(async(userSignUp: UserSignUp) => {
       confirmPassword: userSignUp.confirmPassword,
     })
 
-    await dbConnect()
+    await connectToDatabase()
     await UserModel.create({
       ...user,
       password: await bcrypt.hash(user.password, 5),
@@ -54,7 +55,7 @@ export const SignOut = cache(async () => {
 
 export const updateUserName = cache(async(user: UserName) => {
   try {
-    await dbConnect() //connect to database
+    await connectToDatabase() //connect to database
     const session = await auth() //get session by calling auth function
     const currentUser = await UserModel.findById(session?.user?.id)
     if (!currentUser) throw new Error('User not found')
@@ -72,7 +73,7 @@ export const updateUserName = cache(async(user: UserName) => {
 
 // GET USER BY ID
 export async function getUserById(userId: string) {
-  await dbConnect()
+  await connectToDatabase()
   const user = await UserModel.findById(userId)
   if (!user) throw new Error('User not found')
   return JSON.parse(JSON.stringify(user)) as User
@@ -81,7 +82,7 @@ export async function getUserById(userId: string) {
 // UPDATE USER
 export async function updateUser(user: z.infer<typeof UserUpdateSchema>) {
   try {
-    await dbConnect()
+    await connectToDatabase()
     const dbUser = await UserModel.findById(user._id)
     if (!dbUser) throw new Error('User not found')
     dbUser.name = user.name
@@ -102,7 +103,7 @@ export async function updateUser(user: z.infer<typeof UserUpdateSchema>) {
 // DELETE USER
 export async function deleteUser(id: string) {
   try {
-    await dbConnect()
+    await connectToDatabase()
     const res = await UserModel.findByIdAndDelete(id)
     if (!res) throw new Error('Use not found')
     revalidatePath('/admin/users')

@@ -1,6 +1,6 @@
 'use server'
 import { cache } from 'react'
-import dbConnect from '../db/dbConnect'
+import { connectToDatabase } from '../db/dbConnect'
 import {   Cart, OrderList, OrderItem, ShippingAddress   } from '@/src/types'
 import { formatError, round2 } from '../utils/utils'
 import { AVAILABLE_DELIVERY_DATES, PAGE_SIZE } from '../constants'
@@ -13,12 +13,10 @@ import User from '../db/models/userModel'
 
 
 
-
-
 // CREATE ORDER FROM CART
 export const createOrder = cache(async (clientSideCart: Cart) => {
   try {
-    await dbConnect()
+    await connectToDatabase()
     const session = await auth()
     if (!session) throw new Error('User not authenticated')
     // recalculate price and delivery date on the server
@@ -65,7 +63,7 @@ export const createOrder = cache(async (clientSideCart: Cart) => {
 
 //Get Order by Id
 export const getOrderById = cache(async(orderId: string): Promise<OrderList> => {
-  await dbConnect()
+  await connectToDatabase()
   const order = await OrderModel.findById(orderId)
   return JSON.parse(JSON.stringify(order))
 })
@@ -131,7 +129,7 @@ export const getMyOrders = cache(async({
 }) => {
   
   limit = limit || PAGE_SIZE
-  await dbConnect()
+  await connectToDatabase()
   const session = await auth()
   if (!session) {
     throw new Error('User is not authenticated')
@@ -155,7 +153,7 @@ export const getMyOrders = cache(async({
 
 // GET ORDERS SUMMARY Using Aggregation Pipeline from Mongodb
 export const getOrderSummary = cache(async(date: DateRange) => {
-  await dbConnect()
+  await connectToDatabase()
 
   const ordersCount = await OrderModel.countDocuments({
     createdAt: {

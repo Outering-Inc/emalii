@@ -1,37 +1,36 @@
-import data from '@/src/lib/data'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import data from '../data'
 import { connectToDatabase } from './dbConnect'
-import * as ProductModel from './models/productModel'
+import ProductModel from './models/productModel'
 import { cwd } from 'process'
 import { loadEnvConfig } from '@next/env'
-import User from './models/userModel'
-import Review from './models/reviewModel'
-import { IOrderInput, OrderItem, ShippingAddress } from '@/src/types'
-import { calculateFutureDate, calculatePastDate, generateId, round2 } from '../utils/utils'
-import Order from './models/orderModel'
+import UserModel from './models/userModel'
+import ReviewModel from './models/reviewModel'
+import WebPageModel from './models/webpageModel'
+import OrderModel from './models/orderModel'
+import { OrderInput, OrderItem, ShippingAddress } from '@/src/types'
+import {
+  calculateFutureDate,
+  calculatePastDate,
+  generateId,
+  round2,
+} from '../utils/utils'
 import { AVAILABLE_DELIVERY_DATES } from '../constants'
 
-// Load environment variables
 loadEnvConfig(cwd())
-
-// Extract the default export properly for ES module + tsx compatibility
-const Product = ProductModel.default
 
 const main = async () => {
   try {
-    const { products, users,reviews } = data
-
+    const { products, users, reviews, webPages } = data
     await connectToDatabase(process.env.MONGODB_URI)
 
-    // Clear existing collections
-    await Product.deleteMany()
-    await User.deleteMany() // 🧹 clear users collection
+    await UserModel.deleteMany()
+    const createdUser = await UserModel.insertMany(users)
 
+    await ProductModel.deleteMany()
+    const createdProducts = await ProductModel.insertMany(products)
 
-    // Insert new seed data
-    const createdUser = await User.insertMany(users)
-    const createdProducts = await Product.insertMany(products)
-
-    await Review.deleteMany()
+    await ReviewModel.deleteMany()
     const rws = []
     for (let i = 0; i < createdProducts.length; i++) {
       let x = 0
@@ -41,7 +40,7 @@ const main = async () => {
           x++
           rws.push({
             ...reviews.filter((x) => x.rating === j + 1)[
-              x % reviews.filter((x) => x.rating === j + 1).length //get review from data
+              x % reviews.filter((x) => x.rating === j + 1).length
             ],
             isVerifiedPurchase: true,
             product: createdProducts[i]._id,
@@ -52,9 +51,9 @@ const main = async () => {
         }
       }
     }
-    const createdReviews = await Review.insertMany(rws)
-    
-    await Order.deleteMany()
+    const createdReviews = await ReviewModel.insertMany(rws)
+
+    await OrderModel.deleteMany()
     const orders = []
     for (let i = 0; i < 200; i++) {
       orders.push(
@@ -65,7 +64,10 @@ const main = async () => {
         )
       )
     }
-    const createdOrders = await Order.insertMany(orders)
+    const createdOrders = await OrderModel.insertMany(orders)
+
+    await WebPageModel.deleteMany()
+    await WebPageModel.insertMany(webPages)
     console.log({
       createdUser,
       createdProducts,
@@ -80,28 +82,21 @@ const main = async () => {
   }
 }
 
-   
-
-  
-
-
 const generateOrder = async (
   i: number,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   users: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   products: any
-): Promise<IOrderInput> => {
-  const product1 = await Product.findById(products[i % products.length])
+): Promise<OrderInput> => {
+  const product1 = await ProductModel.findById(products[i % products.length])
 
-  const product2 = await Product.findById(
+  const product2 = await ProductModel.findById(
     products[
       i % products.length >= products.length - 1
         ? (i % products.length) - 1
         : (i % products.length) + 1
     ]
   )
-  const product3 = await Product.findById(
+  const product3 = await ProductModel.findById(
     products[
       i % products.length >= products.length - 2
         ? (i % products.length) - 2
@@ -178,7 +173,6 @@ export const calcDeliveryDateAndPriceForSeed = ({
   items: OrderItem[]
   shippingAddress?: ShippingAddress
 }) => {
- 
   const itemsPrice = round2(
     items.reduce((acc, item) => acc + item.price * item.quantity, 0)
   )
@@ -210,6 +204,5 @@ export const calcDeliveryDateAndPriceForSeed = ({
     totalPrice,
   }
 }
-
 
 main()

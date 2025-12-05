@@ -1,42 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import mongoose from "mongoose";
+import mongoose from 'mongoose'
 
-const MONGODB_URI = process.env.MONGODB_URI as string;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const cached = (global as any).mongoose || { conn: null, promise: null }
 
-if (!MONGODB_URI) {
-  throw new Error("❌ MONGODB_URI is missing in environment variables");
-}
+export const connectToDatabase = async (
+  MONGODB_URI = process.env.MONGODB_URI
+) => {
+  if (cached.conn) return cached.conn
 
-// Global cache to prevent multiple connections in Next.js
-let cached = (global as any).mongoose;
+  if (!MONGODB_URI) throw new Error('MONGODB_URI is missing')
 
-if (!cached) {
-  cached = (global as any).mongoose = { conn: null, promise: null };
-}
+  cached.promise = cached.promise || mongoose.connect(MONGODB_URI)
 
-export default async function dbConnect() {
-  if (cached.conn) {
-    // 👍 Reuse existing DB connection
-    return cached.conn;
-  }
+  cached.conn = await cached.promise
 
-  if (!cached.promise) {
-    // 👇 Create connection once, with optimized settings
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 30000, // Retry for 30s instead of 10s
-      socketTimeoutMS: 45000,          // Prevent monitor connection dropping
-      heartbeatFrequencyMS: 2000,      // Faster detection of issues
-      bufferCommands: false,           // Avoid memory bloat
-    });
-  }
-
-  try {
-    cached.conn = await cached.promise;
-  } catch (e) {
-    cached.promise = null;
-    throw e;
-  }
-
-  return cached.conn;
+  return cached.conn
 }

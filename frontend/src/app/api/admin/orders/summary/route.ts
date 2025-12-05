@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { auth } from "@/src/lib/auth"
-import dbConnect from "@/src/lib/db/dbConnect"
+import { connectToDatabase } from "@/src/lib/db/dbConnect"
 import OrderModel from "@/src/lib/db/models/orderModel"
 import ProductModel from "@/src/lib/db/models/productModel"
 import UserModel from "@/src/lib/db/models/userModel"
@@ -16,7 +16,7 @@ export const GET = auth(async (req: any) => {
     )
   }
 
-  await dbConnect()
+  await connectToDatabase()
 
   const ordersCount = await OrderModel.countDocuments()
   const productsCount = await ProductModel.countDocuments()

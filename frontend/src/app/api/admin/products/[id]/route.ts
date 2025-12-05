@@ -2,7 +2,7 @@
 
 import { cache } from "react"
 import { PAGE_SIZE } from "@/src/lib/constants"
-import dbConnect from "@/src/lib/db/dbConnect"
+import { connectToDatabase } from "@/src/lib/db/dbConnect"
 import ProductModel, { Product } from "@/src/lib/db/models/productModel"
 import { formatError } from "@/src/lib/utils/utils"
 import { ProductInputSchema, ProductUpdateSchema } from "@/src/lib/validation/validator"
@@ -11,9 +11,10 @@ import { revalidatePath } from "next/cache"
 import z from "zod"
 
 
+
 //ADMIN GET PRODUCT BY ID
 export const adminGetProductById = cache(async(id: string) =>{
-  await dbConnect()
+  await connectToDatabase()
   const product = await ProductModel.findById(id).lean();
   if (!product) throw new Error('Product not found')
   return JSON.parse(JSON.stringify(product)) as Product
@@ -23,7 +24,7 @@ export const adminGetProductById = cache(async(id: string) =>{
 export async function adminCreateProduct(data: ProductInput) {
   try {
     const product = ProductInputSchema.parse(data)
-    await dbConnect()
+    await connectToDatabase()
     await ProductModel.create(product)
     revalidatePath('/admin/products')
     return {
@@ -39,7 +40,7 @@ export async function adminCreateProduct(data: ProductInput) {
 export async function adminUpdateProduct(data: z.infer<typeof ProductUpdateSchema>) {
   try {
     const product = ProductUpdateSchema.parse(data)
-    await dbConnect()
+    await connectToDatabase()
     await ProductModel.findByIdAndUpdate(product._id, product)
     revalidatePath('/admin/products')
     return {
@@ -55,7 +56,7 @@ export async function adminUpdateProduct(data: z.infer<typeof ProductUpdateSchem
 // ADMIN DELETE PRODUCT
 export async function adminDeleteProduct(id: string) {
   try {
-    await dbConnect()
+    await connectToDatabase()
     const res = await ProductModel.findByIdAndDelete(id)
     if (!res) throw new Error('Product not found')
     revalidatePath('/admin/products')
@@ -81,7 +82,7 @@ export async function adminGetAllProducts({
   sort?: string
   limit?: number
 }) {
-  await dbConnect()
+  await connectToDatabase()
 
   const pageSize = limit || PAGE_SIZE
   const queryFilter =

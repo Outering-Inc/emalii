@@ -1,6 +1,6 @@
 "use server"
 import { PAGE_SIZE } from "@/src/lib/constants"
-import dbConnect from "@/src/lib/db/dbConnect"
+import { connectToDatabase } from "@/src/lib/db/dbConnect"
 import UserModel, { User } from "@/src/lib/db/models/userModel"
 import { formatError } from "@/src/lib/utils/utils"
 import { UserUpdateSchema } from "@/src/lib/validation/validator"
@@ -9,7 +9,7 @@ import z from "zod"
 
 // ADMIN GET USER BY ID
 export async function adminGetUserById(userId: string) {
-  await dbConnect()
+  await connectToDatabase()
   const user = await UserModel.findById(userId)
   if (!user) throw new Error('User not found')
   return JSON.parse(JSON.stringify(user)) as User
@@ -18,7 +18,7 @@ export async function adminGetUserById(userId: string) {
 // ADMIN UPDATE USER
 export async function adminUpdateUser(user: z.infer<typeof UserUpdateSchema>) {
   try {
-    await dbConnect()
+    await connectToDatabase()
     const dbUser = await UserModel.findById(user._id)
     if (!dbUser) throw new Error('User not found')
     dbUser.name = user.name
@@ -39,7 +39,7 @@ export async function adminUpdateUser(user: z.infer<typeof UserUpdateSchema>) {
 // ADMIN DELETE USER
 export async function adminDeleteUser(id: string) {
   try {
-    await dbConnect()
+    await connectToDatabase()
     const res = await UserModel.findByIdAndDelete(id)
     if (!res) throw new Error('Use not found')
     revalidatePath('/admin/users')
@@ -61,7 +61,7 @@ export async function adminGetAllUsers({
   page: number
 }) {
   limit = limit || PAGE_SIZE
-  await dbConnect()
+  await connectToDatabase()
 
   const skipAmount = (Number(page) - 1) * limit
   const users = await UserModel.find()

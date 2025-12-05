@@ -5,14 +5,10 @@ import mongoose from 'mongoose'
 import { revalidatePath } from 'next/cache'
 
 import { auth } from '../auth'
-import dbConnect from '../db/dbConnect'
-
-
+import { connectToDatabase } from '../db/dbConnect'
 import { ReviewInputSchema } from '../validation/validator'
-
 import Product from '../db/models/productModel'
 
-//import Review, { Review } from '../db/models/reviewModel'
 import { ReviewDetails, ReviewInput } from '@/src/types'
 import { formatError } from '../utils/utils'
 import { PAGE_SIZE } from '../constants'
@@ -38,7 +34,7 @@ export const createUpdateReview = cache(async({
       ...data,
       user: session?.user?.id,
     })
-   await dbConnect()
+   await connectToDatabase()
     const existReview = await ReviewModel.findOne({
       product: review.product,
       user: review.user,
@@ -124,7 +120,7 @@ export const getReviews = cache(async({
 }) => {
   
   limit = limit || PAGE_SIZE
-  await dbConnect()
+  await connectToDatabase()
   const skipAmount = (page - 1) * limit
   const reviews = await ReviewModel.find({ product: productId })
     .populate('user', 'name')
@@ -147,7 +143,7 @@ export const getReviews = cache(async({
 }: {
   productId: string
 }) => {
-  await dbConnect()
+  await connectToDatabase()
   const session = await auth()
   if (!session) {
     throw new Error('User not authenticated')

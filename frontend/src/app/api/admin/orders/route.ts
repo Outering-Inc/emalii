@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { auth } from '@/src/lib/auth'
-import dbConnect from '@/src/lib/db/dbConnect'
+import { connectToDatabase } from '@/src/lib/db/dbConnect'
 import OrderModel from '@/src/lib/db/models/orderModel'
 
 export const GET = auth(async (req: any) => {
@@ -11,7 +11,7 @@ export const GET = auth(async (req: any) => {
     )
   }
 
-  await dbConnect()
+  await connectToDatabase()
 
   // Pagination support
   const page = parseInt(req.nextUrl.searchParams.get('page') || '1', 10)

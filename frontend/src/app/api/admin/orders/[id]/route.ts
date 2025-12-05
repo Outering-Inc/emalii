@@ -1,6 +1,6 @@
 'use server'
 import mongoose from 'mongoose'
-import dbConnect from "@/src/lib/db/dbConnect";
+import { connectToDatabase } from '@/src/lib/db/dbConnect';
 import { formatError } from "@/src/lib/utils/utils";
 import { revalidatePath } from "next/cache";
 
@@ -13,10 +13,9 @@ import { OrderList } from '@/src/types'
 import { cache } from 'react'
 
 
-
 //Get Order by Id
 export const adminGetOrderById = cache(async(orderId: string): Promise<OrderList> => {
-  await dbConnect()
+  await connectToDatabase()
   const order = await OrderModel.findById(orderId)
   return JSON.parse(JSON.stringify(order))
 })
@@ -31,7 +30,7 @@ export async function adminGetAllOrders({
   page: number
 }) {
   limit = limit || PAGE_SIZE
-  await dbConnect()
+  await connectToDatabase()
   const skipAmount = (Number(page) - 1) * limit
   const orders = await OrderModel.find()
     .populate('user', 'name')
@@ -50,7 +49,7 @@ export async function adminGetAllOrders({
 // DELETE
 export async function adminDeleteOrder(id: string) {
   try {
-    await dbConnect()
+    await connectToDatabase()
     const res = await OrderModel.findByIdAndDelete(id)
     if (!res) throw new Error('Order not found')
     revalidatePath('/admin/orders')
@@ -67,7 +66,7 @@ export async function adminDeleteOrder(id: string) {
 //UPDATE ORDER TO PAID
 export async function updateOrderToPaid(orderId: string) {
   try {
-    await dbConnect()
+    await connectToDatabase()
     const order = await OrderModel.findById(orderId).populate<{
       user: { email: string; name: string }
     }>('user', 'name email')
@@ -125,7 +124,7 @@ const updateProductStock = async (orderId: string) => {
 //DELIVER ORDER
 export async function deliverOrder(orderId: string) {
   try {
-    await dbConnect()
+    await connectToDatabase()
     const order = await OrderModel.findById(orderId).populate<{
       user: { email: string; name: string }
     }>('user', 'name email')

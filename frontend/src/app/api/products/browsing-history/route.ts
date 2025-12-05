@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import dbConnect from '@/src/lib/db/dbConnect'
+import { connectToDatabase } from '@/src/lib/db/dbConnect'
 
 import ProductModel from '@/src/lib/db/models/productModel'
 
@@ -21,7 +21,7 @@ export const GET = async (request: NextRequest) => {
         }
       : { category: { $in: categories }, _id: { $nin: productIds } }
 
-  await dbConnect()
+  await connectToDatabase()
   const products = await ProductModel.find(filter)
   if (listType === 'history')
     return NextResponse.json(

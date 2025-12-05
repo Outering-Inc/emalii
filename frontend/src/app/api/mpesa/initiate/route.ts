@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/src/lib/auth';
-import dbConnect from '@/src/lib/db/dbConnect';
+import { connectToDatabase } from '@/src/lib/db/dbConnect';
 import Order from '@/src/lib/db/models/orderModel';
 import { createMpesaOrder } from '@/src/lib/services/mpesaService';
 import { formatError } from '@/src/lib/utils/utils';
@@ -10,7 +10,7 @@ import { formatError } from '@/src/lib/utils/utils';
 export async function POST(req: NextRequest) {
   try {
     // Step 1: Connect to the database
-    await dbConnect();
+    await connectToDatabase();
     
     // Step 2: Check user authentication
     const session = await auth();

@@ -3,7 +3,7 @@
 
 import { cache } from 'react'
 import mongoose from 'mongoose';
-import dbConnect from '../db/dbConnect';
+import { connectToDatabase } from '../db/dbConnect';
 
 import Order from '../db/models/orderModel';
 import { mpesa } from '../payments/mpesa/safaricom';
@@ -25,7 +25,7 @@ function isPopulatedUser(user: unknown): user is User {
 
 // CREATE MPESA ORDER
 export const createMpesaOrder = cache(async(orderId: string) => {
-  await dbConnect();
+  await connectToDatabase();
   try {
     const order = await Order.findById(orderId);
     if (!order) throw new Error('Order not found');
@@ -70,7 +70,7 @@ export const approveMpesaOrder = cache(async(
   orderId: string,
   data: { orderID: string }
 ) => {
-  await dbConnect();
+  await connectToDatabase();
 
   try {
     const order = await Order.findById(orderId).populate('user', 'email');
