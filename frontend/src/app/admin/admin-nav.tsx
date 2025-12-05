@@ -25,7 +25,7 @@ const links = [
   },
   {
     title: 'Pages',
-    href: '/admin/webpages',
+    href: '/admin/web-pages',
   },
   {
     title: 'Settings',

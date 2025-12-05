@@ -5,7 +5,41 @@ import { revalidatePath } from 'next/cache'
 import { connectToDatabase } from '../db/dbConnect'
 import WebPageModel, { WebPage } from '../db/models/webpageModel'
 import { formatError } from '../utils/utils'
+import { WebPageInputSchema, WebPageUpdateSchema } from '../validation/validator'
+import z from 'zod'
 
+
+// CREATE
+export async function createWebPage(data: z.infer<typeof WebPageInputSchema>) {
+  try {
+    const webPage = WebPageInputSchema.parse(data)
+    await connectToDatabase()
+    await WebPageModel.create(webPage)
+    revalidatePath('/admin/web-pages')
+    return {
+      success: true,
+      message: 'WebPage created successfully',
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
+
+// UPDATE
+export async function updateWebPage(data: z.infer<typeof WebPageUpdateSchema>) {
+  try {
+    const webPage = WebPageUpdateSchema.parse(data)
+    await connectToDatabase()
+    await WebPageModel.findByIdAndUpdate(webPage._id, webPage)
+    revalidatePath('/admin/web-pages')
+    return {
+      success: true,
+      message: 'WebPage updated successfully',
+    }
+  } catch (error) {
+    return { success: false, message: formatError(error) }
+  }
+}
 
 // DELETE
 export async function deleteWebPage(id: string) {
