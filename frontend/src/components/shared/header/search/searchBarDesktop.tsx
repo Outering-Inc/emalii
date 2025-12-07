@@ -19,7 +19,7 @@ import {
 } from "@/src/components/ui/hover-card";
 import { Button } from "@/src/components/ui/button";
 import { APP_NAME } from "@/src/lib/constants";
-import { getAllCategories } from "@/src/lib/services/productService";
+import { getAllCategories } from "@/src/lib/actions/productActions";
 import Image from "next/image";
 import ImageUpload from "./imageUpload";
 import LoadingOverlay from "../../common/loading-overlay";

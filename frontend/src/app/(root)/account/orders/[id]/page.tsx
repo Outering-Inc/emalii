@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import React from 'react'
 
 import { auth } from '@/src/lib/auth'
-import { getOrderById } from '@/src/lib/services/orderService'
+import { getOrderById } from '@/src/lib/actions/orderActions'
 import OrderDetailsForm from '@/src/components/shared/order/orderDetailForm'
 import Link from 'next/link'
 import { formatId } from '@/src/lib/utils/utils'
@@ -44,7 +44,7 @@ export default async function OrderDetailsPage(props: {
       </div>
       <h1 className='h1-bold py-4'>Order {formatId(order._id)}</h1>
       <OrderDetailsForm
-        orderId={order._id}
+        order={order}
         isAdmin={session?.user?.role === 'Admin' || false}
       />
     </>

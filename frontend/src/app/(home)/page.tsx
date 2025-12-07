@@ -7,7 +7,7 @@ import {
   getAllCategories, 
   getProductsByTag, 
   getProductsForCard 
-} from '@/src/lib/services/productService'
+} from '@/src/lib/actions/productActions'
 import data from '@/src/lib/data'
 import { toSlug } from '@/src/lib/utils/utils'
 

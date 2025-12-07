@@ -24,10 +24,10 @@ import SalesCategoryPieChart from './sales-category-pie-chart'
 
 import React, { useEffect, useState, useTransition } from 'react'
 import { DateRange } from 'react-day-picker'
-import { getOrderSummary } from '@/src/lib/services/orderService'
+import { getOrderSummary } from '@/src/lib/actions/orderActions'
 import SalesAreaChart from './sales-area-chart'
 import { CalendarDateRangePicker } from './date-range-picker'
-import { IOrderList } from '@/src/types'
+import { OrderList } from '@/src/types'
 import ProductPrice from '@/src/components/shared/product/product-price'
 import { Skeleton } from '@/src/components/ui/skeleton'
 import TableChart from './table-chart'
@@ -223,7 +223,7 @@ export default function OverviewReport() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.latestOrders.map((order: IOrderList) => (
+                  {data.latestOrders.map((order: OrderList) => (
                     <TableRow key={order._id}>
                       <TableCell>
                         {order.user ? order.user.name : ('Deleted User')}

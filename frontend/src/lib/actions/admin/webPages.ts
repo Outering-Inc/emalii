@@ -2,11 +2,13 @@
 
 import { revalidatePath } from 'next/cache'
 
-import { connectToDatabase } from '../db/dbConnect'
-import WebPageModel, { WebPage } from '../db/models/webpageModel'
-import { formatError } from '../utils/utils'
-import { WebPageInputSchema, WebPageUpdateSchema } from '../validation/validator'
+import { connectToDatabase } from '../../db/dbConnect'
+import WebPageModel, { WebPage } from '../../db/models/webpageModel'
+import { formatError } from '../../utils/utils'
+import { WebPageInputSchema, WebPageUpdateSchema } from '../../validation/validator'
 import z from 'zod'
+import { PAGE_SIZE } from '../../constants'
+import { cache } from 'react'
 
 
 // CREATE
@@ -58,11 +60,31 @@ export async function deleteWebPage(id: string) {
 }
 
 // GET ALL
-export async function getAllWebPages() {
+export const getAllWebPages = cache(async ({
+  limit,
+  page,
+}: {
+  limit?: number
+  page: number
+}) => {
   await connectToDatabase()
+
+  limit = limit || PAGE_SIZE
+  const skipAmount = (Number(page) - 1) * limit
+
   const webPages = await WebPageModel.find()
-  return JSON.parse(JSON.stringify(webPages)) as WebPage[]
-}
+    .sort({ createdAt: "desc" })
+    .skip(skipAmount)
+    .limit(limit)
+
+  const pagesCount = await WebPageModel.countDocuments()
+
+  return {
+    data: JSON.parse(JSON.stringify(webPages)) as WebPage[],
+    totalPages: Math.ceil(pagesCount / limit),
+  }
+})
+
 export async function getWebPageById(webPageId: string) {
   await connectToDatabase()
   const webPage = await WebPageModel.findById(webPageId)

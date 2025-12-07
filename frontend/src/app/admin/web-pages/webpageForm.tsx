@@ -21,10 +21,10 @@ import {
 import { Input } from '@/src/components/ui/input'
 import { useToast } from '@/src/hooks/client/use-toast'
 import { Checkbox } from '@/src/components/ui/checkbox'
-import { createWebPage, updateWebPage } from '@/src/lib/services/webpageService'
 import { WebPage } from '@/src/lib/db/models/webpageModel'
 import { WebPageInputSchema, WebPageUpdateSchema } from '@/src/lib/validation/validator'
 import { toSlug } from '@/src/lib/utils/utils'
+import { createWebPage, updateWebPage } from '@/src/lib/actions/admin/webPages'
 
 
 const webPageDefaultValues =

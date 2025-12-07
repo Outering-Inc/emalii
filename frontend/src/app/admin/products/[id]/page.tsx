@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 
 import Link from 'next/link'
 import ProductForm from '../productForm'
-import { adminGetProductById } from '@/src/app/api/admin/products/[id]/route'
+import { adminGetProductById } from '@/src/lib/actions/admin/product'
 import AdminLayout from '@/src/components/shared/admin/adminLayout'
 
 

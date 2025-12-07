@@ -3,7 +3,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { Cart, OrderItem, ShippingAddress } from '@/src/types'
-import { calcDeliveryDateAndPrice } from '@/src/lib/services/orderService'
+import { calcDeliveryDateAndPrice } from '@/src/lib/actions/orderActions'
 
 // -----------------------------
 // Initial cart state

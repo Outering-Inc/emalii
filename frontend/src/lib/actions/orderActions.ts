@@ -10,20 +10,21 @@ import OrderModel  from '../db/models/orderModel'
 import { DateRange } from 'react-day-picker'
 import Product from '../db/models/productModel'
 import User from '../db/models/userModel'
+import UserModel from '../db/models/userModel'
 
 
 
+// CREATE ORDER FROM CART
 // CREATE ORDER FROM CART
 export const createOrder = cache(async (clientSideCart: Cart) => {
   try {
     await connectToDatabase()
     const session = await auth()
     if (!session) throw new Error('User not authenticated')
-    // recalculate price and delivery date on the server
-    const createdOrder = await createOrderFromCart(
-      clientSideCart,
-      session.user.id!
-    )
+
+    // create order with user snapshot
+    const createdOrder = await createOrderFromCart(clientSideCart, session.user.id!)
+
     return {
       success: true,
       message: 'Order placed successfully',
@@ -34,10 +35,13 @@ export const createOrder = cache(async (clientSideCart: Cart) => {
   }
 })
 
- const createOrderFromCart = cache(async (
-  clientSideCart: Cart,
-  userId: string
-) => {
+// CREATE ORDER FROM CART WITH USER SNAPSHOT
+const createOrderFromCart = cache(async (clientSideCart: Cart, userId: string) => {
+  // fetch user snapshot
+  const user = await UserModel.findById(userId)
+  if (!user) throw new Error('User not found')
+
+  // calculate prices and delivery date
   const cart = {
     ...clientSideCart,
     ...calcDeliveryDateAndPrice({
@@ -47,8 +51,13 @@ export const createOrder = cache(async (clientSideCart: Cart) => {
     }),
   }
 
+  // create order object with snapshot
   const order = OrderInputSchema.parse({
-    user: userId,
+    user: {
+      _id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+    },
     items: cart.items,
     shippingAddress: cart.shippingAddress,
     paymentMethod: cart.paymentMethod,
@@ -58,8 +67,10 @@ export const createOrder = cache(async (clientSideCart: Cart) => {
     totalPrice: cart.totalPrice,
     expectedDeliveryDate: cart.expectedDeliveryDate,
   })
+
   return await OrderModel.create(order)
 })
+
 
 //Get Order by Id
 export const getOrderById = cache(async(orderId: string): Promise<OrderList> => {

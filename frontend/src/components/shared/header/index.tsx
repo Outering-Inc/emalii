@@ -8,7 +8,7 @@ import SearchBar from './search/searchBar'
 import data from '@/src/lib/data'
 
 import Sidebar from './sidebar'
-import { getAllCategories } from '@/src/lib/services/productService'
+import { getAllCategories } from '@/src/lib/actions/productActions'
 
 
 

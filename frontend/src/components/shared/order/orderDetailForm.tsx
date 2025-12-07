@@ -16,11 +16,11 @@ import {
 
 import { buttonVariants } from '@/src/components/ui/button'
 import ProductPrice from '../product/product-price'
-//import { Order } from '@/src/lib/db/models/orderModel'
 import { cn, formatDateTime } from '@/src/lib/utils/utils'
 import ActionButton from '../common/actionButton'
-import { deliverOrder, updateOrderToPaid } from '@/src/app/api/admin/orders/[id]/route'
+import { deliverOrder, updateOrderToPaid } from '@/src/lib/actions/admin/order'
 import { OrderList } from '@/src/types'
+
 
 
 export default function OrderDetailsForm({

@@ -27,7 +27,7 @@ import { Card, CardContent } from '@/src/components/ui/card'
 import { User_ROLES } from '@/src/lib/constants'
 import { User } from '@/src/lib/db/models/userModel'
 import { UserUpdateSchema } from '@/src/lib/validation/validator'
-import { adminUpdateUser } from '@/src/app/api/admin/users/[id]/route'
+import { adminUpdateUser } from '@/src/lib/actions/admin/users'
 
 
 const UserEditForm = ({ user }: { user: User }) => {

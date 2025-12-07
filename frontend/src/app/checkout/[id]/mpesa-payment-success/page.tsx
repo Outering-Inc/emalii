@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 
 import { Button } from '@/src/components/ui/button'
-import { getOrderById } from '@/src/lib/services/orderService'
+import { getOrderById } from '@/src/lib/actions/orderActions'
 
 export default async function MpesaPaymentSuccessPage(props: {
   params: Promise<{

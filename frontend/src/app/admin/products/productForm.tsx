@@ -20,7 +20,7 @@ import { Textarea } from '@/src/components/ui/textarea'
 import { useToast } from '@/src/hooks/client/use-toast'
 import { Checkbox } from '@/src/components/ui/checkbox'
 import { Product } from '@/src/lib/db/models/productModel'
-import { adminCreateProduct, adminUpdateProduct } from '@/src/app/api/admin/products/[id]/route'
+import { adminCreateProduct, adminUpdateProduct } from '@/src/lib/actions/admin/product'
 
 import { ProductInput  } from '@/src/types'
 import { ProductInputSchema, ProductUpdateSchema } from '@/src/lib/validation/validator'
@@ -30,6 +30,7 @@ import z from 'zod'
 import Image from 'next/image'
 import { UploadButton } from '@/src/lib/uploadthing'
 import { Trash } from 'lucide-react'
+
 
 const productDefaultValues: ProductInput =
   process.env.NODE_ENV === 'development'

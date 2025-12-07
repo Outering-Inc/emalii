@@ -48,7 +48,7 @@ import {
   createUpdateReview,
   getReviewByProductId,
   getReviews,
-} from '@/src/lib/services/reviewService'
+} from '@/src/lib/actions/reviewActions'
 import { ReviewInputSchema } from '@/src/lib/validation/validator'
 import RatingSummary from '@/src/components/shared/product/rating-summary'
 import { Product } from '@/src/lib/db/models/productModel'

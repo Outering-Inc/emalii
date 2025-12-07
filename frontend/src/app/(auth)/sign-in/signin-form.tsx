@@ -16,7 +16,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Link from 'next/link'
 
-import { IUserSignIn } from '@/src/types'
+import { UserSignIn } from '@/src/types'
 import { UserSignInSchema } from '@/src/lib/validation/validator'
 
 import { toast } from '@/src/hooks/client/use-toast'
@@ -34,14 +34,14 @@ export default function CredentialsSignInForm() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
 
-  const form = useForm<IUserSignIn>({
+  const form = useForm<UserSignIn>({
     resolver: zodResolver(UserSignInSchema),
     defaultValues: signInDefaultValues,
   })
 
   const { control, handleSubmit } = form
 
-  const onSubmit = async (data: IUserSignIn) => {
+  const onSubmit = async (data: UserSignIn) => {
     const result = await signInAction(data, callbackUrl)
 
     if (result?.error) {

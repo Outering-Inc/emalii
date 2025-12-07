@@ -3,11 +3,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import {
   getAllProducts,
   GetAllProductsResult,
-} from '@/src/lib/services/productService'
+} from '@/src/lib/actions/productActions'
 import {
   getProductsByTextSearch,
   GetProductsByTextSearchResult,
-} from '@/src/lib/services/searchService'
+} from '@/src/lib/actions/searchActions'
 import { getCache, setCache } from '@/src/lib/cache/cache'
 import { enhanceSuggestions, SearchableProduct } from '@/src/lib/utils/searchUtils'
 

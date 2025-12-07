@@ -19,7 +19,7 @@ import React, { useEffect, useState, useTransition } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Input } from '@/src/components/ui/input'
 import { formatDateTime, formatId, truncateProductName } from '@/src/lib/utils/utils'
-import { adminDeleteProduct, adminGetAllProducts } from '../../api/admin/products/[id]/route'
+import { adminDeleteProduct, adminGetAllProducts } from '@/src/lib/actions/admin/product'
 
 
 

@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import Stripe from 'stripe'
 
 import { Button } from '@/src/components/ui/button'
-import { getOrderById } from '@/src/lib/services/orderService'
+import { getOrderById } from '@/src/lib/actions/orderActions'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string)
 

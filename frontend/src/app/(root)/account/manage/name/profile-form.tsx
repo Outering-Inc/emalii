@@ -17,7 +17,7 @@ import {
 } from '@/src/components/ui/form'
 import { Input } from '@/src/components/ui/input'
 import { useToast } from '@/src/hooks/client/use-toast'
-import { updateUserName } from '@/src/lib/services/userService'
+import { updateUserName } from '@/src/lib/actions/userActions'
 import { UserNameSchema } from '@/src/lib/validation/validator'
 
 

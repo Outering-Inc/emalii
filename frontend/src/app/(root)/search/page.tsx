@@ -14,8 +14,8 @@ import {
   getAllCategories,
    getAllProducts, 
    getAllTags 
-  } from "@/src/lib/services/productService"
-import { getImageSearchResults } from "@/src/lib/services/searchService"
+  } from "@/src/lib/actions/productActions"
+import { getImageSearchResults } from "@/src/lib/actions/searchActions"
 
 
 

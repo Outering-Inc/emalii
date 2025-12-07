@@ -22,7 +22,7 @@ import { APP_NAME } from "@/src/lib/constants";
 import Image from "next/image";
 import ImageUpload from "./imageUpload";
 import LoadingOverlay from "../../common/loading-overlay";
-import { getAllCategories } from "@/src/lib/services/productService";
+import { getAllCategories } from "@/src/lib/actions/productActions";
 
 interface Suggestion {
   id: string;

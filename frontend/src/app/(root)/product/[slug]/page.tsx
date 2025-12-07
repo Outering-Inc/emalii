@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/src/components/ui/card'
 import {
   getProductBySlug,
   getRelatedProductsByCategory,
-} from '@/src/lib/services/productService'
+} from '@/src/lib/actions/productActions'
 
 import SelectVariant from '@/src/components/shared/product/select-variant'
 import ProductPrice from '@/src/components/shared/product/product-price'

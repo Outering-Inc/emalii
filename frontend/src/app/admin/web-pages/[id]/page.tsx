@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { getWebPageById } from '@/src/lib/services/webpageService'
 import WebPageForm from '../webpageForm'
+import { getWebPageById } from '@/src/lib/actions/admin/webPages'
 
 
 type UpdateWebPageProps = {

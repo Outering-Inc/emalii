@@ -1,7 +1,7 @@
 'use client'
 import { useFormStatus } from 'react-dom'
 import { Button } from '@/src/components/ui/button'
-import { SignInWithGoogle } from '@/src/lib/services/userService'
+import { SignInWithGoogle } from '@/src/lib/actions/userActions'
 
 
 export function GoogleSignInForm() {

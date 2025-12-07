@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import React from 'react'
 
 import { auth } from '@/src/lib/auth'
-import { getOrderById } from '@/src/lib/services/orderService'
+import { getOrderById } from '@/src/lib/actions/orderActions'
 import PaymentForm from './payment-form'
 import Stripe from 'stripe'
 

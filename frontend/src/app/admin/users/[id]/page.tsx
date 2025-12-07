@@ -2,8 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Metadata } from 'next'
 import UserEditForm from '../userForm'
-
-import { adminGetUserById } from '@/src/app/api/admin/users/[id]/route'
+import { adminGetUserById } from '@/src/lib/actions/admin/users'
 
 
 export const metadata: Metadata = {

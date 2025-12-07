@@ -1,6 +1,6 @@
 import ReactMarkdown from 'react-markdown'
 import { notFound } from 'next/navigation'
-import { getWebPageBySlug } from '@/src/lib/services/webpageService'
+import { getWebPageBySlug } from '@/src/lib/actions/admin/webPages'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>

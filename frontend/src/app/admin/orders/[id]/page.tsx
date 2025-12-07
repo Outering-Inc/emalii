@@ -1,10 +1,9 @@
 import { notFound } from 'next/navigation'
 import React from 'react'
-
-
 import Link from 'next/link'
+
 import { auth } from '@/src/lib/auth'
-import { adminGetOrderById } from '@/src/app/api/admin/orders/[id]/route'
+import { adminGetOrderById } from '@/src/lib/actions/admin/order'
 import OrderDetailsForm from '@/src/components/shared/order/orderDetailForm'
 
 export const metadata = {

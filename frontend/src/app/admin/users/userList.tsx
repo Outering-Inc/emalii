@@ -12,9 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/src/components/ui/table'
-import { adminDeleteUser, adminGetAllUsers } from '../../api/admin/users/[id]/route'
 import { User } from '@/src/lib/db/models/userModel'
 import { formatId } from '@/src/lib/utils/utils'
+import { adminDeleteUser, adminGetAllUsers } from '@/src/lib/actions/admin/users'
 
 
 export default async function UserList({ page }: { page: string }) {

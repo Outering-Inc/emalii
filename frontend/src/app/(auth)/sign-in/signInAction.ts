@@ -2,11 +2,11 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { IUserSignIn } from '@/src/types'
-import { signInWithCredentials } from '@/src/lib/services/userService'
+import { UserSignIn } from '@/src/types'
+import { signInWithCredentials } from '@/src/lib/actions/userActions'
 import { isRedirectError } from 'next/dist/client/components/redirect-error'
 
-export async function signInAction(data: IUserSignIn, callbackUrl: string) {
+export async function signInAction(data: UserSignIn, callbackUrl: string) {
   try {
     await signInWithCredentials({
       email: data.email,

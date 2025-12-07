@@ -10,11 +10,12 @@ import StripeForm from './stripe-form'
 
 import { useRouter } from 'next/navigation'
 import { redirect } from 'next/navigation'
-import { Order } from '@/src/lib/db/models/orderModel'
+//import { Order } from '@/src/lib/db/models/orderModel'
 
 import { loadStripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import { formatDateTime } from '@/src/lib/utils/utils'
+import { OrderList } from '@/src/types'
 
 
 // Stripe initialization
@@ -27,7 +28,7 @@ export default function OrderDetailsForm({
   paypalClientId,
   clientSecret,
 }: {
-  order: Order
+  order: OrderList
   paypalClientId: string
   isAdmin: boolean
   clientSecret: string | null

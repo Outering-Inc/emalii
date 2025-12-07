@@ -100,13 +100,11 @@ export const ShippingAddressSchema = z.object({
 })
 
 export const OrderInputSchema = z.object({
-  user: z.union([
-    MongoId,
-    z.object({
-      name: z.string(),
-      email: z.string().email(),
+  user: z.object({
+    _id: MongoId,
+     name: z.string(),
+     email: z.string().email(),
     }),
-  ]),
   items: z.array(OrderItemSchema).min(1, 'Order must contain at least one item'),
   shippingAddress: ShippingAddressSchema,
   paymentMethod: z.string().min(1, 'Payment method is required'),

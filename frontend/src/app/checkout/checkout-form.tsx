@@ -39,7 +39,7 @@ import useIsMounted from '@/src/hooks/client/use-is-mounted'
 import useCartStore from '@/src/hooks/stores/use-cart-store'
 import ProductPrice from '@/src/components/shared/product/product-price'
 import { APP_NAME, AVAILABLE_DELIVERY_DATES, AVAILABLE_PAYMENT_METHODS, DEFAULT_PAYMENT_METHOD } from '@/src/lib/constants'
-import { createOrder } from '@/src/lib/services/orderService'
+import { createOrder } from '@/src/lib/actions/orderActions'
 import { toast } from '@/src/hooks/client/use-toast'
 
 

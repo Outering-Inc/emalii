@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/src/lib/auth';
 import { connectToDatabase } from '@/src/lib/db/dbConnect';
 import Order from '@/src/lib/db/models/orderModel';
-import { createMpesaOrder } from '@/src/lib/services/mpesaService';
+import { createMpesaOrder } from '@/src/lib/actions/mpesaService';
 import { formatError } from '@/src/lib/utils/utils';
 
 

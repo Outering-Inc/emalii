@@ -1,7 +1,6 @@
-// file: app/admin/orders/orderList.tsx
 import Link from 'next/link'
 import { auth } from '@/src/lib/auth'
-import { adminDeleteOrder, adminGetAllOrders } from '../../api/admin/orders/[id]/route'
+import { adminDeleteOrder, adminGetAllOrders } from '@/src/lib/actions/admin/order'
 import { formatDateTime, formatId } from '@/src/lib/utils/utils'
 import { OrderList } from '@/src/types'
 import { Button } from '@/src/components/ui/button'
@@ -11,6 +10,7 @@ import {
 import ProductPrice from '@/src/components/shared/product/product-price'
 import DeleteDialog from '@/src/components/shared/common/deleteDialog'
 import Pagination from '@/src/components/shared/common/pagination'
+
 
 export default async function OrderListPage({ page }: { page: string }) {
   const pageNumber = Number(page) || 1

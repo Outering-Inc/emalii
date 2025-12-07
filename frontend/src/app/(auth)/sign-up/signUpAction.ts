@@ -3,9 +3,9 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useSearchParams, redirect } from 'next/navigation'
-import { IUserSignUp } from '@/src/types'
+import { UserSignUp } from '@/src/types'
 import { UserSignUpSchema } from '@/src/lib/validation/validator'
-import { registerUser, signInWithCredentials } from '@/src/lib/services/userService'
+import { registerUser, signInWithCredentials } from '@/src/lib/actions/userActions'
 import { toast } from '@/src/hooks/client/use-toast'
 import { isRedirectError } from 'next/dist/client/components/redirect-error'
 
@@ -28,12 +28,12 @@ export const useSignUpAction = () => {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
 
-  const form = useForm<IUserSignUp>({
+  const form = useForm<UserSignUp>({
     resolver: zodResolver(UserSignUpSchema),
     defaultValues: signUpDefaultValues,
   })
 
-  const onSubmit = async (data: IUserSignUp) => {
+  const onSubmit = async (data: UserSignUp) => {
     try {
       const res = await registerUser(data)
       if (!res.success) {
