@@ -6,36 +6,46 @@ import useIsMounted from '@/src/hooks/client/use-is-mounted'
 import { cn } from '@/src/lib/utils/utils'
 import useCartStore from '@/src/hooks/stores/use-cart-store'
 import useCartSidebar from '@/src/hooks/client/use-cart-sidebar'
+import { useLocale, useTranslations } from 'next-intl'
+import { getDirection } from '@/src/lib/i18n/config/i18n-config'
 
 export default function CartButton() {
   const isMounted = useIsMounted()
-  const { cart } = useCartStore()
-  const items = cart?.items || []               // <-- safe fallback
+  const {
+    cart: { items },
+  } = useCartStore()
   const cartItemsCount = items.reduce((a, c) => a + c.quantity, 0)
-  const isCartSidebarOpen = useCartSidebar()
+  const showSidebar = useCartSidebar()
+  const t = useTranslations()
 
+  const locale = useLocale()
   return (
     <Link href='/cart' className='px-1 header-button'>
       <div className='flex items-end text-xs relative'>
         <ShoppingCartIcon className='h-8 w-8' />
 
-        {isMounted && cartItemsCount > 0 && (
+        {isMounted && (
           <span
             className={cn(
-              `bg-black px-1 rounded-full text-primary text-base font-bold absolute right-[30px] top-[-4px] z-10`,
+              `bg-black  px-1 rounded-full text-primary text-base font-bold absolute ${
+                getDirection(locale) === 'rtl' ? 'right-[5px]' : 'left-[10px]'
+              } top-[-4px] z-10`,
               cartItemsCount >= 10 && 'text-sm px-0 p-[1px]'
             )}
           >
             {cartItemsCount}
           </span>
         )}
+        <span className='font-bold'>{t('Header.Cart')}</span>
 
-        <span className='font-bold'>Cart</span>
-
-        {isCartSidebarOpen && (
+        {showSidebar && (
           <div
-            className='absolute top-[20px] right-[-16px] rotate-[-90deg] z-10 w-0 h-0 border-l-[7px] border-r-[7px] border-b-[8px] border-transparent border-b-background'
-          />
+            className={`absolute top-[20px] ${
+              getDirection(locale) === 'rtl'
+                ? 'left-[-16px] rotate-[-270deg]'
+                : 'right-[-16px] rotate-[-90deg]'
+            }  z-10   w-0 h-0 border-l-[7px] border-r-[7px] border-b-[8px] border-transparent border-b-background`}
+          ></div>
         )}
       </div>
     </Link>

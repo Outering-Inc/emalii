@@ -11,8 +11,8 @@ import Product from '../db/models/productModel'
 
 import { ReviewDetails, ReviewInput } from '@/src/types'
 import { formatError } from '../utils/utils'
-import { PAGE_SIZE } from '../constants'
 import ReviewModel from '../db/models/reviewModel'
+import { getSetting } from './admin/setting'
 
 
 // CREATE
@@ -109,7 +109,7 @@ export const createUpdateReview = cache(async({
 })   
   
 // GET REVIEWS BY PRODUCT ID
-export const getReviews = cache(async({
+export async function getReviews({
   productId,
   limit,
   page,
@@ -117,9 +117,11 @@ export const getReviews = cache(async({
   productId: string
   limit?: number
   page: number
-}) => {
-  
-  limit = limit || PAGE_SIZE
+}) {
+  const {
+    common: { pageSize },
+  } = await getSetting()
+  limit = limit || pageSize
   await connectToDatabase()
   const skipAmount = (page - 1) * limit
   const reviews = await ReviewModel.find({ product: productId })
@@ -129,12 +131,13 @@ export const getReviews = cache(async({
     })
     .skip(skipAmount)
     .limit(limit)
+  console.log(reviews)
   const reviewsCount = await ReviewModel.countDocuments({ product: productId })
   return {
     data: JSON.parse(JSON.stringify(reviews)) as ReviewDetails[],
     totalPages: reviewsCount === 0 ? 1 : Math.ceil(reviewsCount / limit),
   }
-})
+}
 
 
 // GET REVIEW BY PRODUCT ID AND USER ID

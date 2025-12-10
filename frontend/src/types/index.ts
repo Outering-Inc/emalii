@@ -1,17 +1,22 @@
 import { MpesaInputSchema } from "@/src/lib/validation/mpesa";
 import { 
+  CarouselSchema,
   CartSchema, 
+  DeliveryDateSchema, 
   OrderInputSchema, 
   OrderItemSchema, 
+  PaymentMethodSchema, 
   ProductInputSchema, 
   ProductUpdateSchema, 
   ReviewInputSchema, 
+  SettingInputSchema, 
   ShippingAddressSchema, 
+  SiteCurrencySchema, 
+  SiteLanguageSchema, 
   UserInputSchema, 
   UserNameSchema, 
   UserSignInSchema,
   UserSignUpSchema,
-  UserUpdateSchema,
   WebPageInputSchema
  } from "@/src/lib/validation/validator";
 import { z } from "zod";
@@ -19,6 +24,7 @@ import { z } from "zod";
 
 // ------------------ Generic App Data ------------------
 export type Data = {
+  settings: SettingInput[]
   users: UserInput[]
   products: ProductInput[]
   webPages: WebPageInput[]
@@ -50,11 +56,6 @@ export type ReviewDetails = ReviewInput & {
   }
 }
 
-
-// ------------------ Products ------------------
-export type ProductInput = z.infer<typeof ProductInputSchema>
-export type ProductUpdateInput = z.infer<typeof ProductUpdateSchema>
- 
  
 // ------------------ Orders ------------------
 export type OrderInput = z.infer<typeof OrderInputSchema>
@@ -84,11 +85,13 @@ export type OrderItem = z.infer<typeof OrderItemSchema>
 export type Cart = z.infer<typeof CartSchema>
 export type ShippingAddress = z.infer<typeof ShippingAddressSchema>
 
+
+// ------------------ Products ------------------
+export type ProductInput = z.infer<typeof ProductInputSchema>
+export type ProductUpdateInput = z.infer<typeof ProductUpdateSchema>
+
 // ------------------ Users ------------------
 export type UserInput = z.infer<typeof UserInputSchema>
-export type UserEditFormType = z.infer<typeof UserUpdateSchema>;
-export type UserUpdateInput = Partial<UserInput> & { _id: string };
-
 export type UserSignIn = z.infer<typeof UserSignInSchema>
 export type UserSignUp = z.infer<typeof UserSignUpSchema>
 export type UserName = z.infer<typeof UserNameSchema>
@@ -96,7 +99,16 @@ export type UserName = z.infer<typeof UserNameSchema>
 // ------------------ Mpesa ------------------
 export type MpesaTransactionInput = z.infer<typeof MpesaInputSchema>
 
-// webpage
+// ------------------ Web Pages ------------------
 export type WebPageInput = z.infer<typeof WebPageInputSchema>
 
-
+// ------------------ Settings & Others ------------------
+export type CarouselInput = z.infer<typeof CarouselSchema>
+export type SettingInput = z.infer<typeof SettingInputSchema>
+export type ClientSetting = SettingInput & {
+  currency: string
+}
+export type SiteLanguage = z.infer<typeof SiteLanguageSchema>
+export type SiteCurrency = z.infer<typeof SiteCurrencySchema>
+export type PaymentMethod = z.infer<typeof PaymentMethodSchema>
+export type DeliveryDate = z.infer<typeof DeliveryDateSchema>

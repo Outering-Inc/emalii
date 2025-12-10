@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
 import { Button } from '@/src/components/ui/button'
@@ -13,9 +14,9 @@ import useCartStore from '@/src/hooks/stores/use-cart-store'
 // Replace old use-toast with new use-sonner
 
 import { OrderItem } from '@/src/types'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-
 export default function AddToCart({
   item,
   minimal = false,
@@ -25,23 +26,13 @@ export default function AddToCart({
 }) {
   const router = useRouter()
   const { toast } = useToast()
+
   const { addItem } = useCartStore()
 
+  //PROMPT: add quantity state
   const [quantity, setQuantity] = useState(1)
 
-  const handleError = (error: unknown) => {
-    if (error instanceof Error) {
-      toast({
-        variant: 'destructive',
-        description: error.message,
-      })
-    } else {
-      toast({
-        variant: 'destructive',
-        description: 'An unexpected error occurred',
-      })
-    }
-  }
+  const t = useTranslations()
 
   return minimal ? (
     <Button
@@ -50,23 +41,26 @@ export default function AddToCart({
         try {
           addItem(item, 1)
           toast({
-            description: 'Added to Cart',
+            description: t('Product.Added to Cart'),
             action: (
               <Button
                 onClick={() => {
                   router.push('/cart')
                 }}
               >
-                Go to Cart
+                {t('Product.Go to Cart')}
               </Button>
             ),
           })
-        } catch (error: unknown) {
-          handleError(error)
+        } catch (error: any) {
+          toast({
+            variant: 'destructive',
+            description: error.message,
+          })
         }
       }}
     >
-      Add to Cart
+      {t('Product.Add to Cart')}
     </Button>
   ) : (
     <div className='w-full space-y-2'>
@@ -74,8 +68,10 @@ export default function AddToCart({
         value={quantity.toString()}
         onValueChange={(i) => setQuantity(Number(i))}
       >
-        <SelectTrigger>
-          <SelectValue>Quantity: {quantity}</SelectValue>
+        <SelectTrigger className=''>
+          <SelectValue>
+            {t('Product.Quantity')}: {quantity}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent position='popper'>
           {Array.from({ length: item.countInStock }).map((_, i) => (
@@ -93,27 +89,32 @@ export default function AddToCart({
           try {
             const itemId = await addItem(item, quantity)
             router.push(`/cart/${itemId}`)
-          } catch (error: unknown) {
-            handleError(error)
+          } catch (error: any) {
+            toast({
+              variant: 'destructive',
+              description: error.message,
+            })
           }
         }}
       >
-        Add to Cart
+        {t('Product.Add to Cart')}
       </Button>
-
       <Button
         variant='secondary'
         onClick={() => {
           try {
             addItem(item, quantity)
             router.push(`/checkout`)
-          } catch (error: unknown) {
-            handleError(error)
+          } catch (error: any) {
+            toast({
+              variant: 'destructive',
+              description: error.message,
+            })
           }
         }}
-        className='w-full rounded-full'
+        className='w-full rounded-full '
       >
-        Buy Now
+        {t('Product.Buy Now')}
       </Button>
     </div>
   )

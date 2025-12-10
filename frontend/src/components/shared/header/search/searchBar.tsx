@@ -1,4 +1,4 @@
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
@@ -18,11 +18,12 @@ import {
   HoverCardContent,
 } from "@/src/components/ui/hover-card";
 import { Button } from "@/src/components/ui/button";
-import { APP_NAME } from "@/src/lib/constants";
 import Image from "next/image";
 import ImageUpload from "./imageUpload";
 import LoadingOverlay from "../../common/loading-overlay";
 import { getAllCategories } from "@/src/lib/actions/productActions";
+import { getSetting } from "@/src/lib/actions/admin/setting";
+import { getTranslations } from "next-intl/server";
 
 interface Suggestion {
   id: string;
@@ -30,8 +31,16 @@ interface Suggestion {
   image?: string | null;
 }
 
-
 export default function SearchBar() {
+  const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLUListElement>(null);
+
+  const [siteName, setSiteName] = useState("Site");
+  const [t, setT] = useState<any>({
+    Header: { All: "All", SearchSite: "Search {name}" },
+    SearchBar: { imageSearchTitle: "Search By Image", imageSearchDescription: "Turn images into products instantly." },
+  });
   const [categories, setCategories] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
@@ -41,12 +50,23 @@ export default function SearchBar() {
   const [imageSearchOpen, setImageSearchOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const router = useRouter();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLUListElement>(null);
-
+  // Fetch settings, translations, and categories on mount
   useEffect(() => {
-    getAllCategories().then(setCategories).catch(() => {});
+    const fetchInitialData = async () => {
+      try {
+        const settingData = await getSetting();
+        setSiteName(settingData?.site?.name || "Site");
+
+        const categoriesData = await getAllCategories();
+        setCategories(categoriesData || []);
+
+        const translations = await getTranslations(); // optional if using next-intl
+        setT(translations);
+      } catch (err) {
+        console.error("Failed to fetch initial data", err);
+      }
+    };
+    fetchInitialData();
   }, []);
 
   // 🔎 Handle search (text + image)
@@ -170,7 +190,8 @@ export default function SearchBar() {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
@@ -185,10 +206,10 @@ export default function SearchBar() {
           {/* Category select */}
           <Select value={category} onValueChange={setCategory}>
             <SelectTrigger className="w-auto h-full bg-gray-100 text-black border-r rounded-l-md">
-              <SelectValue placeholder="All" />
+              <SelectValue placeholder={t.Header.All} />
             </SelectTrigger>
             <SelectContent position="popper">
-              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="all">{t.Header.All}</SelectItem>
               {categories.map((c) => (
                 <SelectItem key={c} value={c}>
                   {c}
@@ -204,8 +225,8 @@ export default function SearchBar() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="w-full rounded-none bg-gray-100 text-black text-base h-full pr-10"
-              placeholder={`Search ${APP_NAME}`}
+              className="flex-1 rounded-none dark:border-gray-200 bg-gray-100 text-black text-base h-full"
+              placeholder={t.Header.SearchSite.replace("{name}", siteName)}
             />
 
             {query && (
@@ -278,10 +299,11 @@ export default function SearchBar() {
                 <X className="w-5 h-5" />
               </button>
 
-              <h3 className="font-semibold text-sm mb-2">Search By Image</h3>
+              <h3 className="font-semibold text-sm mb-2">
+                {t.SearchBar.imageSearchTitle}
+              </h3>
               <p className="text-sm mb-2">
-                Search smarter. Shop faster. Turn pictures into products
-                instantly with {APP_NAME}.
+                {t.SearchBar.imageSearchDescription.replace("{name}", siteName)}
               </p>
               <ImageUpload
                 onFileSelect={(file) => {
@@ -289,8 +311,7 @@ export default function SearchBar() {
                 }}
               />
               <p className="text-xs mt-2 text-gray-500">
-                *Fast track your search: just CTRL+V your image for quick
-                results.
+                *Fast track your search: just CTRL+V your image for quick results.
               </p>
             </HoverCardContent>
           </HoverCard>
@@ -307,4 +328,3 @@ export default function SearchBar() {
     </>
   );
 }
-

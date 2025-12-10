@@ -1,23 +1,19 @@
-import { APP_NAME } from '@/src/lib/constants'
 import Image from 'next/image'
 import Link from 'next/link'
-
 import Menu from './menu'
-import SearchBar from './search/searchBar'
-//import SearchBar from './search/search'
-import data from '@/src/lib/data'
-
 import Sidebar from './sidebar'
+import SearchBar from './search/searchBar'
+import data from '@/src/lib/data'
+import { getTranslations } from 'next-intl/server'
 import { getAllCategories } from '@/src/lib/actions/productActions'
-
-
-
-
+import { getSetting } from '@/src/lib/actions/admin/setting'
 
 export default async function Header() {
   const categories = await getAllCategories()
+  const { site } = await getSetting()
+  const t = await getTranslations()
   return (
-    <header className='text-white'style={{ backgroundColor: ' #023430' }} >
+    <header className='text-white' style={{ backgroundColor: ' #023430' }}>
       <div className='px-2'>
         <div className='flex items-center justify-between'>
           <div className='flex items-center'>
@@ -26,26 +22,26 @@ export default async function Header() {
               className='flex items-center header-button font-extrabold text-2xl m-1 '
             >
               <Image
-                src='/icons/logo.JPEG'
-                width={80}
-                height={80}
-                alt={`${APP_NAME} logo`}
+                src={site.logo}
+                width={40}
+                height={40}
+                alt={`${site.name} logo`}
               />
-             
+              {site.name}
             </Link>
           </div>
 
           <div className='hidden md:block flex-1 max-w-xl'>
-            <SearchBar />
+            <SearchBar/>
           </div>
           <Menu />
         </div>
         <div className='md:hidden block py-2'>
-          <SearchBar />
+          <SearchBar/>
         </div>
       </div>
-      <div className=' text-white flex items-center px-3 mb-[1px] 'style={{ backgroundColor: ' #00593F' }} >
-      <Sidebar categories={categories} />
+      <div className='flex items-center px-3 mb-[1px]'style={{ backgroundColor: ' #00593F' }}>
+        <Sidebar categories={categories} />
         <div className='flex items-center flex-wrap gap-3 overflow-hidden   max-h-[42px]'>
           {data.headerMenus.map((menu) => (
             <Link
@@ -53,7 +49,7 @@ export default async function Header() {
               key={menu.href}
               className='header-button !p-2 '
             >
-              {menu.name}
+              {t('Header.' + menu.name)}
             </Link>
           ))}
         </div>

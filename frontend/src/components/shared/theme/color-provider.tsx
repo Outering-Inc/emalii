@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { ThemeProvider as NextThemesProvider, useTheme } from 'next-themes'
-import useColorStore from '@/src/hooks/client/use-color-store'
+import useColorStore from '@/src/hooks/stores/use-color-store'
 
 export function ColorProvider({
   children,

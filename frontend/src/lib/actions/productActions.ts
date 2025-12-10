@@ -3,41 +3,13 @@
 import { cache } from 'react'
 import { connectToDatabase } from '../db/dbConnect'
 import ProductModel, { Product } from '../db/models/productModel'
+import { getSetting } from './admin/setting'
 
-// =========================
-//      TYPES & CONSTANTS
-// =========================
-export interface GetAllProductsParams {
-  query?: string
-  category?: string
-  tag?: string
-  page: number
-  limit?: number
-  price?: string        // e.g. "10-50"
-  rating?: number       // numeric value (e.g. 4)
-  sort?: string
-  filters?: Record<string, unknown>// <-- add this
-}
-
-export interface GetAllProductsResult {
-  products: Product[]
-  totalPages: number
-  totalProducts: number
-  from: number
-  to: number
-}
-
-const PAGE_SIZE = 10
 
 // =========================
 //      ACTIONS
 // =========================
 
-// ADMIN: all products
-export const getAllProductsForAdmin = cache(async() => {
-  await connectToDatabase()
-  return ProductModel.find({ isPublished: true }).distinct('category')
-})
 
 // all categories
 export const getAllCategories = cache(async() => {
@@ -108,37 +80,43 @@ export const getProductById = cache(async(id: string) =>{
 })
 
 // Related products
-export const getRelatedProductsByCategory = cache(async ({
+export async function getRelatedProductsByCategory({
   category,
   productId,
-  limit = PAGE_SIZE,
+  limit = 4,
   page = 1,
 }: {
   category: string
   productId: string
   limit?: number
   page: number
-}) => {
+}) {
+  const {
+    common: { pageSize },
+  } = await getSetting()
+  limit = limit || pageSize
   await connectToDatabase()
-  const skipAmount = (page - 1) * limit
-  const conditions = { isPublished: true, category, _id: { $ne: productId } }
-
+  const skipAmount = (Number(page) - 1) * limit
+  const conditions = {
+    isPublished: true,
+    category,
+    _id: { $ne: productId },
+  }
   const products = await ProductModel.find(conditions)
     .sort({ numSales: 'desc' })
     .skip(skipAmount)
     .limit(limit)
-
-  const total = await ProductModel.countDocuments(conditions)
+  const productsCount = await ProductModel.countDocuments(conditions)
   return {
     data: JSON.parse(JSON.stringify(products)) as Product[],
-    totalPages: Math.ceil(total / limit),
+    totalPages: Math.ceil(productsCount / limit),
   }
-})
+}
 
 // =========================
 //   MAIN SEARCH ACTION
 // =========================
-export const getAllProducts = cache(async ({
+export async function getAllProducts({
   query,
   limit,
   page,
@@ -147,49 +125,63 @@ export const getAllProducts = cache(async ({
   price,
   rating,
   sort,
-}: GetAllProductsParams): Promise<GetAllProductsResult> => {
-  const perPage = limit ?? PAGE_SIZE
+}: {
+  query: string
+  category: string
+  tag: string
+  limit?: number
+  page: number
+  price?: string
+  rating?: string
+  sort?: string
+}) {
+  const {
+    common: { pageSize },
+  } = await getSetting()
+  limit = limit || pageSize
   await connectToDatabase()
 
-  // filters
   const queryFilter =
     query && query !== 'all'
-      ? { name: { $regex: query, $options: 'i' } }
+      ? {
+          name: {
+            $regex: query,
+            $options: 'i',
+          },
+        }
       : {}
-
-  const categoryFilter =
-    category && category !== 'all' ? { category } : {}
-
+  const categoryFilter = category && category !== 'all' ? { category } : {}
   const tagFilter = tag && tag !== 'all' ? { tags: tag } : {}
 
   const ratingFilter =
-    typeof rating === 'number'
-      ? { avgRating: { $gte: rating } }
+    rating && rating !== 'all'
+      ? {
+          avgRating: {
+            $gte: Number(rating),
+          },
+        }
       : {}
-
+  // 10-50
   const priceFilter =
     price && price !== 'all'
-      ? (() => {
-          const [min, max] = price.split('-').map((p) => Number(p))
-          return { price: { $gte: min, $lte: max } }
-        })()
+      ? {
+          price: {
+            $gte: Number(price.split('-')[0]),
+            $lte: Number(price.split('-')[1]),
+          },
+        }
       : {}
-
-  // sort options
   const order: Record<string, 1 | -1> =
     sort === 'best-selling'
       ? { numSales: -1 }
       : sort === 'price-low-to-high'
-      ? { price: 1 }
-      : sort === 'price-high-to-low'
-      ? { price: -1 }
-      : sort === 'avg-customer-review'
-      ? { avgRating: -1 }
-      : { _id: -1 }
-
+        ? { price: 1 }
+        : sort === 'price-high-to-low'
+          ? { price: -1 }
+          : sort === 'avg-customer-review'
+            ? { avgRating: -1 }
+            : { _id: -1 }
   const isPublished = { isPublished: true }
-
-  // query db
   const products = await ProductModel.find({
     ...isPublished,
     ...queryFilter,
@@ -199,27 +191,25 @@ export const getAllProducts = cache(async ({
     ...ratingFilter,
   })
     .sort(order)
-    .skip(perPage * (page - 1))
-    .limit(perPage)
-    .lean<Product[]>()
+    .skip(limit * (Number(page) - 1))
+    .limit(limit)
+    .lean()
 
-  const count = await ProductModel.countDocuments({
-    ...isPublished,
+  const countProducts = await ProductModel.countDocuments({
     ...queryFilter,
     ...tagFilter,
     ...categoryFilter,
     ...priceFilter,
     ...ratingFilter,
   })
-
   return {
     products: JSON.parse(JSON.stringify(products)) as Product[],
-    totalPages: Math.ceil(count / perPage),
-    totalProducts: count,
-    from: perPage * (page - 1) + 1,
-    to: perPage * (page - 1) + products.length,
+    totalPages: Math.ceil(countProducts / limit),
+    totalProducts: countProducts,
+    from: limit * (Number(page) - 1) + 1,
+    to: limit * (Number(page) - 1) + products.length,
   }
-})
+}
 
 // =========================
 //      TAGS
@@ -281,93 +271,6 @@ export const getBySlug = cache(async (slug: string) => {
   return product as Product
 })
 
-
-export const getByQuery = cache(
-  async ({
-    q,
-    category,
-    sort,
-    price,
-    rating,
-    page = '1',
-  }: {
-    q: string
-    category: string
-    price: string
-    rating: string
-    sort: string
-    page: string
-  }) => {
-    await connectToDatabase()
-
-    const queryFilter =
-      q && q !== 'all'
-        ? {
-            name: {
-              $regex: q,
-              $options: 'i',
-            },
-          }
-        : {}
-    const categoryFilter = category && category !== 'all' ? { category } : {}
-    const ratingFilter =
-      rating && rating !== 'all'
-        ? {
-            rating: {
-              $gte: Number(rating),
-            },
-          }
-        : {}
-    // 10-50
-    const priceFilter =
-      price && price !== 'all'
-        ? {
-            price: {
-              $gte: Number(price.split('-')[0]),
-              $lte: Number(price.split('-')[1]),
-            },
-          }
-        : {}
-    const order: Record<string, 1 | -1> =
-      sort === 'lowest'
-        ? { price: 1 }
-        : sort === 'highest'
-        ? { price: -1 }
-        : sort === 'toprated'
-        ? { rating: -1 }
-        : { _id: -1 }
-
-    const categories = await ProductModel.find().distinct('category')
-    const products = await ProductModel.find(
-      {
-        ...queryFilter,
-        ...categoryFilter,
-        ...priceFilter,
-        ...ratingFilter,
-      },
-      '-reviews'
-    )
-      .sort(order)
-      .skip(PAGE_SIZE * (Number(page) - 1))
-      .limit(PAGE_SIZE)
-      .lean()
-
-    const countProducts = await ProductModel.countDocuments({
-      ...queryFilter,
-      ...categoryFilter,
-      ...priceFilter,
-      ...ratingFilter,
-    })
-
-    return {
-      products: products as Product[],
-      countProducts,
-      page,
-      pages: Math.ceil(countProducts / PAGE_SIZE),
-      categories,
-    }
-  }
-)
 
 export const getCategories = cache(async () => {
   await connectToDatabase()

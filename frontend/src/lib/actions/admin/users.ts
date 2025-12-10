@@ -1,11 +1,12 @@
 "use server"
-import { PAGE_SIZE } from "@/src/lib/constants"
+
 import { connectToDatabase } from "@/src/lib/db/dbConnect"
 import UserModel, { User } from "@/src/lib/db/models/userModel"
 import { formatError } from "@/src/lib/utils/utils"
 import { UserUpdateSchema } from "@/src/lib/validation/validator"
 import { revalidatePath } from "next/cache"
 import z from "zod"
+import { getSetting } from "./setting"
 
 // ADMIN GET USER BY ID
 export async function adminGetUserById(userId: string) {
@@ -60,7 +61,10 @@ export async function adminGetAllUsers({
   limit?: number
   page: number
 }) {
-  limit = limit || PAGE_SIZE
+  const {
+    common: { pageSize },
+  } = await getSetting()
+  limit = limit || pageSize
   await connectToDatabase()
 
   const skipAmount = (Number(page) - 1) * limit
@@ -74,6 +78,7 @@ export async function adminGetAllUsers({
     totalPages: Math.ceil(usersCount / limit),
   }
 }
+
 
 
 

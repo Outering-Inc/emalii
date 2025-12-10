@@ -7,8 +7,8 @@ import WebPageModel, { WebPage } from '../../db/models/webpageModel'
 import { formatError } from '../../utils/utils'
 import { WebPageInputSchema, WebPageUpdateSchema } from '../../validation/validator'
 import z from 'zod'
-import { PAGE_SIZE } from '../../constants'
 import { cache } from 'react'
+import { getSetting } from './setting'
 
 
 // CREATE
@@ -60,6 +60,7 @@ export async function deleteWebPage(id: string) {
 }
 
 // GET ALL
+
 export const getAllWebPages = cache(async ({
   limit,
   page,
@@ -67,13 +68,17 @@ export const getAllWebPages = cache(async ({
   limit?: number
   page: number
 }) => {
+  const {
+    common: { pageSize },
+  } = await getSetting()
+  limit = limit || pageSize
   await connectToDatabase()
 
-  limit = limit || PAGE_SIZE
   const skipAmount = (Number(page) - 1) * limit
 
+  // Fetch orders sorted by latest first
   const webPages = await WebPageModel.find()
-    .sort({ createdAt: "desc" })
+    .sort({ createdAt: 'desc' })
     .skip(skipAmount)
     .limit(limit)
 

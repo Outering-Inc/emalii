@@ -1,20 +1,29 @@
 import { usePathname } from 'next/navigation'
 import useDeviceType from './use-device-type'
 import useCartStore from '../stores/use-cart-store'
+import { i18n } from '@/src/lib/i18n/config/i18n-config'
+
+const locales = i18n.locales
+  .filter((locale) => locale.code !== 'en-US')
+  .map((locale) => locale.code)
 
 const isNotInPaths = (s: string) => {
-  return !new RegExp(
-    `^(?:/(?:en|fr|es|de))?(?:/$|/cart$|/checkout$|/sign-in$|/sign-up$|/order(?:/.*)?$|/account(?:/.*)?$|/admin(?:/.*)?$)?$`
-  ).test(s)
+  const localePattern = `/(?:${locales.join('|')})` // Match locales
+  const pathsPattern = `^(?:${localePattern})?(?:/$|/cart$|/checkout$|/sign-in$|/sign-up$|/order(?:/.*)?$|/account(?:/.*)?$|/admin(?:/.*)?$)?$`
+  console.log(!new RegExp(pathsPattern).test(s))
+  return !new RegExp(pathsPattern).test(s)
 }
 
 function useCartSidebar() {
-  const { cart } = useCartStore()   // <-- get cart object
-  const { items } = cart            // <-- extract items from cart
+  const {
+    cart: { items },
+  } = useCartStore()
   const deviceType = useDeviceType()
   const currentPath = usePathname()
 
-  return items.length > 0 && deviceType === 'desktop' && isNotInPaths(currentPath)
+  return (
+    items.length > 0 && deviceType === 'desktop' && isNotInPaths(currentPath)
+  )
 }
 
 export default useCartSidebar

@@ -8,6 +8,7 @@ import UserModel from './models/userModel'
 import ReviewModel from './models/reviewModel'
 import WebPageModel from './models/webpageModel'
 import OrderModel from './models/orderModel'
+import SettingModel from './models/settingModel'
 import { OrderInput, OrderItem, ShippingAddress } from '@/src/types'
 import {
   calculateFutureDate,
@@ -15,20 +16,28 @@ import {
   generateId,
   round2,
 } from '../utils/utils'
-import { AVAILABLE_DELIVERY_DATES } from '../constants'
+
 
 loadEnvConfig(cwd())
 
 const main = async () => {
   try {
-    const { products, users, reviews, webPages } = data
+    const { users, products, reviews, webPages, settings } = data
     await connectToDatabase(process.env.MONGODB_URI)
 
     await UserModel.deleteMany()
     const createdUser = await UserModel.insertMany(users)
 
+    await SettingModel.deleteMany()
+    const createdSetting = await SettingModel.insertMany(settings)
+
+    await WebPageModel.deleteMany()
+    await WebPageModel.insertMany(webPages)
+
     await ProductModel.deleteMany()
-    const createdProducts = await ProductModel.insertMany(products)
+    const createdProducts = await ProductModel.insertMany(
+      products.map((x) => ({ ...x, _id: undefined }))
+    )
 
     await ReviewModel.deleteMany()
     const rws = []
@@ -65,14 +74,12 @@ const main = async () => {
       )
     }
     const createdOrders = await OrderModel.insertMany(orders)
-
-    await WebPageModel.deleteMany()
-    await WebPageModel.insertMany(webPages)
     console.log({
       createdUser,
       createdProducts,
       createdReviews,
       createdOrders,
+      createdSetting,
       message: 'Seeded database successfully',
     })
     process.exit(0)
@@ -173,14 +180,15 @@ export const calcDeliveryDateAndPriceForSeed = ({
   items: OrderItem[]
   shippingAddress?: ShippingAddress
 }) => {
+  const { availableDeliveryDates } = data.settings[0]
   const itemsPrice = round2(
     items.reduce((acc, item) => acc + item.price * item.quantity, 0)
   )
 
   const deliveryDate =
-    AVAILABLE_DELIVERY_DATES[
+    availableDeliveryDates[
       deliveryDateIndex === undefined
-        ? AVAILABLE_DELIVERY_DATES.length - 1
+        ? availableDeliveryDates.length - 1
         : deliveryDateIndex
     ]
 
@@ -193,10 +201,10 @@ export const calcDeliveryDateAndPriceForSeed = ({
       (taxPrice ? round2(taxPrice) : 0)
   )
   return {
-    AVAILABLE_DELIVERY_DATES,
+    availableDeliveryDates,
     deliveryDateIndex:
       deliveryDateIndex === undefined
-        ? AVAILABLE_DELIVERY_DATES.length - 1
+        ? availableDeliveryDates.length - 1
         : deliveryDateIndex,
     itemsPrice,
     shippingPrice,

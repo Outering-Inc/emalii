@@ -3,7 +3,6 @@ import { cache } from 'react'
 import { connectToDatabase } from '../db/dbConnect'
 import {   Cart, OrderList, OrderItem, ShippingAddress   } from '@/src/types'
 import { formatError, round2 } from '../utils/utils'
-import { AVAILABLE_DELIVERY_DATES, PAGE_SIZE } from '../constants'
 import { auth } from '../auth'
 import { OrderInputSchema } from '../validation/validator'
 import OrderModel  from '../db/models/orderModel'
@@ -11,10 +10,11 @@ import { DateRange } from 'react-day-picker'
 import Product from '../db/models/productModel'
 import User from '../db/models/userModel'
 import UserModel from '../db/models/userModel'
+import { getSetting } from './admin/setting'
 
 
 
-// CREATE ORDER FROM CART
+
 // CREATE ORDER FROM CART
 export const createOrder = cache(async (clientSideCart: Cart) => {
   try {
@@ -82,7 +82,7 @@ export const getOrderById = cache(async(orderId: string): Promise<OrderList> => 
 //Define Dser create Order plugin here
 
 // Calculate delivery date and price
- export const calcDeliveryDateAndPrice = cache(async ({
+export const calcDeliveryDateAndPrice = async ({
   items,
   shippingAddress,
   deliveryDateIndex,
@@ -91,15 +91,15 @@ export const getOrderById = cache(async(orderId: string): Promise<OrderList> => 
   items: OrderItem[]
   shippingAddress?: ShippingAddress
 }) => {
-  //const { availableDeliveryDates } = await getSetting()
+  const { availableDeliveryDates } = await getSetting()
   const itemsPrice = round2(
     items.reduce((acc, item) => acc + item.price * item.quantity, 0)
   )
 
   const deliveryDate =
-    AVAILABLE_DELIVERY_DATES[
+    availableDeliveryDates[
       deliveryDateIndex === undefined
-        ? AVAILABLE_DELIVERY_DATES.length - 1
+        ? availableDeliveryDates.length - 1
         : deliveryDateIndex
     ]
   const shippingPrice =
@@ -117,17 +117,17 @@ export const getOrderById = cache(async(orderId: string): Promise<OrderList> => 
       (taxPrice ? round2(taxPrice) : 0)
   )
   return {
-    AVAILABLE_DELIVERY_DATES,
+    availableDeliveryDates,
     deliveryDateIndex:
       deliveryDateIndex === undefined
-        ? AVAILABLE_DELIVERY_DATES.length - 1
+        ? availableDeliveryDates.length - 1
         : deliveryDateIndex,
     itemsPrice,
     shippingPrice,
     taxPrice,
     totalPrice,
   }
-})
+}
 
 
 // GET MY ORDERS WITH PAGINATION
@@ -138,8 +138,10 @@ export const getMyOrders = cache(async({
   limit?: number
   page: number
 }) => {
-  
-  limit = limit || PAGE_SIZE
+  const {
+      common: { pageSize },
+    } = await getSetting()
+  limit = limit || pageSize
   await connectToDatabase()
   const session = await auth()
   if (!session) {
@@ -163,7 +165,7 @@ export const getMyOrders = cache(async({
 
 
 // GET ORDERS SUMMARY Using Aggregation Pipeline from Mongodb
-export const getOrderSummary = cache(async(date: DateRange) => {
+export async function getOrderSummary(date: DateRange) {
   await connectToDatabase()
 
   const ordersCount = await OrderModel.countDocuments({
@@ -237,11 +239,14 @@ export const getOrderSummary = cache(async(date: DateRange) => {
   const topSalesCategories = await getTopSalesCategories(date)
   const topSalesProducts = await getTopSalesProducts(date)
 
-  
+  const {
+    common: { pageSize },
+  } = await getSetting()
+  const limit = pageSize
   const latestOrders = await OrderModel.find()
     .populate('user', 'name')
     .sort({ createdAt: 'desc' })
-    .limit(PAGE_SIZE)
+    .limit(limit)
   return {
     ordersCount,
     productsCount,
@@ -253,7 +258,7 @@ export const getOrderSummary = cache(async(date: DateRange) => {
     topSalesProducts: JSON.parse(JSON.stringify(topSalesProducts)),
     latestOrders: JSON.parse(JSON.stringify(latestOrders)) as OrderList[],
   }
-})
+}
 
 // GET ALL ORDERS SUMMARY Using Drizzle Pipeline from postgresql
 

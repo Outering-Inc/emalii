@@ -8,9 +8,9 @@ import { sendAskReviewOrderItems, sendPurchaseReceipt } from "@/src/emails"
 import OrderModel from "@/src/lib/db/models/orderModel"
 import ProductModel from "@/src/lib/db/models/productModel"
 
-import { PAGE_SIZE } from '@/src/lib/constants'
 import { OrderList } from '@/src/types'
 import { cache } from 'react'
+import { getSetting } from './setting'
 
 // -----------------------------
 // ADMIN: GET ORDER BY ID
@@ -34,7 +34,10 @@ export const adminGetAllOrders = cache(async ({
   limit?: number
   page: number
 }) => {
-  limit = limit || PAGE_SIZE
+  const {
+    common: { pageSize },
+  } = await getSetting()
+  limit = limit || pageSize
   await connectToDatabase()
 
   const skipAmount = (Number(page) - 1) * limit

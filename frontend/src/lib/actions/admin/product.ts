@@ -1,7 +1,6 @@
 "use server"
 
 import { cache } from "react"
-import { PAGE_SIZE } from "@/src/lib/constants"
 import { connectToDatabase } from "@/src/lib/db/dbConnect"
 import ProductModel, { Product } from "@/src/lib/db/models/productModel"
 import { formatError } from "@/src/lib/utils/utils"
@@ -9,6 +8,7 @@ import { ProductInputSchema, ProductUpdateSchema } from "@/src/lib/validation/va
 import { ProductInput } from "@/src/types"
 import { revalidatePath } from "next/cache"
 import z from "zod"
+import { getSetting } from "./setting"
 
 
 
@@ -84,7 +84,10 @@ export async function adminGetAllProducts({
 }) {
   await connectToDatabase()
 
-  const pageSize = limit || PAGE_SIZE
+  const {
+    common: { pageSize },
+  } = await getSetting()
+  limit = limit || pageSize
   const queryFilter =
     query && query !== 'all'
       ? {
@@ -109,8 +112,8 @@ export async function adminGetAllProducts({
     ...queryFilter,
   })
     .sort(order)
-    .skip(pageSize * (Number(page) - 1))
-    .limit(pageSize)
+    .skip(limit * (Number(page) - 1))
+    .limit(limit)
     .lean()
 
   const countProducts = await ProductModel.countDocuments({
