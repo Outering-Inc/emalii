@@ -25,11 +25,11 @@ export default function Footer() {
   const locale = useLocale()
   const t = useTranslations()
   return (
-    <footer className=  'text-white underline-link' style={{ backgroundColor:  ' #011F1D' }}>
+    <footer className=  'text-white underline-link' style={{ backgroundColor: ' #00332E' }}>
       <div className='w-full'>
         <Button
           variant='ghost'
-          className='bg-gray-800 w-full  rounded-none '
+          className='w-full  rounded-none ' style={{ backgroundColor: '	#00593F' }} 
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         >
           <ChevronUp className='mr-2 h-4 w-4' />
@@ -91,7 +91,7 @@ export default function Footer() {
             </ul>
           </div>
         </div>
-        <div className='border-t border-gray-800'>
+        <div className='border-t border-green-800'>
           <div className='max-w-7xl mx-auto py-8 px-4 flex flex-col items-center space-y-4'>
             <div className='flex items-center space-x-4 flex-wrap md:flex-nowrap'>
               <Image
@@ -152,7 +152,7 @@ export default function Footer() {
           </div>
         </div>
       </div>
-      <div className='p-4'>
+      <div className='p-4' style={{ backgroundColor: ' #011F1D' }}>
         <div className='flex justify-center  gap-3 text-sm'>
           <Link href='/page/conditions-of-use'>
             {t('Footer.Conditions of Use')}

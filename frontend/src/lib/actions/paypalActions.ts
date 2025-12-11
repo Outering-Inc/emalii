@@ -3,10 +3,10 @@
 import { connectToDatabase } from "../db/dbConnect"
 import Order from "../db/models/orderModel"
 import { sendPurchaseReceipt } from "@/src/emails"
-import { paypal } from "../payments/paypal/paypal"
 import { revalidatePath } from "next/cache"
 import { formatError } from "../utils/utils"
 import { cache } from "react"
+import { paypal } from "../payments/paypal/paypal"
 
 
 // Create PayPal Order

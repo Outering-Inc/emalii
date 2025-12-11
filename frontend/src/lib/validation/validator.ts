@@ -205,7 +205,6 @@ export const WebPageUpdateSchema = WebPageInputSchema.extend({
 })
 
 // Setting
-
 export const SiteLanguageSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   code: z.string().min(1, 'Code is required'),
@@ -238,27 +237,28 @@ export const DeliveryDateSchema = z.object({
     .min(0, 'Free shipping min amount must be at least 0'),
 })
 
+// ------------------ Settings ------------------
 export const SettingInputSchema = z.object({
   // PROMPT: create fields
   // codeium, based on the mongoose schema for settings
   common: z.object({
     pageSize: z.coerce
       .number()
-      .min(1, 'Page size must be at least 1')
-      .default(9),
-    isMaintenanceMode: z.boolean().default(false),
+      .min(1, 'Page size must be at least 1'),
+   
+    isMaintenanceMode: z.boolean(),
     freeShippingMinPrice: z.coerce
       .number()
-      .min(0, 'Free shipping min price must be at least 0')
-      .default(0),
+      .min(0, 'Free shipping min price must be at least 0'),
+     
     defaultTheme: z
       .string()
-      .min(1, 'Default theme is required')
-      .default('light'),
+      .min(1, 'Default theme is required'),
+     
     defaultColor: z
       .string()
-      .min(1, 'Default color is required')
-      .default('gold'),
+      .min(1, 'Default color is required'),
+      
   }),
   site: z.object({
     name: z.string().min(1, 'Name is required'),
@@ -294,3 +294,4 @@ export const SettingInputSchema = z.object({
     .min(1, 'At least one delivery date is required'),
   defaultDeliveryDate: z.string().min(1, 'Delivery date is required'),
 })
+

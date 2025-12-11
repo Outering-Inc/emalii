@@ -6,8 +6,8 @@ import {
   usePayPalScriptReducer,
 } from '@paypal/react-paypal-js'
 
-import { approvePayPalOrder, createPayPalOrder } from '@/src/lib/actions/paypalService'
 import { useToast } from '@/src/hooks/client/use-toast'
+import { approvePayPalOrder, createPayPalOrder } from '@/src/lib/actions/paypalActions'
 
 export default function PaypalForm({
   orderId,
