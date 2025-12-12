@@ -19,7 +19,7 @@ export default async function HomePage() {
   const bestSellingProducts = await getProductsByTag({ tag: 'best-seller' })
 
   // Fetch categories and products for home cards
-  const categories = (await getAllCategories()).slice(0, 6)
+  const categories = (await getAllCategories()).slice(0, 4)
   const newArrivals = await getProductsForCard({
     tag: 'new-arrival',
   })

@@ -15,7 +15,7 @@ import { cn } from '@/src/lib/utils/utils'
 import { Button } from '@/src/components/ui/button'
 import { useTranslations } from 'next-intl'
 import { CarouselInput } from '@/src/types'
-
+import { HomeImageWrapper } from './HomeImageWrapper'
 
 export function HomeCarousel({ items }: { items: CarouselInput[] }) {
   const plugin = React.useRef(
@@ -25,10 +25,11 @@ export function HomeCarousel({ items }: { items: CarouselInput[] }) {
   const t = useTranslations('Home')
 
   return (
+    <HomeImageWrapper imageUrl='/images/christmas-gift.jpg' height='50vh'>
     <Carousel
       dir='ltr'
       plugins={[plugin.current]}
-      className='w-full mx-auto '
+      className='w-full mx-auto h-[35vh]' // half page height
       onMouseEnter={plugin.current.stop}
       onMouseLeave={plugin.current.reset}
     >
@@ -36,24 +37,20 @@ export function HomeCarousel({ items }: { items: CarouselInput[] }) {
         {items.map((item) => (
           <CarouselItem key={item.title}>
             <Link href={item.url}>
-              <div className='flex aspect-[16/6] items-center justify-center p-6 relative -m-1'>
+              <div className='relative w-full h-[45vh]'>
                 <Image
                   src={item.image}
                   alt={item.title}
                   fill
-                  className='object-cover'
+                  className='object-cover bg-transparent'
                   priority
                 />
-                <div className='absolute w-1/3 left-16 md:left-32 top-1/2 transform -translate-y-1/2'>
-                  <h2
-                    className={cn(
-                      'text-xl md:text-6xl font-bold mb-4 text-primary  '
-                    )}
-                  >
-                    {t(`${item.title}`)}
+                <div className='absolute w-1/3 left-16 md:left-32 top-1/2 -translate-y-1/2'>
+                  <h2 className={cn('text-xl md:text-6xl font-bold mb-4 text-primary')}>
+                    {t(item.title)}
                   </h2>
                   <Button className='hidden md:block'>
-                    {t(`${item.buttonCaption}`)}
+                    {t(item.buttonCaption)}
                   </Button>
                 </div>
               </div>
@@ -64,5 +61,6 @@ export function HomeCarousel({ items }: { items: CarouselInput[] }) {
       <CarouselPrevious className='left-0 md:left-12' />
       <CarouselNext className='right-0 md:right-12' />
     </Carousel>
+    </HomeImageWrapper>
   )
 }

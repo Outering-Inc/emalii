@@ -5,10 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 
 import { z } from 'zod'
+import dynamic from "next/dynamic";
 
-import MdEditor from 'react-markdown-editor-lite'
-import ReactMarkdown from 'react-markdown'
-import 'react-markdown-editor-lite/lib/index.css'
 import { Button } from '@/src/components/ui/button'
 import {
   Form,
@@ -26,6 +24,9 @@ import { WebPageInputSchema, WebPageUpdateSchema } from '@/src/lib/validation/va
 import { toSlug } from '@/src/lib/utils/utils'
 import { createWebPage, updateWebPage } from '@/src/lib/actions/admin/webPages'
 
+
+// UIW Markdown Editor (client-only)
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
 const webPageDefaultValues =
   process.env.NODE_ENV === 'development'
@@ -157,12 +158,12 @@ const WebPageForm = ({
               <FormItem className='w-full'>
                 <FormLabel>Content</FormLabel>
                 <FormControl>
-                  <MdEditor
-                    {...field}
-                    style={{ height: '500px' }}
-                    renderHTML={(text) => <ReactMarkdown>{text}</ReactMarkdown>}
-                    onChange={({ text }) => form.setValue('content', text)}
+                 <MDEditor
+                    value={field.value}
+                    onChange={(val) => form.setValue('content', val || "")}
+                    height={500}
                   />
+
                 </FormControl>
                 <FormMessage />
               </FormItem>
