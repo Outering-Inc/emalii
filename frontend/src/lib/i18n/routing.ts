@@ -1,16 +1,10 @@
-import { createNavigation } from 'next-intl/navigation'
 import { defineRouting } from 'next-intl/routing'
 import { i18n } from './config/i18n-config'
 
 export const routing = defineRouting({
-  locales: i18n.locales.map((locale) => locale.code),
-  defaultLocale: 'en-US',
-  localePrefix: 'as-needed',
-  pathnames: {
-    // If all locales use the same pathname, a single
-    // external path can be used for all locales
-  },
+  locales: i18n.locales.map((l) => l.code),
+  defaultLocale: i18n.defaultLocale,
+  localePrefix: 'as-needed', // OK with our middleware
 })
 
-export const { Link, redirect, usePathname, useRouter } =
-  createNavigation(routing)
+export type AppLocale = (typeof routing.locales)[number]
