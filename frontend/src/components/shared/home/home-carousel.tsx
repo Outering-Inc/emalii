@@ -29,7 +29,7 @@ export function HomeCarousel({ items }: { items: CarouselInput[] }) {
     <Carousel
       dir='ltr'
       plugins={[plugin.current]}
-      className='w-full mx-auto h-[35vh]' // half page height
+      className='w-full mx-auto h-[45vh]' // half page height
       onMouseEnter={plugin.current.stop}
       onMouseLeave={plugin.current.reset}
     >
@@ -42,7 +42,7 @@ export function HomeCarousel({ items }: { items: CarouselInput[] }) {
                   src={item.image}
                   alt={item.title}
                   fill
-                  className='object-cover bg-transparent'
+                  className='object-cover'
                   priority
                 />
                 <div className='absolute w-1/3 left-16 md:left-32 top-1/2 -translate-y-1/2'>
