@@ -202,6 +202,22 @@ const ProductForm = ({
             )}
           />
 
+        </div>
+         <div className='flex flex-col gap-5 md:flex-row'>
+          <FormField
+            control={form.control}
+            name='tags'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>Tags</FormLabel>
+                <FormControl>
+                  <Input placeholder='Enter tags' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
           <FormField
             control={form.control}
             name='brand'
