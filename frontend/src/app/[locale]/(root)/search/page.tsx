@@ -1,4 +1,3 @@
-
 import Link from "next/link"
 
 import Pagination from "@/src/components/shared/common/pagination"

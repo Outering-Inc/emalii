@@ -12,13 +12,6 @@ import {
 
 import { useEffect, useState } from 'react'
 
-/*************  ✨ Windsurf Command ⭐  *************/
-/**
- * A navigation component for the settings page.
- * It observes the sections of the page and updates the active state accordingly.
- * It also provides a function to scroll to the desired section.
- */
-/*******  a3bd9d7d-dba9-4872-b54d-bfa94db7d3f5  *******/
 const SettingNav = () => {
   const [active, setActive] = useState('')
 

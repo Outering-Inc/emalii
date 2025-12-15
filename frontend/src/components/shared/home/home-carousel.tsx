@@ -17,6 +17,7 @@ import { useTranslations } from 'next-intl'
 import { CarouselInput } from '@/src/types'
 import { HomeImageWrapper } from './HomeImageWrapper'
 
+
 export function HomeCarousel({ items }: { items: CarouselInput[] }) {
   const plugin = React.useRef(
     Autoplay({ delay: 3000, stopOnInteraction: true })

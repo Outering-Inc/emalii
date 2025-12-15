@@ -32,8 +32,8 @@ export function HomeCard({ cards }: { cards: CardItem[] }) {
                     src={item.image}
                     alt={item.name}
                     className='aspect-square object-scale-down max-w-full h-auto mx-auto'
-                    height={120}
-                    width={120}
+                    height={80}
+                    width={80}
                   />
                   <p className='text-center text-sm whitespace-nowrap overflow-hidden text-ellipsis'>
                     {item.name}
