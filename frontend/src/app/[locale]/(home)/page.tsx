@@ -51,12 +51,14 @@ export default async function HomePage() {
     },
   ]
 
+ 
   return (
     <>
       {/* ✅ HERO MEDIA SECTION */}
       <HomeHeroMediaSection items={carousels} />
 
       <div className="md:p-4 md:space-y-4 bg-border">
+        <HomeCard cards={cards} />
         <HomeCard cards={cards} />
 
         <Card className="w-full rounded-none">
