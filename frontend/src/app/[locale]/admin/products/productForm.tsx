@@ -38,6 +38,7 @@ const productDefaultValues: ProductInput =
         name: 'Sample Product',
         slug: 'sample-product',
         category: 'Sample Category',
+        tags: ['new-arrival', 'premium'],
         images: ['/images/p11-1.jpg'],
         brand: 'Sample Brand',
         description: 'This is a sample description of the product.',
@@ -48,7 +49,6 @@ const productDefaultValues: ProductInput =
         avgRating: 0,
         numSales: 0,
         isPublished: false,
-        tags: [],
         sizes: [],
         colors: [],
         ratingDistribution: [],
@@ -58,6 +58,7 @@ const productDefaultValues: ProductInput =
         name: '',
         slug: '',
         category: '',
+        tags: [],
         images: [],
         brand: '',
         description: '',
@@ -68,7 +69,6 @@ const productDefaultValues: ProductInput =
         avgRating: 0,
         numSales: 0,
         isPublished: false,
-        tags: [],
         sizes: [],
         colors: [],
         ratingDistribution: [],
@@ -204,17 +204,30 @@ const ProductForm = ({
 
         </div>
          <div className='flex flex-col gap-5 md:flex-row'>
-          <FormField
+         <FormField
             control={form.control}
-            name='tags'
+            name="tags"
             render={({ field }) => (
-              <FormItem className='w-full'>
-                <FormLabel>Tags</FormLabel>
-                <FormControl>
-                  <Input placeholder='Enter tags' {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+          <FormItem className="w-full">
+            <FormLabel>Tags</FormLabel>
+            <FormControl>
+            <Input
+              placeholder="new-arrival, premium, bestseller"
+              value={field.value?.join(', ') ?? ''}
+              onChange={(e) => {
+              const value = e.target.value
+              field.onChange(
+              value
+                .split(',')
+                .map(tag => tag.trim())
+                .filter(Boolean)
+              )
+              }}
+            />
+              </FormControl>
+              <FormDescription>Comma separated</FormDescription>
+              <FormMessage />
+            </FormItem>
             )}
           />
 

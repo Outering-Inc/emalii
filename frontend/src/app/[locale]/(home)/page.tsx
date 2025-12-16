@@ -24,6 +24,12 @@ export default async function HomePage() {
   const featureds = await getProductsForCard({ tag: 'featured' })
   const bestSellers = await getProductsForCard({ tag: 'best-seller' })
 
+  const trusted = (await getAllCategories()).slice(0, 4)
+  const fastMoving = await getProductsForCard({ tag: 'fast-moving' })
+  const approvals = await getProductsForCard({ tag: 'approval' })
+  const premium = await getProductsForCard({ tag: 'premium' })
+   const powerDiscount = await getProductsForCard({ tag: 'power-discount' })
+
   const cards = [
     {
       title: t('Categories to explore'),
@@ -49,8 +55,41 @@ export default async function HomePage() {
       items: featureds,
       link: { text: t('Shop Now'), href: '/search?tag=featured' },
     },
+    
   ]
-
+  
+   const card2 = [
+    {
+      title: t('The Elephant Edition'),
+      link: { text: t('See More'), href: '/search' },
+      items: trusted.map((trust) => ({
+        name: trust,
+        image: `/images/${toSlug(trust)}.jpg`,
+        href: `/search?trust=${trust}`,
+      })),
+    },
+    {
+      title: t('The Cheetah Drop'),
+      items: fastMoving,
+      link: { text: t('View All'), href: '/search?tag=fast-moving' },
+    },
+    {
+      title: t('The Buffalo Choice'),
+      items: approvals,
+      link: { text: t('View All'), href: '/search?tag=approvals' },
+    },
+    {
+      title: t('The Lion Collection'),
+      items: premium,
+      link: { text: t('Shop Now'), href: '/search?tag=premium' },
+    },
+     {
+      title: t('The Rhino Deals'),
+      items: powerDiscount,
+      link: { text: t('Shop Now'), href: '/search?tag=power-discount' },
+    },
+    
+  ]
  
   return (
     <>
@@ -59,7 +98,7 @@ export default async function HomePage() {
 
       <div className="md:p-4 md:space-y-4 bg-border">
         <HomeCard cards={cards} />
-        <HomeCard cards={cards} />
+        <HomeCard cards={card2} />
 
         <Card className="w-full rounded-none">
           <CardContent className="p-4">
