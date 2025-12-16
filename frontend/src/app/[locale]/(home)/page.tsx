@@ -26,7 +26,7 @@ export default async function HomePage() {
 
   const trusted = (await getAllCategories()).slice(0, 4)
   const fastMoving = await getProductsForCard({ tag: 'fast-moving' })
-  const approvals = await getProductsForCard({ tag: 'approval' })
+  const approvals = await getProductsForCard({ tag: 'approvals' })
   const premium = await getProductsForCard({ tag: 'premium' })
    const powerDiscount = await getProductsForCard({ tag: 'power-discount' })
 
