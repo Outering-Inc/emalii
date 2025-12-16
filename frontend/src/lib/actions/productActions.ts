@@ -20,7 +20,7 @@ export const getAllCategories = cache(async() => {
 // products for card
 export const getProductsForCard = cache(async({
   tag,
-  limit = 4,
+  limit = 1000, // fetch all products by default mongoose limit
 }: {
   tag: string
   limit?: number
@@ -46,7 +46,7 @@ export const getProductsForCard = cache(async({
 // products by tag
 export const getProductsByTag = cache(async({
   tag,
-  limit = 10,
+  limit = 1000, // fetch all products by default
 }: {
   tag: string
   limit?: number
