@@ -48,7 +48,7 @@ export default async function ProductGridSection({
                 alt={item.name}
                 width={120}
                 height={120}
-                className="object-contain"
+                className='aspect-square object-scale-down max-w-full h-auto mx-auto'
               />
             </div>
 

@@ -12,6 +12,7 @@ type CardItem = {
     image: string
     href: string
   }[]
+  limit?: number // <-- optional limit per card
 }
 
 export function HomeCard({ cards }: { cards: CardItem[] }) {

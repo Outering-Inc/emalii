@@ -13,6 +13,7 @@ import {
 import { toSlug } from '@/src/lib/utils/utils'
 import { getTranslations } from 'next-intl/server'
 
+
 export default async function HomePage() {
   const t = await getTranslations('Home')
   const { carousels } = await getSetting()
@@ -40,21 +41,25 @@ export default async function HomePage() {
         image: `/images/${toSlug(category)}.jpg`,
         href: `/search?category=${category}`,
       })),
+      limit : 4,
     },
     {
       title: t('Explore New Arrivals'),
       items: newArrivals,
       link: { text: t('View All'), href: '/search?tag=new-arrival' },
+      limit : 4,
     },
     {
       title: t('Discover Best Sellers'),
       items: bestSellers,
       link: { text: t('View All'), href: '/search?tag=best-seller' },
+      limit : 4,
     },
     {
       title: t('Featured Products'),
       items: featureds,
       link: { text: t('Shop Now'), href: '/search?tag=featured' },
+      limit : 4,
     },
     
   ]
@@ -68,21 +73,25 @@ export default async function HomePage() {
         image: `/images/${toSlug(trust)}.jpg`,
         href: `/search?trust=${trust}`,
       })),
+      limit : 4,
     },
     {
       title: t('The Cheetah Drop'),
       items: fastMoving,
       link: { text: t('View All'), href: '/search?tag=fast-moving' },
+      limit: 4,
     },
     {
       title: t('The Buffalo Choice'),
       items: approvals,
       link: { text: t('View All'), href: '/search?tag=approvals' },
+      limit: 4,
     },
     {
       title: t('The Lion Collection'),
       items: premium,
       link: { text: t('Shop Now'), href: '/search?tag=premium' },
+      limit: 4,
     },
     
   ]
