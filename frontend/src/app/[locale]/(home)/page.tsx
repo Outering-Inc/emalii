@@ -1,7 +1,7 @@
 import BrowsingHistoryList from '@/src/components/shared/common/browsing-history-list'
 import { HomeCard } from '@/src/components/shared/home/home-card'
 import HomeHeroMediaSection from '@/src/components/shared/home/HomeHeroMediaSection'
-import TaggedProductSection from '@/src/components/shared/home/taggedProductSection'
+import ProductGridSection from '@/src/components/shared/home/ProductGridSection'
 import ProductSlider from '@/src/components/shared/product/product-slider'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { getSetting } from '@/src/lib/actions/admin/setting'
@@ -95,11 +95,12 @@ export default async function HomePage() {
       <div className="md:p-4 md:space-y-4 bg-border">
         <HomeCard cards={cards} />
         <HomeCard cards={card2} />
-        <TaggedProductSection
-           titleKey="The Rhino Deals"
-           tag="power-discount"
-          viewAllHref='/search?tag=power-discount'
+        <ProductGridSection
+          titleKey="The Rhino Deals"
+          tag="power-discount"
+          viewAllHref="/search?tag=power-discount"
         />
+
 
         <Card className="w-full rounded-none">
           <CardContent className="p-4">
