@@ -1,6 +1,7 @@
 import BrowsingHistoryList from '@/src/components/shared/common/browsing-history-list'
 import { HomeCard } from '@/src/components/shared/home/home-card'
 import HomeHeroMediaSection from '@/src/components/shared/home/HomeHeroMediaSection'
+import TaggedProductSection from '@/src/components/shared/home/taggedProductSection'
 import ProductSlider from '@/src/components/shared/product/product-slider'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { getSetting } from '@/src/lib/actions/admin/setting'
@@ -28,7 +29,7 @@ export default async function HomePage() {
   const fastMoving = await getProductsForCard({ tag: 'fast-moving' })
   const approvals = await getProductsForCard({ tag: 'approvals' })
   const premium = await getProductsForCard({ tag: 'premium' })
-   const powerDiscount = await getProductsForCard({ tag: 'power-discount' })
+  
 
   const cards = [
     {
@@ -83,11 +84,6 @@ export default async function HomePage() {
       items: premium,
       link: { text: t('Shop Now'), href: '/search?tag=premium' },
     },
-     {
-      title: t('The Rhino Deals'),
-      items: powerDiscount,
-      link: { text: t('Shop Now'), href: '/search?tag=power-discount' },
-    },
     
   ]
  
@@ -99,6 +95,11 @@ export default async function HomePage() {
       <div className="md:p-4 md:space-y-4 bg-border">
         <HomeCard cards={cards} />
         <HomeCard cards={card2} />
+        <TaggedProductSection
+           titleKey="The Rhino Deals"
+           tag="power-discount"
+          viewAllHref='/search?tag=power-discount'
+        />
 
         <Card className="w-full rounded-none">
           <CardContent className="p-4">
