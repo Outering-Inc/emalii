@@ -1,99 +1,66 @@
 // src/components/shared/home/ProductGridSection.tsx
-'use client'
-
 import Image from 'next/image'
 import Link from 'next/link'
-import ProductPrice from '../product/product-price'
-import Rating from '../product/rating'
-import ProductImageHover from '../product/product-image-hover'
-import { LeanProduct } from '@/src/types/product'
+import { getAllCategories } from '@/src/lib/actions/productActions'
+import { toSlug } from '@/src/lib/utils/utils'
+import { getTranslations } from 'next-intl/server'
 
 interface ProductGridSectionProps {
   title: string
-  products: LeanProduct[]
+  viewAllHref: string
   limit?: number
 }
 
-export default function ProductGridSection({
+interface CategoryItem {
+  name: string
+  image: string
+  href: string
+}
+
+export default async function ProductGridSection({
   title,
-  products,
+  viewAllHref,
   limit = 16,
 }: ProductGridSectionProps) {
-  // Show only the first "limit" items
-  const items = products.slice(0, limit)
+  const t = await getTranslations('Home')
 
-  if (!items.length) return null
+  // Fetch categories and limit
+  const categories = (await getAllCategories()).slice(0, limit)
+  const items: CategoryItem[] = categories.map((category) => ({
+    name: category,
+    image: `/images/${toSlug(category)}.jpg`,
+    href: `/search?trust=${toSlug(category)}`,
+  }))
 
   return (
     <section className="bg-background p-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">{title}</h2>
-        <Link href={`/search`} className="text-sm text-primary">
-          View All
+        <h2 className="text-xl font-bold">{t(title)}</h2>
+        <Link href={viewAllHref} className="text-sm text-primary">
+          {t('View All')}
         </Link>
       </div>
 
-      {/* Product grid */}
+      {/* Category grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-8 gap-4">
-        {items.map((product) => (
-          <div
-            key={product.slug}
-            className="flex flex-col border rounded-md p-2 hover:shadow-md transition"
+        {items.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="flex flex-col items-center"
           >
-            {/* Image with hover */}
-            <Link href={`/product/${product.slug}`} className="relative h-48">
-              {product.images.length > 1 ? (
-                <ProductImageHover
-                  src={product.images[0]}
-                  hoverSrc={product.images[1]}
-                  alt={product.name}
-                />
-              ) : (
-                <Image
-                  src={product.images[0] ?? '/images/placeholder.png'}
-                  alt={product.name}
-                  fill
-                  sizes="200px"
-                  className="object-contain"
-                />
-              )}
-            </Link>
-
-            {/* Name & Brand */}
-            <div className="mt-2 flex-1">
-              <p className="text-xs text-muted-foreground">{product.brand}</p>
-              <Link
-                href={`/product/${product.slug}`}
-                className="block text-sm font-medium overflow-hidden text-ellipsis"
-                style={{
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                }}
-              >
-                {product.name}
-              </Link>
-            </div>
-
-            {/* Rating */}
-            <div className="flex items-center gap-1 mt-1">
-              <Rating rating={product.avgRating} />
-              <span className="text-xs text-muted-foreground">
-                ({product.numReviews})
-              </span>
-            </div>
-
-            {/* Price */}
-            <div className="mt-2">
-              <ProductPrice
-                price={product.price}
-                listPrice={product.listPrice}
-                isDeal={product.tags.includes('todays-deal')}
-                forListing
+            <div className="aspect-square bg-muted flex items-center justify-center rounded">
+              <Image
+                src={item.image ?? '/images/placeholder.png'}
+                alt={item.name}
+                width={120}
+                height={120}
+                className="aspect-square object-scale-down max-w-full h-auto mx-auto"
               />
             </div>
-          </div>
+            <p className="mt-2 text-sm truncate text-center">{item.name}</p>
+          </Link>
         ))}
       </div>
     </section>

@@ -42,7 +42,7 @@ export default async function HomePage() {
         image: `/images/${toSlug(category)}.jpg`,
         href: `/search?trust=${category}`,
       })),
-      limit : 6,
+      limit : 4,
     },
 
     {
@@ -105,12 +105,10 @@ export default async function HomePage() {
       <div className="md:p-4 md:space-y-4 bg-border">
         <HomeCard cards={cards} />
         <HomeCard cards={card2} />
-        <ProductGridSection
-          title="Power Discount | The Rhino Deals"
-          products={await getProductsByTag({ tag: 'power-discount' })}
-          limit={12}
-         />
-
+       <ProductGridSection
+          title="Categories to Explore"
+          viewAllHref="/search"
+        />
 
 
         <Card className="w-full rounded-none">
