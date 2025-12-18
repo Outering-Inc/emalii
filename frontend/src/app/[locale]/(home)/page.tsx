@@ -26,23 +26,25 @@ export default async function HomePage() {
   const featureds = await getProductsForCard({ tag: 'featured' })
   const bestSellers = await getProductsForCard({ tag: 'best-seller' })
 
-  const trusted = (await getAllCategories()).slice(0, 4)
+ 
   const fastMoving = await getProductsForCard({ tag: 'fast-moving' })
   const approvals = await getProductsForCard({ tag: 'approvals' })
   const premium = await getProductsForCard({ tag: 'premium' })
+  const powerDiscount = await getProductsForCard({ tag: 'power-discount' })
   
-
+  
   const cards = [
-    {
+     {
       title: t('Categories to explore'),
       link: { text: t('See More'), href: '/search' },
       items: categories.map((category) => ({
         name: category,
         image: `/images/${toSlug(category)}.jpg`,
-        href: `/search?category=${category}`,
+        href: `/search?trust=${category}`,
       })),
-      limit : 4,
+      limit : 6,
     },
+
     {
       title: t('Explore New Arrivals'),
       items: newArrivals,
@@ -56,7 +58,7 @@ export default async function HomePage() {
       limit : 4,
     },
     {
-      title: t('Featured Products'),
+      title: t('Featured Favorites'),
       items: featureds,
       link: { text: t('Shop Now'), href: '/search?tag=featured' },
       limit : 4,
@@ -65,30 +67,29 @@ export default async function HomePage() {
   ]
   
    const card2 = [
-    {
-      title: t('The Elephant Edition'),
-      link: { text: t('See More'), href: '/search' },
-      items: trusted.map((trust) => ({
-        name: trust,
-        image: `/images/${toSlug(trust)}.jpg`,
-        href: `/search?trust=${trust}`,
-      })),
-      limit : 4,
+
+      {
+      title: t('Powerful Deals'),
+      items: powerDiscount,
+      link: { text: t('See More'), href: '/search?tag=power-discount' },
+      limit: 4,
     },
-    {
-      title: t('The Cheetah Drop'),
+
+     {
+      title: t('Fast-Moving Trends'),
       items: fastMoving,
       link: { text: t('View All'), href: '/search?tag=fast-moving' },
       limit: 4,
     },
+  
     {
-      title: t('The Buffalo Choice'),
+      title: t('Approved by Customers'),
       items: approvals,
       link: { text: t('View All'), href: '/search?tag=approvals' },
       limit: 4,
     },
     {
-      title: t('The Lion Collection'),
+      title: t('Premium Quality'),
       items: premium,
       link: { text: t('Shop Now'), href: '/search?tag=premium' },
       limit: 4,
@@ -105,10 +106,11 @@ export default async function HomePage() {
         <HomeCard cards={cards} />
         <HomeCard cards={card2} />
         <ProductGridSection
-          titleKey="The Rhino Deals"
-          tag="power-discount"
-          viewAllHref="/search?tag=power-discount"
-        />
+          title="Power Discount | The Rhino Deals"
+          products={await getProductsByTag({ tag: 'power-discount' })}
+          limit={12}
+         />
+
 
 
         <Card className="w-full rounded-none">

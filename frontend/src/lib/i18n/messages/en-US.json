@@ -24,6 +24,7 @@
     "Today's Deal": "Today's Deal",
     "New Arrivals": "New Arrivals",
     "Featured Products": "Featured Products",
+    "Power Discount  | The Rhino Deals": "Power Discount  | The Rhino Deals",
     "Best Sellers": "Best Sellers",
     "Browsing History": "Browsing History",
     "Customer Service": "Customer Service",
@@ -38,7 +39,7 @@
     "See More": "See More",
     "Explore New Arrivals": "Explore New Arrivals",
     "Discover Best Sellers": "Discover Best Sellers",
-    "Featured Products": "Featured Products",
+    "Featured Favorites": "Featured Favorites",
     "View All": "View All",
     "Shop Now": "Shop Now",
     "Today's Deals": "Today's Deals",
@@ -47,10 +48,15 @@
     "Your browsing history": "Your browsing history",
     "Most Popular Shoes For Sale": "Most Popular Shoes For Sale",
     "Best Sellers in T-Shirts": "Best Sellers in T-Shirts",
-    "Best Deals on Wrist Watches": "Best Deals on Wrist Watches"
+    "Best Deals on Wrist Watches": "Best Deals on Wrist Watches",
+    "Powerful Deals": "Powerful Deals",
+    "Fast-Moving Trends": " Fast-Moving Trends",
+    "Premium Quality": " Premium Quality",
+    "Approved by Customers": "Approved by Customers",
+    "Power Discount  | The Rhino Deals": "Power Discount  | The Rhino Deals"
+
   },
-  "Product": {
-    "Added to Cart": "Added to Cart",
+  "Product": {    "Added to Cart": "Added to Cart",
     "Go to Cart": "Go to Cart",
     "Deleted User": "Deleted User",
     "Brand": "Brand",
