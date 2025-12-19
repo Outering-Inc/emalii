@@ -43,6 +43,31 @@ export const getProductsForCard = cache(async({
   }[]
 })
 
+export const getProductsForCategories = cache(async({
+  tag,
+  limit = 1000, // fetch all products by default mongoose limit
+}: {
+  tag: string
+  limit?: number
+}) => {
+  await connectToDatabase()
+  const products = await ProductModel.find(
+    { tags: { $in: [tag] }, isPublished: true },
+    {
+      name: 1,
+      href: { $concat: ['/product/', '$slug'] },
+      image: { $arrayElemAt: ['$images', 0] },
+    }
+  )
+    .sort({ createdAt: 'desc' })
+    .limit(limit)
+  return JSON.parse(JSON.stringify(products)) as {
+    name: string
+    href: string
+    image: string
+  }[]
+})
+
 // products by tag
 export const getProductsByTag = cache(async({
   tag,

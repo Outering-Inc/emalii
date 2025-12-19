@@ -87,7 +87,14 @@ export type ShippingAddress = z.infer<typeof ShippingAddressSchema>
 
 
 // ------------------ Products ------------------
-export type ProductInput = z.infer<typeof ProductInputSchema>
+export type ProductInput = z.infer<typeof ProductInputSchema> & {
+  subcategory?: string
+  subsubcategory?: string
+  isFeatured?: boolean
+  featuredOrder?: number
+  attributes?: Record<string, string>
+}
+
 export type ProductUpdateInput = z.infer<typeof ProductUpdateSchema>
 
 // ------------------ Users ------------------

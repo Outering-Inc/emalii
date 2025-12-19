@@ -106,6 +106,8 @@ export default async function HomePage() {
         <HomeCard cards={cards} />
         <HomeCard cards={card2} />
        <ProductGridSection
+          limit={16}
+          tag="new-arrival"
           title="Categories to Explore"
           viewAllHref="/search"
         />

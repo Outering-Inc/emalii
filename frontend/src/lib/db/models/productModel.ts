@@ -9,56 +9,35 @@ export interface Product extends Document, ProductInput {
 
 const productSchema = new Schema<Product>(
   {
-    name: {
-      type: String,
-      required: true,
-    },
-    slug: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    category: {
-      type: String,
-      required: true,
-    },
-    images: {
-      type: [String],
-      required: true,
-    },
-    brand: {
-      type: String,
-      required: true,
-    },
-    description: {
-      type: String,
-      trim: true,
-    },
-    price: {
-      type: Number,
-      required: true,
-    },
-    listPrice: {
-      type: Number,
-      required: true,
-    },
-    countInStock: {
-      type: Number,
-      required: true,
-    },
+     // Basic Info
+    name: { type: String, required: true,},
+    slug: {  type: String,  required: true,   unique: true, },  
+    brand: { type: String, required: true,  },
+
+     // Product Attributes
     tags: { type: [String], default: ['new arrival'] },
     colors: { type: [String], default: ['White', 'Red', 'Black'] },
     sizes: { type: [String], default: ['S', 'M', 'L'] },
-    avgRating: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
-    numReviews: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
+    attributes: { type: Map, of: String }, // e.g., {screenSize: "42inch", resolution: "4K"}
+
+     // Category hierarchy
+    category: {   type: String,required: true, }, // e.g., Electronics
+    subcategory: { type: String,  default: '' }, // e.g., TV 
+    subsubcategory: { type: String,  default: ''}, // e.g., Smart 
+    
+    // Pricing
+    price: {type: Number,required: true,},
+    listPrice: { type: Number, required: true, }, 
+    
+            
+    // Inventory & Availability          
+    countInStock: { type: Number, required: true,  },
+    isPublished: { type: Boolean,   required: true,default: false,},
+    
+         
+    // Ratings & Reviews
+    avgRating: { type: Number,required: true,default: 0,},
+    numReviews: { type: Number,required: true,default: 0,},
     ratingDistribution: [
       {
         rating: {
@@ -70,24 +49,34 @@ const productSchema = new Schema<Product>(
           required: true,
         },
       },
-    ],
-    numSales: {
-      type: Number,
-      required: true,
-      default: 0,
-    },
-    isPublished: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
-    reviews: [
+    ],  
+     reviews: [
       {
         type: Schema.Types.ObjectId,
         ref: 'Review',
         default: [],
       },
-    ],
+    ],  
+      
+
+   // Sales & Marketing             
+    numSales: { type: Number, required: true,default: 0,},
+    isFeatured: { type: Boolean, required: true, default: false, },
+    featuredOrder: { type: Number, default: 0 },
+
+    // Media
+    images: { type: [String], required: true,  },
+     
+    // Description & SEO
+    description: {  type: String,trim: true,},
+     //seoTitle: { type: String, default: '' },
+    //seoDescription: { type: String, default: '' },
+
+
+     // Optional: Vendor/Marketplace info
+   // vendor: { type: String, default: '' },
+    //sku: { type: String, default: '' },
+    //barcode: { type: String, default: '' },
   },
   {
     timestamps: true,
