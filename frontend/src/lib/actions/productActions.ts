@@ -75,6 +75,50 @@ export const getCategoryGrid = cache(async () => {
   }[]
 })
 
+// category grid by tag
+export const getCategoryGridByTag = cache(
+  async ({ tag }: { tag: string }) => {
+    await connectToDatabase()
+
+    const categories = await ProductModel.aggregate([
+      {
+        $match: {
+          isPublished: true,
+          tags: { $in: [tag] },
+        },
+      },
+      {
+        $group: {
+          _id: '$category',
+          image: { $first: { $arrayElemAt: ['$images', 0] } },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          name: '$_id',
+          image: 1,
+          href: {
+            $concat: [
+              '/search?category=',
+              '$_id',
+              '&tag=',
+              tag,
+            ],
+          },
+        },
+      },
+      { $sort: { name: 1 } },
+    ])
+
+    return categories as {
+      name: string
+      image: string
+      href: string
+    }[]
+  }
+)
+
 
 // products by tag
 export const getProductsByTag = cache(async({

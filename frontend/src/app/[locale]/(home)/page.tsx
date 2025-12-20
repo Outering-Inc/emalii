@@ -7,11 +7,11 @@ import ProductSlider from '@/src/components/shared/product/product-slider'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { getSetting } from '@/src/lib/actions/admin/setting'
 import {
-  getAllCategories,
+
+  getCategoryGridByTag,
   getProductsByTag,
   getProductsForCard,
 } from '@/src/lib/actions/productActions'
-import { toSlug } from '@/src/lib/utils/utils'
 import { getTranslations } from 'next-intl/server'
 
 
@@ -22,29 +22,29 @@ export default async function HomePage() {
   const todaysDeals = await getProductsByTag({ tag: 'todays-deal' })
   const bestSellingProducts = await getProductsByTag({ tag: 'best-seller' })
 
-  const categories = (await getAllCategories()).slice(0, 4)
+  const categories =  await getCategoryGridByTag({tag: 'category-explore'})
   const newArrivals = await getProductsForCard({ tag: 'new-arrival' })
-  const featureds = await getProductsForCard({ tag: 'featured' })
-  const bestSellers = await getProductsForCard({ tag: 'best-seller' })
+  const featureds = await getCategoryGridByTag({ tag: 'featured' })
+  const bestSellers = await getCategoryGridByTag({ tag: 'best-seller' })
 
- 
+  const powerDiscount = await getCategoryGridByTag({tag: 'power-discount'})
+  const fastMoving = await getCategoryGridByTag({tag: 'fast-moving'})
+  const approvals = await getCategoryGridByTag({tag: 'approvals'})
+  const premium = await getCategoryGridByTag({tag: 'premium'})
+
+
   
   const cards = [
      {
-      title: t('Categories to explore'),
-      link: { text: t('See More'), href: '/search' },
-      items: categories.map((category) => ({
-        name: category,
-        image: `/images/${toSlug(category)}.jpg`,
-        href: `/search?category=${category}`,
-      })),
-      limit : 4,
+    title: t('Powerful Deals'),
+    link: { text: t('See More'), href: '/search?tag=category-explore' },
+    items: categories,
+    limit: 4,
     },
-
     {
       title: t('Explore New Arrivals'),
       items: newArrivals,
-      link: { text: t('View All'), href: '/search?tag=new-arrival' },
+      link: { text: t('View All'),href: '/search?category=Fashion&tag=new-arrival' },
       limit : 4,
     },
     {
@@ -62,50 +62,33 @@ export default async function HomePage() {
     
   ]
   
-   const card2 = [
-    {
-      title: t('Powerful Deals'),
-      link: { text: t('See More'), href: '/search?tag=power-discount' },
-      items: categories.map((category) => ({
-        name: category,
-        image: `/images/${toSlug(category)}.jpg`,
-        href: `/search?category=${category}&tag=power-discount`
-      })),
-      limit : 4,
-    },
-   {
-      title: t('Fast-Moving Trends'),
-      link: { text: t('View All'), href: '/search?tag=fast-moving' },
-      items: categories.map((category) => ({
-        name: category,
-        image: `/images/${toSlug(category)}.jpg`,
-        href: `/search?category=${category}&tag=fast-moving`
-      })),
-      limit : 4,
-    },
-    {
-      title: t('Approved by Customers'),
-      link: { text: t('View All'), href: '/search?tag=approvals' },
-      items: categories.map((category) => ({
-        name: category,
-        image: `/images/${toSlug(category)}.jpg`,
-        href: `/search?category=${category}&tag=approvals`
-      })),
-      limit : 4,
-    },
+ const card2 = [
+  {
+    title: t('Powerful Deals'),
+    link: { text: t('See More'), href: '/search?tag=power-discount' },
+    items: powerDiscount,
+    limit: 4,
+  },
+  {
+    title: t('Fast-Moving Trends'),
+    link: { text: t('View All'), href: '/search?tag=fast-moving' },
+    items: fastMoving,
+    limit: 4,
+  },
+  {
+    title: t('Approved by Customers'),
+    link: { text: t('View All'), href: '/search?tag=approvals' },
+    items: approvals,
+    limit: 4,
+  },
+  {
+    title: t('Premium Quality'),
+    link: { text: t('View All'), href: '/search?tag=premium' },
+    items: premium,
+    limit: 4,
+  },
+]
 
-    {
-      title: t('Premium Quality'),
-      link: { text: t('Shop Now'), href: '/search?tag=premium' },
-      items: categories.map((category) => ({
-        name: category,
-        image: `/images/${toSlug(category)}.jpg`,
-        href: `/search?category=${category}&tag=premium`
-      })),
-      limit : 4,
-    },
-       
-  ]
  
   return (
     <>
