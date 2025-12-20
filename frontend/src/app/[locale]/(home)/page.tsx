@@ -1,7 +1,8 @@
 import BrowsingHistoryList from '@/src/components/shared/common/browsing-history-list'
+import CategoryGridSection from '@/src/components/shared/home/CategoryGridSection'
 import { HomeCard } from '@/src/components/shared/home/home-card'
 import HomeHeroMediaSection from '@/src/components/shared/home/HomeHeroMediaSection'
-import ProductGridSection from '@/src/components/shared/home/ProductGridSection'
+
 import ProductSlider from '@/src/components/shared/product/product-slider'
 import { Card, CardContent } from '@/src/components/ui/card'
 import { getSetting } from '@/src/lib/actions/admin/setting'
@@ -27,11 +28,6 @@ export default async function HomePage() {
   const bestSellers = await getProductsForCard({ tag: 'best-seller' })
 
  
-  const fastMoving = await getProductsForCard({ tag: 'fast-moving' })
-  const approvals = await getProductsForCard({ tag: 'approvals' })
-  const premium = await getProductsForCard({ tag: 'premium' })
-  const powerDiscount = await getProductsForCard({ tag: 'power-discount' })
-  
   
   const cards = [
      {
@@ -40,7 +36,7 @@ export default async function HomePage() {
       items: categories.map((category) => ({
         name: category,
         image: `/images/${toSlug(category)}.jpg`,
-        href: `/search?trust=${category}`,
+        href: `/search?category=${category}`,
       })),
       limit : 4,
     },
@@ -67,34 +63,48 @@ export default async function HomePage() {
   ]
   
    const card2 = [
-
-      {
+    {
       title: t('Powerful Deals'),
-      items: powerDiscount,
       link: { text: t('See More'), href: '/search?tag=power-discount' },
-      limit: 4,
+      items: categories.map((category) => ({
+        name: category,
+        image: `/images/${toSlug(category)}.jpg`,
+        href: `/search?category=${category}&tag=power-discount`
+      })),
+      limit : 4,
     },
-
-     {
+   {
       title: t('Fast-Moving Trends'),
-      items: fastMoving,
       link: { text: t('View All'), href: '/search?tag=fast-moving' },
-      limit: 4,
+      items: categories.map((category) => ({
+        name: category,
+        image: `/images/${toSlug(category)}.jpg`,
+        href: `/search?category=${category}&tag=fast-moving`
+      })),
+      limit : 4,
     },
-  
     {
       title: t('Approved by Customers'),
-      items: approvals,
       link: { text: t('View All'), href: '/search?tag=approvals' },
-      limit: 4,
+      items: categories.map((category) => ({
+        name: category,
+        image: `/images/${toSlug(category)}.jpg`,
+        href: `/search?category=${category}&tag=approvals`
+      })),
+      limit : 4,
     },
+
     {
       title: t('Premium Quality'),
-      items: premium,
       link: { text: t('Shop Now'), href: '/search?tag=premium' },
-      limit: 4,
+      items: categories.map((category) => ({
+        name: category,
+        image: `/images/${toSlug(category)}.jpg`,
+        href: `/search?category=${category}&tag=premium`
+      })),
+      limit : 4,
     },
-    
+       
   ]
  
   return (
@@ -105,9 +115,8 @@ export default async function HomePage() {
       <div className="md:p-4 md:space-y-4 bg-border">
         <HomeCard cards={cards} />
         <HomeCard cards={card2} />
-       <ProductGridSection
+       <CategoryGridSection
           limit={16}
-          tag="new-arrival"
           title="Categories to Explore"
           viewAllHref="/search"
         />
