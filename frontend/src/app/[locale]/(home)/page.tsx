@@ -44,7 +44,7 @@ export default async function HomePage() {
     {
       title: t('Explore New Arrivals'),
       items: newArrivals,
-      link: { text: t('View All'),href: '/search?category=Fashion&tag=new-arrival' },
+      link: { text: t('View All'),href: '/search?tag=new-arrival' },
       limit : 4,
     },
     {
