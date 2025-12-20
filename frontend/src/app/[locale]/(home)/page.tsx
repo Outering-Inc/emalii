@@ -36,7 +36,7 @@ export default async function HomePage() {
   
   const cards = [
      {
-    title: t('Powerful Deals'),
+    title: t('Categories to explore'),
     link: { text: t('See More'), href: '/search?tag=category-explore' },
     items: categories,
     limit: 4,
