@@ -100,8 +100,12 @@ const ProductForm = ({
   });
 
    
-  const { toast } = useToast()
+  const { toast } = useToast() 
   async function onSubmit(values: ProductInput) {
+           // Auto-generate slugs before sending
+      values.slug = toSlug(values.name)
+      values.categorySlug = toSlug(values.category)
+      values.tagsSlug = values.tags.map(toSlug)
     if (type === 'Create') {
       const res = await adminCreateProduct(values)
       if (!res.success) {
@@ -132,6 +136,7 @@ const ProductForm = ({
       }
     }
   }
+  
   const images = form.watch('images')
 
 
