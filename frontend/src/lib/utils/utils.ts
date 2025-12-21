@@ -186,6 +186,7 @@ export const getFilterUrl = ({
   params: {
     q?: string
     category?: string
+    subcategory?: string
     tag?: string
     price?: string
     rating?: string
@@ -194,6 +195,7 @@ export const getFilterUrl = ({
   }
   tag?: string
   category?: string
+  subcategory?: string
   sort?: string
   price?: string
   rating?: string
@@ -216,3 +218,11 @@ export const truncateProductName = (name: string, maxWords = 3) => {
   if (words.length <= maxWords) return name;
   return words.slice(0, maxWords).join(" ") + "...";
 };
+
+// src/lib/utils/slugify.ts
+export const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')

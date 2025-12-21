@@ -4,6 +4,7 @@ import { cache } from 'react'
 import { connectToDatabase } from '../db/dbConnect'
 import ProductModel, { Product } from '../db/models/productModel'
 import { getSetting } from './admin/setting'
+import { slugify } from '../utils/utils'
 
 
 // =========================
@@ -76,48 +77,75 @@ export const getCategoryGrid = cache(async () => {
 })
 
 // category grid by tag
+
 export const getCategoryGridByTag = cache(
   async ({ tag }: { tag: string }) => {
     await connectToDatabase()
 
+    // ✅ Normalize incoming tag
+    const normalizedTag = slugify(tag)
+
     const categories = await ProductModel.aggregate([
+      // 1️⃣ Match published products with normalized tag
       {
         $match: {
           isPublished: true,
-          tags: { $in: [tag] },
+          tags: normalizedTag,
+          category: { $ne: '' },
+          images: { $exists: true, $ne: [] },
         },
       },
+
+      // 2️⃣ Sort so $first image is deterministic
+      {
+        $sort: { createdAt: -1 },
+      },
+
+      // 3️⃣ Group by category
       {
         $group: {
           _id: '$category',
           image: { $first: { $arrayElemAt: ['$images', 0] } },
         },
       },
+
+      // 4️⃣ Project clean response
       {
         $project: {
           _id: 0,
-          name: '$_id',
-          image: 1,
-          href: {
-            $concat: [
-              '/search?category=',
-              '$_id',
-              '&tag=',
-              tag,
-            ],
+          name: '$_id', // Human readable
+          slug: {
+            $toLower: {
+              $replaceAll: {
+                input: '$_id',
+                find: ' ',
+                replacement: '-',
+              },
+            },
           },
+          image: 1,
         },
       },
-      { $sort: { name: 1 } },
+
+      // 5️⃣ Alphabetical order
+      {
+        $sort: { name: 1 },
+      },
     ])
 
-    return categories as {
+    // 6️⃣ Build hrefs safely in JS
+    return categories.map((cat) => ({
+      name: cat.name,
+      image: cat.image,
+      href: `/search?category=${cat.slug}&tag=${normalizedTag}`,
+    })) as {
       name: string
       image: string
       href: string
     }[]
   }
 )
+
 
 
 // products by tag
