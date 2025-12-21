@@ -254,7 +254,6 @@ const ProductForm = ({
               }}
             />
               </FormControl>
-              <FormDescription>Comma separated</FormDescription>
               <FormMessage />
             </FormItem>
             )}
