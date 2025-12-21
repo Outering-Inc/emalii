@@ -205,7 +205,7 @@ const ProductForm = ({
           />
             <FormField
             control={form.control}
-            name='category'
+            name='subcategory'
             render={({ field }) => (
               <FormItem className='w-full'>
                 <FormLabel>SubCategory</FormLabel>
