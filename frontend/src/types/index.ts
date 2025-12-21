@@ -88,6 +88,8 @@ export type ShippingAddress = z.infer<typeof ShippingAddressSchema>
 
 // ------------------ Products ------------------
 export type ProductInput = z.infer<typeof ProductInputSchema> & {
+  categorySlug?: string
+  tagsSlug?: string[]
   subcategory?: string
   subsubcategory?: string
   isFeatured?: boolean
