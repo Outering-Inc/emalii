@@ -201,9 +201,36 @@ const ProductForm = ({
               </FormItem>
             )}
           />
+            <FormField
+            control={form.control}
+            name='category'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>SubCategory</FormLabel>
+                <FormControl>
+                  <Input placeholder='Enter subcategory' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
         </div>
          <div className='flex flex-col gap-5 md:flex-row'>
+           <FormField
+            control={form.control}
+            name='brand'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>Brand</FormLabel>
+                <FormControl>
+                  <Input placeholder='Enter product brand' {...field} />
+                </FormControl>
+
+                <FormMessage />
+              </FormItem>
+            )}
+          />
          <FormField
             control={form.control}
             name="tags"
@@ -230,21 +257,7 @@ const ProductForm = ({
             </FormItem>
             )}
           />
-
-          <FormField
-            control={form.control}
-            name='brand'
-            render={({ field }) => (
-              <FormItem className='w-full'>
-                <FormLabel>Brand</FormLabel>
-                <FormControl>
-                  <Input placeholder='Enter product brand' {...field} />
-                </FormControl>
-
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+         
         </div>
         <div className='flex flex-col gap-5 md:flex-row'>
           <FormField
