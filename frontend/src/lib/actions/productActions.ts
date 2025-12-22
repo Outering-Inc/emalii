@@ -90,8 +90,8 @@ export const getCategoryGridByTag = cache(
       {
         $match: {
           isPublished: true,
-          tags: normalizedTag,
-          category: { $ne: '' },
+          tags: normalizedTag, // ✅ normalized tag
+          categorySlug: { $exists: true, $ne: '' },
           images: { $exists: true, $ne: [] },
         },
       },
@@ -104,7 +104,7 @@ export const getCategoryGridByTag = cache(
       // 3️⃣ Group by category
       {
         $group: {
-          _id: '$category',
+          _id: '$categorySlug',     // ✅ group by slug
           image: { $first: { $arrayElemAt: ['$images', 0] } },
         },
       },
