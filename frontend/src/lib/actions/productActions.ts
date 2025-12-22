@@ -105,6 +105,7 @@ export const getCategoryGridByTag = cache(
       {
         $group: {
           _id: '$categorySlug',     // ✅ group by slug
+          category: { $first: '$category' }, // ✅ keep human name
           image: { $first: { $arrayElemAt: ['$images', 0] } },
         },
       },
@@ -113,16 +114,8 @@ export const getCategoryGridByTag = cache(
       {
         $project: {
           _id: 0,
-          name: '$_id', // Human readable
-          slug: {
-            $toLower: {
-              $replaceAll: {
-                input: '$_id',
-                find: ' ',
-                replacement: '-',
-              },
-            },
-          },
+          name: '$category',   // ✅ UI-friendly  Human readable
+          slug: '$_id',       // ✅ URL-friendly // Slug
           image: 1,
         },
       },
