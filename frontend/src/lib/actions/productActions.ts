@@ -221,6 +221,7 @@ export async function getRelatedProductsByCategory({
 // =========================
 //   MAIN SEARCH ACTION
 // =========================
+
 export async function getAllProducts({
   query,
   limit,
@@ -243,30 +244,41 @@ export async function getAllProducts({
   const {
     common: { pageSize },
   } = await getSetting()
+
   limit = limit || pageSize
   await connectToDatabase()
+
+  // ✅ Normalize incoming params
+  const normalizedCategory =
+    category && category !== 'all' ? slugify(category) : null
+
+  const normalizedTag =
+    tag && tag !== 'all' ? slugify(tag) : null
+
+  // -----------------------------
+  // Filters
+  // -----------------------------
 
   const queryFilter =
     query && query !== 'all'
       ? {
-          name: {
-            $regex: query,
-            $options: 'i',
-          },
+          name: { $regex: query, $options: 'i' },
         }
       : {}
-  const categoryFilter = category && category !== 'all' ? { category } : {}
-  const tagFilter = tag && tag !== 'all' ? { tags: tag } : {}
+
+  const categoryFilter = normalizedCategory
+    ? { categorySlug: normalizedCategory }
+    : {}
+
+  const tagFilter = normalizedTag
+    ? { tagsSlug: normalizedTag }
+    : {}
 
   const ratingFilter =
     rating && rating !== 'all'
-      ? {
-          avgRating: {
-            $gte: Number(rating),
-          },
-        }
+      ? { avgRating: { $gte: Number(rating) } }
       : {}
-  // 10-50
+
   const priceFilter =
     price && price !== 'all'
       ? {
@@ -276,45 +288,52 @@ export async function getAllProducts({
           },
         }
       : {}
+
+  // -----------------------------
+  // Sorting
+  // -----------------------------
+
   const order: Record<string, 1 | -1> =
     sort === 'best-selling'
       ? { numSales: -1 }
       : sort === 'price-low-to-high'
-        ? { price: 1 }
-        : sort === 'price-high-to-low'
-          ? { price: -1 }
-          : sort === 'avg-customer-review'
-            ? { avgRating: -1 }
-            : { _id: -1 }
-  const isPublished = { isPublished: true }
-  const products = await ProductModel.find({
-    ...isPublished,
+      ? { price: 1 }
+      : sort === 'price-high-to-low'
+      ? { price: -1 }
+      : sort === 'avg-customer-review'
+      ? { avgRating: -1 }
+      : { createdAt: -1 }
+
+  // -----------------------------
+  // Query
+  // -----------------------------
+
+  const baseFilter = {
+    isPublished: true,
     ...queryFilter,
-    ...tagFilter,
     ...categoryFilter,
+    ...tagFilter,
     ...priceFilter,
     ...ratingFilter,
-  })
+  }
+
+  const products = await ProductModel.find(baseFilter)
     .sort(order)
     .skip(limit * (Number(page) - 1))
     .limit(limit)
     .lean()
 
-  const countProducts = await ProductModel.countDocuments({
-    ...queryFilter,
-    ...tagFilter,
-    ...categoryFilter,
-    ...priceFilter,
-    ...ratingFilter,
-  })
+  const countProducts = await ProductModel.countDocuments(baseFilter)
+
   return {
-    products: JSON.parse(JSON.stringify(products)) as Product[],
+    products: products as Product[],
     totalPages: Math.ceil(countProducts / limit),
     totalProducts: countProducts,
     from: limit * (Number(page) - 1) + 1,
     to: limit * (Number(page) - 1) + products.length,
   }
 }
+
 
 // =========================
 //      TAGS
