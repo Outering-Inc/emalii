@@ -27,8 +27,13 @@ export const getProductsForCard = cache(async({
   limit?: number
 }) => {
   await connectToDatabase()
+   // ✅ Normalize incoming tag (URL-safe)
+  const normalizedTag = slugify(tag)
+
   const products = await ProductModel.find(
-    { tags: { $in: [tag] }, isPublished: true },
+    { 
+      tags: { $in: [normalizedTag] },
+      isPublished: true },
     {
       name: 1,
       href: { $concat: ['/product/', '$slug'] },
@@ -140,7 +145,7 @@ export const getCategoryGridByTag = cache(
 )
 
 
-
+//---confirm this function is used if not delete it--- 
 // products by tag
 export const getProductsByTag = cache(async({
   tag,
