@@ -55,31 +55,44 @@ export const getCategoryGrid = cache(async () => {
 
   const categories = await ProductModel.aggregate([
     { $match: { isPublished: true } },
+
+    // Ensure deterministic product choice
+    { $sort: { createdAt: -1 } },
+
     {
       $group: {
         _id: '$category',
         image: { $first: { $arrayElemAt: ['$images', 0] } },
+        price: { $first: '$price' },
+        listPrice: { $first: '$listPrice' },
       },
     },
+
     {
       $project: {
         _id: 0,
         name: '$_id',
         image: 1,
+        price: 1,
+        listPrice: 1,
         href: {
           $concat: ['/search?category=', '$_id'],
         },
       },
     },
+
     { $sort: { name: 1 } },
   ])
 
-  return JSON.parse(JSON.stringify(categories)) as {
+  return categories as {
     name: string
     image: string
     href: string
+    price: number
+    listPrice?: number
   }[]
 })
+
 
 // category grid by tag
 

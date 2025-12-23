@@ -3,6 +3,8 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { getCategoryGrid } from '@/src/lib/actions/productActions'
 import { getTranslations } from 'next-intl/server'
+import DiscountBadge from '../common/discountBadge'
+//import DiscountBadge from '@/src/components/shared/product/DiscountBadge'
 
 interface CategoryGridSectionProps {
   title: string
@@ -16,11 +18,7 @@ export default async function CategoryGridSection({
   limit = 16,
 }: CategoryGridSectionProps) {
   const t = await getTranslations('Home')
-
-  // API fetches ALL
   const allItems = await getCategoryGrid()
-
-  // UI controls display
   const items = allItems.slice(0, limit)
 
   if (!items.length) return null
@@ -37,7 +35,13 @@ export default async function CategoryGridSection({
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
         {items.map((item) => (
           <Link key={item.href} href={item.href} className="flex flex-col">
-            <div className="aspect-square bg-muted flex items-center justify-center">
+            <div className="relative aspect-square bg-muted flex items-center justify-center">
+              {/* 🔥 Discount badge */}
+              <DiscountBadge
+                price={item.price}
+                listPrice={item.listPrice}
+              />
+
               <Image
                 src={item.image}
                 alt={item.name}
@@ -46,6 +50,7 @@ export default async function CategoryGridSection({
                 className="aspect-square object-contain"
               />
             </div>
+
             <p className="mt-2 text-sm text-center truncate">
               {item.name}
             </p>
