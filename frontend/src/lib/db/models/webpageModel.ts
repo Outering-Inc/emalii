@@ -24,6 +24,7 @@ const webPageSchema = new Schema<WebPage>(
     },
     keywords: {
       type: [String], // <-- array of strings
+      validate: [(v: string[]) => v.length <= 10, 'Max 10 keywords'],
       required: false,
       default: [],    // optional, defaults to empty array
     },
