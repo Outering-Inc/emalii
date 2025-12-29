@@ -246,7 +246,7 @@ const ProductForm = ({
             <FormLabel>Tags</FormLabel>
             <FormControl>
             <Input
-              placeholder="new-arrival, premium, bestseller"
+              placeholder="new-arrival, premium, best-seller,approvals, power-discount, fast-moving"
               value={field.value?.join(', ') ?? ''}
               onChange={(e) => {
               const value = e.target.value

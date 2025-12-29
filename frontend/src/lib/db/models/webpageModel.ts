@@ -18,6 +18,15 @@ const webPageSchema = new Schema<WebPage>(
       required: true,
       unique: true,
     },
+    description: {
+      type: String,
+      required: true,
+    },
+    keywords: {
+      type: [String], // <-- array of strings
+      required: false,
+      default: [],    // optional, defaults to empty array
+    },
     content: {
       type: String,
       required: true,

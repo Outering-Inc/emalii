@@ -16,6 +16,8 @@ export async function generateMetadata(props: {
   }
   return {
     title: webPage.title,
+    description: webPage.description,
+    keywords: webPage.keywords?.join(', '), // join array into string
   }
 }
 
@@ -35,6 +37,11 @@ export default async function ProductDetailsPage(props: {
       <section className='text-justify text-lg mb-20 web-page-content'>
         <ReactMarkdown>{webPage.content}</ReactMarkdown>
       </section>
+       {webPage.keywords && (
+        <p className="text-sm text-gray-500">
+          <strong>Keywords:</strong> {webPage.keywords.join(', ')}
+        </p>
+      )}
     </div>
   )
 }

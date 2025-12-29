@@ -195,10 +195,16 @@ export const ProductUpdateSchema = ProductInputSchema.extend({
   _id: z.string(),
 })
 
+
 // WEBPAGE
 export const WebPageInputSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters'),
   slug: z.string().min(3, 'Slug must be at least 3 characters'),
+  description: z
+    .string()
+    .max(160, 'Description should be 160 characters or less')
+    .optional(), // optional for now, but recommended
+  keywords: z.array(z.string()).optional(), // <-- array of strings
   content: z.string().min(1, 'Content is required'),
   isPublished: z.boolean(),
 })

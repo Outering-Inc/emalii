@@ -23,6 +23,7 @@ import { WebPage } from '@/src/lib/db/models/webpageModel'
 import { WebPageInputSchema, WebPageUpdateSchema } from '@/src/lib/validation/validator'
 import { toSlug } from '@/src/lib/utils/utils'
 import { createWebPage, updateWebPage } from '@/src/lib/actions/admin/webPages'
+import { Textarea } from '@/src/components/ui/textarea'
 
 
 // UIW Markdown Editor (client-only)
@@ -33,11 +34,15 @@ const webPageDefaultValues =
     ? {
         title: 'Sample Page',
         slug: 'sample-page',
+        description: 'Sample Description',
+        keywords: ['sample', 'page'],
         content: 'Sample Content',
       }
     : {
         title: '',
         slug: '',
+        description: '',
+        keywords: [],
         content: '',
       }
 
@@ -149,7 +154,45 @@ const WebPageForm = ({
               </FormItem>
             )}
           />
+
         </div>
+        <div className='flex flex-col gap-5 md:flex-row'>
+          <FormField
+            control={form.control}
+            name="keywords"
+            render={({ field }) => (
+           <FormItem className="w-full">
+            <FormLabel>Keywords</FormLabel>
+             <FormControl>
+             <Input
+               placeholder="Enter keywords separated by commas"
+              {...field}
+             />
+           </FormControl>
+            <FormMessage />
+          </FormItem>
+           )}
+         />
+
+          <FormField
+            control={form.control}
+            name='description'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder='Tell us a little bit about section'
+                      className='resize-none'
+                      {...field}
+                    />
+                  </FormControl>
+                          
+                  <FormMessage />
+              </FormItem>
+              )}
+           />
+           </div>
         <div className='flex flex-col gap-5 md:flex-row'>
           <FormField
             control={form.control}
