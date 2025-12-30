@@ -1,28 +1,26 @@
-// src/app/[locale]/(root)/page/[slug]/page.tsx
 import ReactMarkdown from 'react-markdown'
 import { notFound } from 'next/navigation'
 import { getWebPageBySlug } from '@/src/lib/actions/admin/webPages'
-import { Metadata } from 'next'
+
 
 // ------------------- METADATA -------------------
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string } // <-- plain object, not Promise
-}): Promise<Metadata> {
-  const { slug } = params
-  const webPage = await getWebPageBySlug(slug)
+export async function generateMetadata(props: {
+  params: Promise<{ slug: string }>
+}) {
+  const params = await props.params
 
+  const { slug } = params
+
+  const webPage = await getWebPageBySlug(slug)
   if (!webPage) {
-    return {
-      title: 'Page Not Found',
+    return { 
+      title: 'Web page not found',
       description: 'The requested page could not be found',
       robots: { index: false, follow: false },
-    }
+     }
   }
-
+  
   const url = `https://emalii.com/${slug}` //canonical URL
-
   return {
     title: webPage.title,
     description: webPage.description || undefined,
@@ -59,38 +57,22 @@ export async function generateMetadata({
   }
 }
 
-// ------------------- PAGE COMPONENT -------------------
-export default async function WebPageSlug({
-  params,
-}: {
-  params: { slug: string } // <-- plain object
+export default async function ProductDetailsPage(props: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ page: string; color: string; size: string }>
 }) {
+  const params = await props.params
   const { slug } = params
   const webPage = await getWebPageBySlug(slug)
 
   if (!webPage) notFound()
 
-  const jsonLd = {
-    '@context': 'https://schema.org',
-    '@type': 'WebPage',
-    name: webPage.title,
-    description: webPage.description || '',
-    url: `https://emalii.com/${slug}`,
-  }
-
   return (
-    <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-
-      <div className="p-4 max-w-3xl mx-auto">
-        <h1 className="h1-bold py-4">{webPage.title}</h1>
-        <section className="text-justify text-lg mb-20 web-page-content">
-          <ReactMarkdown>{webPage.content}</ReactMarkdown>
-        </section>
-      </div>
-    </>
+    <div className='p-4 max-w-3xl mx-auto'>
+      <h1 className='h1-bold py-4'>{webPage.title}</h1>
+      <section className='text-justify text-lg mb-20 web-page-content'>
+        <ReactMarkdown>{webPage.content}</ReactMarkdown>
+      </section>
+    </div>
   )
 }
