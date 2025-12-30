@@ -32,11 +32,17 @@ export async function generateMetadata(props: {
       description: t('Product.The requested product could not be found'),
      };
   }
- 
+  
   return {
     title: `${product.name} - ${product.brand} | Emalii.com`,
-    description: product.description,
-  }
+    description: `${product.description} Price: $${product.price}.${product.countInStock ? "In Stock" : "Out of Stock"}.Rating: ${product.avgRating}/ 5 stars`,
+    keywords: [
+      product.name.toLowerCase(),
+      product.brand,
+      product.category,
+      product.subcategory,
+      product.subsubcategory,]
+}
 }
 
 export default async function ProductDetails(props: {

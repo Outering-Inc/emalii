@@ -264,7 +264,7 @@ const ProductForm = ({
             <FormLabel>Keywords</FormLabel>
             <FormControl>
             <Input
-              placeholder="new-arrival, premium, best-seller,approvals, power-discount, fast-moving"
+              placeholder="Best Product, Premium Quality, High Performance,Best Lenovo Laptops"
               value={field.value?.join(', ') ?? ''}
               onChange={(e) => {
               const value = e.target.value
