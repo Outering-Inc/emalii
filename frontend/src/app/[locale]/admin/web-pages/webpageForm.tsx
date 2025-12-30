@@ -23,7 +23,6 @@ import { WebPage } from '@/src/lib/db/models/webpageModel'
 import { WebPageInputSchema, WebPageUpdateSchema } from '@/src/lib/validation/validator'
 import { toSlug } from '@/src/lib/utils/utils'
 import { createWebPage, updateWebPage } from '@/src/lib/actions/admin/webPages'
-import { Textarea } from '@/src/components/ui/textarea'
 
 
 // UIW Markdown Editor (client-only)
@@ -161,37 +160,27 @@ const WebPageForm = ({
             control={form.control}
             name="keywords"
             render={({ field }) => (
-           <FormItem className="w-full">
-            <FormLabel>Keywords</FormLabel>
-             <FormControl>
-             <Input
-               placeholder="Enter keywords separated by commas"
-              {...field}
-             />
-           </FormControl>
-            <FormMessage />
-          </FormItem>
-           )}
-         />
-
-          <FormField
-            control={form.control}
-            name='description'
-            render={({ field }) => (
-              <FormItem className='w-full'>
-                <FormLabel>Description</FormLabel>
+              <FormItem className="w-full">
+                <FormLabel>Keywords</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder='Tell us a little bit about section'
-                      className='resize-none'
-                      {...field}
-                    />
-                  </FormControl>
-                          
-                  <FormMessage />
-              </FormItem>
-              )}
-           />
+                     <Input
+                        placeholder="Shipping Rates,Shipping Policy,Delivery Fees,Shipping Charges, Fast Online Shipping, Shipping and Handling Fees"
+                        value={field.value?.join(', ') ?? ''}
+                        onChange={(e) => {
+                        const value = e.target.value
+                        field.onChange(
+                        value
+                          .split(',')
+                          .map(keyword => keyword.trim())
+                          .filter(Boolean)
+                        )
+                        }}
+                      />
+              </FormControl>
+              <FormMessage />
+             </FormItem>
+             )}
+          />
            </div>
         <div className='flex flex-col gap-5 md:flex-row'>
           <FormField
