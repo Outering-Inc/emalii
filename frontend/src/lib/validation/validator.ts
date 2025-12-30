@@ -204,7 +204,7 @@ export const WebPageInputSchema = z.object({
     .string()
     .max(160, 'Description should be 160 characters or less')
     .optional(), // optional for now, but recommended
-  keywords: z.array(z.string()).default([]), // <-- array of strings
+  keywords: z.array(z.string()).optional(), // <-- array of strings
   content: z.string().min(1, 'Content is required'),
   isPublished: z.boolean(),
 })

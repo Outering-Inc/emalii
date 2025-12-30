@@ -1064,126 +1064,246 @@ const data: Data = {
   products,
   reviews,
   webPages: [
-    {
-      title: 'About Us',
-      slug: 'about-us',
-      content: `Welcome to [Your Store Name], your trusted destination for quality products and exceptional service. Our journey began with a mission to bring you the best shopping experience by offering a wide range of products at competitive prices, all in one convenient platform.
+  {
+    title: 'About Us',
+    slug: 'about-us',
+    description:
+      'Learn more about our mission, values, and commitment to delivering quality products and exceptional customer service.',
+    keywords: [
+      'about us',
+      'company information',
+      'our mission',
+      'ecommerce store',
+      'who we are',
+    ],
+    content: `Welcome to [Your Store Name], your trusted destination for quality products and exceptional service. Our journey began with a mission to bring you the best shopping experience by offering a wide range of products at competitive prices, all in one convenient platform.
 
-At [Your Store Name], we prioritize customer satisfaction and innovation. Our team works tirelessly to curate a diverse selection of items, from everyday essentials to exclusive deals, ensuring there's something for everyone. We also strive to make your shopping experience seamless with fast shipping, secure payments, and excellent customer support.
+At [Your Store Name], we prioritize customer satisfaction and innovation. Our team works tirelessly to curate a diverse selection of items, from everyday essentials to exclusive deals, ensuring there's something for everyone.
 
-As we continue to grow, our commitment to quality and service remains unwavering. Thank you for choosing [Your Store Name]—we look forward to being a part of your journey and delivering value every step of the way.`,
-      isPublished: true,
-    },
-    {
-      title: 'Contact Us',
-      slug: 'contact-us',
-      content: `We’re here to help! If you have any questions, concerns, or feedback, please don’t hesitate to reach out to us. Our team is ready to assist you and ensure you have the best shopping experience.
+As we continue to grow, our commitment to quality and service remains unwavering. Thank you for choosing [Your Store Name].`,
+    isPublished: true,
+  },
+
+  {
+    title: 'Contact Us',
+    slug: 'contact-us',
+    description:
+      'Get in touch with our support team for help with orders, products, or general inquiries.',
+    keywords: [
+      'contact us',
+      'customer support',
+      'help desk',
+      'support email',
+      'customer service',
+    ],
+    content: `We’re here to help! If you have any questions, concerns, or feedback, please don’t hesitate to reach out.
 
 **Customer Support**
-For inquiries about orders, products, or account-related issues, contact our customer support team:
 - **Email:** support@example.com
 - **Phone:** +1 (123) 456-7890
-- **Live Chat:** Available on our website from 9 AM to 6 PM (Monday to Friday).
+- **Live Chat:** Available Monday–Friday, 9 AM – 6 PM
 
-**Head Office**
-For corporate or business-related inquiries, reach out to our headquarters:
-- **Address:** 1234 E-Commerce St, Suite 567, Business City, BC 12345
-- **Phone:** +1 (987) 654-3210
+Your satisfaction is our priority.`,
+    isPublished: true,
+  },
 
-We look forward to assisting you! Your satisfaction is our priority.
-`,
-      isPublished: true,
-    },
-    {
-      title: 'Help',
-      slug: 'help',
-      content: `Welcome to our Help Center! We're here to assist you with any questions or concerns you may have while shopping with us. Whether you need help with orders, account management, or product inquiries, this page provides all the information you need to navigate our platform with ease.
+  {
+    title: 'Help',
+    slug: 'help',
+    description:
+      'Find answers to common questions about orders, shipping, returns, and account management.',
+    keywords: [
+      'help center',
+      'faq',
+      'order help',
+      'shipping help',
+      'returns help',
+    ],
+    content: `Welcome to our Help Center! We're here to assist you with any questions you may have.
 
-**Placing and Managing Orders**
-Placing an order is simple and secure. Browse our product categories, add items to your cart, and proceed to checkout. Once your order is placed, you can track its status through your account under the "My Orders" section. If you need to modify or cancel your order, please contact us as soon as possible for assistance.
+**Orders**
+Track, modify, or cancel your orders from your account dashboard.
 
-**Shipping and Returns**
-We offer a variety of shipping options to suit your needs, including standard and express delivery. For detailed shipping costs and delivery timelines, visit our Shipping Policy page. If you're not satisfied with your purchase, our hassle-free return process allows you to initiate a return within the specified timeframe. Check our Returns Policy for more details.
+**Shipping & Returns**
+Learn about delivery options, timelines, and return policies.
 
-**Account and Support**
-Managing your account is easy. Log in to update your personal information, payment methods, and saved addresses. If you encounter any issues or need further assistance, our customer support team is available via email, live chat, or phone. Visit our Contact Us page for support hours and contact details.`,
-      isPublished: true,
-    },
-    {
-      title: 'Privacy Policy',
-      slug: 'privacy-policy',
-      content: `We value your privacy and are committed to protecting your personal information. This Privacy Notice explains how we collect, use, and share your data when you interact with our services. By using our platform, you consent to the practices described herein.
+**Account Support**
+Manage your account details or reach out to our support team for assistance.`,
+    isPublished: true,
+  },
 
-We collect data such as your name, email address, and payment details to provide you with tailored services and improve your experience. This information may also be used for marketing purposes, but only with your consent. Additionally, we may share your data with trusted third-party providers to facilitate transactions or deliver products.
+  {
+    title: 'Privacy Policy',
+    slug: 'privacy-policy',
+    description:
+      'Understand how we collect, use, and protect your personal information.',
+    keywords: [
+      'privacy policy',
+      'data protection',
+      'user privacy',
+      'personal information',
+      'security',
+    ],
+    content: `We value your privacy and are committed to protecting your personal information.
 
-Your data is safeguarded through robust security measures to prevent unauthorized access. However, you have the right to access, correct, or delete your personal information at any time. For inquiries or concerns regarding your privacy, please contact our support team.`,
-      isPublished: true,
-    },
-    {
-      title: 'Conditions of Use',
-      slug: 'conditions-of-use',
-      content: `Welcome to [Ecommerce Website Name]. By accessing or using our website, you agree to comply with and be bound by the following terms and conditions. These terms govern your use of our platform, including browsing, purchasing products, and interacting with any content or services provided. You must be at least 18 years old or have the consent of a parent or guardian to use this website. Any breach of these terms may result in the termination of your access to our platform.
+We collect limited data to improve services and process transactions. Your data is protected using industry-standard security practices.
 
-We strive to ensure all product descriptions, pricing, and availability information on our website are accurate. However, errors may occur, and we reserve the right to correct them without prior notice. All purchases are subject to our return and refund policy. By using our site, you acknowledge that your personal information will be processed according to our privacy policy, ensuring your data is handled securely and responsibly. Please review these terms carefully before proceeding with any transactions.
-`,
-      isPublished: true,
-    },
-    {
-      title: 'Customer Service',
-      slug: 'customer-service',
-      content: `At [Your Store Name], our customer service team is here to ensure you have the best shopping experience. Whether you need assistance with orders, product details, or returns, we are committed to providing prompt and helpful support.
+You may request access, correction, or deletion of your data at any time.`,
+    isPublished: true,
+  },
 
-If you have questions or concerns, please reach out to us through our multiple contact options:
-- **Email:** support@example.com
-- **Phone:** +1 (123) 456-7890
-- **Live Chat:** Available on our website for instant assistance
+  {
+    title: 'Conditions of Use',
+    slug: 'conditions-of-use',
+    description:
+      'Review the terms and conditions governing the use of our website and services.',
+    keywords: [
+      'terms of use',
+      'conditions',
+      'user agreement',
+      'website rules',
+      'legal terms',
+    ],
+    content: `By accessing our platform, you agree to comply with these terms and conditions.
 
-We also provide helpful resources such as order tracking, product guides, and FAQs to assist you with common inquiries. Your satisfaction is our priority, and we’re here to resolve any issues quickly and efficiently. Thank you for choosing us!`,
-      isPublished: true,
-    },
-    {
-      title: 'Returns Policy',
-      slug: 'returns-policy',
-      content: 'Returns Policy Content',
-      isPublished: true,
-    },
-    {
-      title: 'Careers',
-      slug: 'careers',
-      content: 'careers Content',
-      isPublished: true,
-    },
-    {
-      title: 'Blog',
-      slug: 'blog',
-      content: 'Blog Content',
-      isPublished: true,
-    },
-    {
-      title: 'Sell Products',
-      slug: 'sell',
-      content: `Sell Products Content`,
-      isPublished: true,
-    },
-    {
-      title: 'Become Affiliate',
-      slug: 'become-affiliate',
-      content: 'Become Affiliate Content',
-      isPublished: true,
-    },
-    {
-      title: 'Advertise Your Products',
-      slug: 'advertise',
-      content: 'Advertise Your Products',
-      isPublished: true,
-    },
-    {
-      title: 'Shipping Rates & Policies',
-      slug: 'shipping',
-      content: 'Shipping Rates & Policies',
-      isPublished: true,
-    },
-  ],
+All product information is subject to change. Misuse of the platform may result in account suspension.
+
+Please review these terms carefully before using our services.`,
+    isPublished: true,
+  },
+
+  {
+    title: 'Customer Service',
+    slug: 'customer-service',
+    description:
+      'Dedicated customer service support to assist with orders, products, and inquiries.',
+    keywords: [
+      'customer service',
+      'support team',
+      'order support',
+      'help line',
+      'assistance',
+    ],
+    content: `Our customer service team is here to ensure a smooth shopping experience.
+
+Contact us via email, phone, or live chat for quick assistance.`,
+    isPublished: true,
+  },
+
+  {
+    title: 'Returns Policy',
+    slug: 'returns-policy',
+    description:
+      'Learn about our return process, eligibility, and refund timelines.',
+    keywords: [
+      'returns policy',
+      'refund policy',
+      'product returns',
+      'exchange policy',
+    ],
+    content: `We offer a hassle-free return policy within the specified timeframe.
+
+Items must be unused and in original packaging to qualify for a return.`,
+    isPublished: true,
+  },
+
+  {
+    title: 'Careers',
+    slug: 'careers',
+    description:
+      'Explore career opportunities and join our growing team.',
+    keywords: [
+      'careers',
+      'jobs',
+      'employment',
+      'work with us',
+      'hiring',
+    ],
+    content: `Join our team and be part of a fast-growing ecommerce company.
+
+We’re always looking for talented individuals.`,
+    isPublished: true,
+  },
+
+  {
+    title: 'Blog',
+    slug: 'blog',
+    description:
+      'Read the latest news, updates, and insights from our team.',
+    keywords: [
+      'blog',
+      'news',
+      'articles',
+      'updates',
+      'ecommerce tips',
+    ],
+    content: `Stay updated with industry trends, tips, and announcements.`,
+    isPublished: true,
+  },
+
+  {
+    title: 'Sell Products',
+    slug: 'sell',
+    description:
+      'Start selling your products on our marketplace and reach more customers.',
+    keywords: [
+      'sell online',
+      'vendor',
+      'marketplace',
+      'list products',
+      'become seller',
+    ],
+    content: `Sell your products easily and grow your business with us.`,
+    isPublished: true,
+  },
+
+  {
+    title: 'Become Affiliate',
+    slug: 'become-affiliate',
+    description:
+      'Earn commissions by promoting our products through our affiliate program.',
+    keywords: [
+      'affiliate program',
+      'earn commission',
+      'partner',
+      'referral',
+    ],
+    content: `Join our affiliate program and start earning today.`,
+    isPublished: true,
+  },
+
+  {
+    title: 'Advertise Your Products',
+    slug: 'advertise',
+    description:
+      'Promote your products to a wider audience through our advertising solutions.',
+    keywords: [
+      'advertise products',
+      'product promotion',
+      'ads',
+      'marketing',
+    ],
+    content: `Advertise your products and increase visibility.`,
+    isPublished: true,
+  },
+
+  {
+    title: 'Shipping Rates & Policies',
+    slug: 'shipping',
+    description:
+      'View our shipping rates, delivery timelines, and shipping policies.',
+    keywords: [
+      'shipping rates',
+      'shipping policy',
+      'delivery information',
+      'order shipping',
+      'logistics',
+    ],
+    content: `Find details about shipping costs, delivery timelines, and policies.`,
+    isPublished: true,
+  },
+],
+
   headerMenus: [
     {
       name: "Today's Deal",
