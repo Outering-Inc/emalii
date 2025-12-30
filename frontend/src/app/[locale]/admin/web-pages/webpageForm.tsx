@@ -19,6 +19,7 @@ import {
 import { Input } from '@/src/components/ui/input'
 import { useToast } from '@/src/hooks/client/use-toast'
 import { Checkbox } from '@/src/components/ui/checkbox'
+import { Textarea } from '@/src/components/ui/textarea'
 import { WebPage } from '@/src/lib/db/models/webpageModel'
 import { WebPageInputSchema, WebPageUpdateSchema } from '@/src/lib/validation/validator'
 import { toSlug } from '@/src/lib/utils/utils'
@@ -180,6 +181,23 @@ const WebPageForm = ({
               <FormMessage />
              </FormItem>
              )}
+          />
+          <FormField
+            control={form.control}
+            name='description'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder='Tell us a little bit about the  page'
+                    className='resize-none'
+                    {...field}
+                  />
+                </FormControl>
+               <FormMessage />
+              </FormItem>
+            )}
           />
            </div>
         <div className='flex flex-col gap-5 md:flex-row'>
