@@ -18,6 +18,7 @@ import { generateId, round2 } from '@/src/lib/utils/utils'
 import RatingSummary from '@/src/components/shared/product/rating-summary'
 import ReviewList from './review-list'
 import { getTranslations } from 'next-intl/server'
+import { features } from 'process'
 
 
 export async function generateMetadata(props: {
@@ -30,6 +31,9 @@ export async function generateMetadata(props: {
     return { 
       title: t('Product.Product not found') ,
       description: t('Product.The requested product could not be found'),
+      alternatives: {
+        cannonical: `https://emalii.com/product/${params.slug}`,
+      }
      };
   }
   
@@ -68,8 +72,55 @@ export default async function ProductDetails(props: {
   })
 
   const t = await getTranslations()
+  const structureData = {
+    '@context': 'http://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    image: product.images[0],
+    description: product.description,
+    brand: {
+      '@type': 'Brand',
+      name: product.brand,
+    },
+    category: product.category,
+    aggregateRating: {
+      '@type': 'AggregateRating',
+      ratingValue: product.avgRating,
+      ratingCount: product.numReviews,
+      bestRating: '5',
+      worstRating: '1',
+    },
+    offers: {
+      '@type': 'Offer',
+      price: product.price,
+      priceCurrency: 'USD',
+      availability: product.countInStock > 0 ? 'http://schema.org/InStock' : 'http://schema.org/OutOfStock',
+      seller: {
+        '@type': 'Organization',
+        name: 'Emalii.com',
+      },
+    },
+    additionalProperty: [
+      {
+        '@type': 'PropertyValue',
+        name: 'Color',
+        value: color,
+      },
+      {
+        '@type': 'PropertyValue',
+        name: 'Size',
+        value: size,
+      },
+      {
+        '@type': 'PropertyValue',
+        name: 'Feautures',
+        value: features,
+      },
+    ],
+  } 
   return (
     <div>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(structureData)}}/>
       <AddToBrowsingHistory id={product._id} category={product.category} />
       <section>
         <div className='grid grid-cols-1 md:grid-cols-5  '>

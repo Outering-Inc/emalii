@@ -54,6 +54,9 @@ export async function generateMetadata(props: {
         'max-snippet': -1,
       },
     },
+    alternatives: {
+      cannonical: "https://emalii.com/page/${slug}"
+    }
   }
 }
 
