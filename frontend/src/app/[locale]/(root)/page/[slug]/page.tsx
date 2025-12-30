@@ -1,4 +1,4 @@
-// app/[slug]/page.tsx
+// src/app/[locale]/(root)/page/[slug]/page.tsx
 import ReactMarkdown from 'react-markdown'
 import { notFound } from 'next/navigation'
 import { getWebPageBySlug } from '@/src/lib/actions/admin/webPages'
@@ -8,7 +8,7 @@ import { Metadata } from 'next'
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string }
+  params: { slug: string } // <-- plain object, not Promise
 }): Promise<Metadata> {
   const { slug } = params
   const webPage = await getWebPageBySlug(slug)
@@ -17,22 +17,17 @@ export async function generateMetadata({
     return {
       title: 'Page Not Found',
       description: 'The requested page could not be found',
-      robots: {
-        index: false,
-        follow: false,
-      },
+      robots: { index: false, follow: false },
     }
   }
 
-  const url = `https://emalii.com/${slug}` // canonical URL
+  const url = `https://emalii.com/${slug}` //canonical URL
 
   return {
     title: webPage.title,
     description: webPage.description || undefined,
     keywords: webPage.keywords?.join(', '),
-    alternates: {
-      canonical: url,
-    },
+    alternates: { canonical: url },
     openGraph: {
       title: webPage.title,
       description: webPage.description || undefined,
@@ -40,12 +35,7 @@ export async function generateMetadata({
       type: 'website',
       url,
       images: [
-        {
-          url: '/emalii.PNG',
-          width: 1200,
-          height: 630,
-          alt: webPage.title,
-        },
+        { url: '/emalii.PNG', width: 1200, height: 630, alt: webPage.title },
       ],
     },
     twitter: {
@@ -73,20 +63,19 @@ export async function generateMetadata({
 export default async function WebPageSlug({
   params,
 }: {
-  params: { slug: string }
+  params: { slug: string } // <-- plain object
 }) {
   const { slug } = params
   const webPage = await getWebPageBySlug(slug)
 
   if (!webPage) notFound()
 
-  // JSON-LD structured data
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
-    'name': webPage.title,
-    'description': webPage.description || '',
-    'url': `https://emalii.com/${slug}`,
+    name: webPage.title,
+    description: webPage.description || '',
+    url: `https://emalii.com/${slug}`,
   }
 
   return (
