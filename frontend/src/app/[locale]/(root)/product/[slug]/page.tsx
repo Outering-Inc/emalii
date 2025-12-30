@@ -27,10 +27,14 @@ export async function generateMetadata(props: {
   const params = await props.params
   const product = await getProductBySlug(params.slug)
   if (!product) {
-    return { title: t('Product.Product not found') }
+    return { 
+      title: t('Product.Product not found') ,
+      description: t('Product.The requested product could not be found'),
+     };
   }
+ 
   return {
-    title: product.name,
+    title: `${product.name} - ${product.brand} | Emalii.com`,
     description: product.description,
   }
 }

@@ -19,7 +19,7 @@ export async function generateMetadata(props: {
       robots: { index: false, follow: false },
      }
   }
-  
+
   const url = `https://emalii.com/${slug}` //canonical URL
   return {
     title: webPage.title,
@@ -57,6 +57,7 @@ export async function generateMetadata(props: {
   }
 }
 
+// ------------------- PAGE -------------------
 export default async function ProductDetailsPage(props: {
   params: Promise<{ slug: string }>
   searchParams: Promise<{ page: string; color: string; size: string }>

@@ -56,6 +56,12 @@ const productSchema = new Schema<Product>(
 
     // Description & SEO
     description: { type: String, trim: true },
+    keywords: {
+      type: [String], // <-- array of strings
+      validate: [(v: string[]) => v.length <= 10, 'Max 10 keywords'],
+      required: false,
+      default: [],    // optional, defaults to empty array
+    },
   },
   { timestamps: true }
 )

@@ -43,6 +43,7 @@ const productDefaultValues: ProductInput =
         images: ['/images/p11-1.jpg'],
         brand: 'Sample Brand',
         description: 'This is a sample description of the product.',
+        keywords: ['Best Product', 'Premium Quality', 'High Performance'],
         price: 99.99,
         listPrice: 0,
         countInStock: 15,
@@ -64,6 +65,7 @@ const productDefaultValues: ProductInput =
         images: [],
         brand: '',
         description: '',
+        keywords: [],
         price: 0,
         listPrice: 0,
         countInStock: 0,
@@ -197,12 +199,12 @@ const ProductForm = ({
         <div className='flex flex-col gap-5 md:flex-row'>
           <FormField
             control={form.control}
-            name='category'
+            name='brand'
             render={({ field }) => (
               <FormItem className='w-full'>
-                <FormLabel>Category</FormLabel>
+                <FormLabel>Brand</FormLabel>
                 <FormControl>
-                  <Input placeholder='Enter category' {...field} />
+                  <Input placeholder='Enter Brand name' {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -210,12 +212,12 @@ const ProductForm = ({
           />
             <FormField
             control={form.control}
-            name='subcategory'
+            name='category'
             render={({ field }) => (
               <FormItem className='w-full'>
-                <FormLabel>SubCategory</FormLabel>
+                <FormLabel>Category</FormLabel>
                 <FormControl>
-                  <Input placeholder='Enter subcategory' {...field} />
+                  <Input placeholder='Enter Category' {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -226,16 +228,57 @@ const ProductForm = ({
          <div className='flex flex-col gap-5 md:flex-row'>
            <FormField
             control={form.control}
-            name='brand'
+            name='subcategory'
             render={({ field }) => (
               <FormItem className='w-full'>
-                <FormLabel>Brand</FormLabel>
+                <FormLabel>Sub Category</FormLabel>
                 <FormControl>
-                  <Input placeholder='Enter product brand' {...field} />
+                  <Input placeholder='Enter Sub category' {...field} />
                 </FormControl>
 
                 <FormMessage />
               </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name='subsubcategory'
+            render={({ field }) => (
+              <FormItem className='w-full'>
+                <FormLabel>Sub-SubCategory</FormLabel>
+                <FormControl>
+                  <Input placeholder='Enter Sub-subcategory' {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+         
+        </div>
+       <div className='flex flex-col gap-5 md:flex-row'>
+         <FormField
+            control={form.control}
+            name="keywords"
+            render={({ field }) => (
+          <FormItem className="w-full">
+            <FormLabel>Keywords</FormLabel>
+            <FormControl>
+            <Input
+              placeholder="new-arrival, premium, best-seller,approvals, power-discount, fast-moving"
+              value={field.value?.join(', ') ?? ''}
+              onChange={(e) => {
+              const value = e.target.value
+              field.onChange(
+              value
+                .split(',')
+                .map(keyword => keyword.trim())
+                .filter(Boolean)
+              )
+              }}
+            />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
             )}
           />
          <FormField

@@ -161,6 +161,7 @@ export const ProductInputSchema = z.object({
   images: z.array(z.string()).min(1, 'Product must have at least one image'),
   brand: z.string().min(1, 'Brand is required'),
   description: z.string().min(1, 'Description is required'),
+  keywords: z.array(z.string()).optional(),
   isPublished: z.boolean(),
   price: Price('Price'),
   listPrice: Price('List price'),
