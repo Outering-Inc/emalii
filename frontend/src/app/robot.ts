@@ -1,20 +1,22 @@
 import { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-    const baseUrl = process.env.baseUrl;
-    return {
-        rules: [
-            {
-            userAgent: "*",
-            allow: "/",
-            disallow: ["/admin/", "/api/" ],
-        },
-        {
-            userAgent: "Googlebot",
-            allow: "/",
-            disallow: ["/admin/", "/api/" ],
-        },
+  const baseUrl = process.env.SITE_URL!;
+
+  return {
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: [
+          "/admin/",
+          "/api/",
+          "/cart",
+          "/checkout",
+          "/account",
         ],
-        sitemap: `${baseUrl}/sitemap.xml`,
-    };
+      },
+    ],
+    sitemap: `${baseUrl}/sitemap.xml`,
+  };
 }
