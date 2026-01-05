@@ -8,7 +8,7 @@ export default function VideoCardSection() {
    
     
     {
-      videoUrl: '/videos/christmas-video.mp4',
+      videoUrl: '/videos/pet-food.mp4',
       title: 'Bring brands to life with interactive hero moments',
       buttonsOnly: false,
     },
