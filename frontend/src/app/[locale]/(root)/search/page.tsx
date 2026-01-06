@@ -11,7 +11,7 @@ import {
    getAllTags 
   } from "@/src/lib/actions/productActions"
 import { getTranslations } from 'next-intl/server'
-import ProductGrid from "@/src/components/shared/product/productGrid"
+import ProductGrid from "@/src/components/shared/product/ProductGrid"
 
 const sortOrders = [
   { value: 'price-low-to-high', name: 'Price: Low to high' },
