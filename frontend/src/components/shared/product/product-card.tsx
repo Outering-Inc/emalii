@@ -27,7 +27,7 @@ export default function ProductCard({
 }: ProductCardProps) {
   const ProductImage = () => (
     <Link href={`/product/${product.slug}`}>
-      <div className="relative h-52">
+      <div className="relative h-42 w-full">
         {product.images.length > 1 ? (
           <ProductImageHover
             src={product.images[0]}
@@ -35,12 +35,12 @@ export default function ProductCard({
             alt={product.name}
           />
         ) : (
-          <div className="relative h-52">
+          <div className="relative h-42 w-full">
             <Image
               src={product.images[0]}
               alt={product.name}
               fill
-              sizes="80vw"
+              sizes="20vw"
               className="object-contain"
             />
           </div>
@@ -50,7 +50,7 @@ export default function ProductCard({
   )
 
   const ProductDetails = () => (
-    <div className="flex-1 space-y-2">
+    <div className="flex-1 space-y-1">
       <p className="font-bold">{product.brand}</p>
       <Link
         href={`/product/${product.slug}`}
@@ -75,7 +75,7 @@ export default function ProductCard({
   )
 
   const AddButton = () => (
-    <div className="w-full text-center">
+    <div className="w-full text-center pt-1">
       <AddToCart
         minimal
         item={{
@@ -100,7 +100,7 @@ export default function ProductCard({
       <ProductImage />
       {!hideDetails && (
         <>
-          <div className="p-3 flex-1 text-center">
+          <div className="p-1 flex-1 text-center">
             <ProductDetails />
           </div>
           {!hideAddToCart && <AddButton />}
@@ -109,15 +109,15 @@ export default function ProductCard({
     </div>
   ) : (
     <Card className="flex flex-col">
-      <CardHeader className="p-3">
+      <CardHeader className="p-1">
         <ProductImage />
       </CardHeader>
       {!hideDetails && (
         <>
-          <CardContent className="p-3 flex-1 text-center">
+          <CardContent className="p-1 flex-1 text-center">
             <ProductDetails />
           </CardContent>
-          <CardFooter className="p-3">
+          <CardFooter className="p-1">
             {!hideAddToCart && <AddButton />}
           </CardFooter>
         </>
