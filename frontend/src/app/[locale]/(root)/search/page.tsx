@@ -1,6 +1,5 @@
 import Link from "next/link"
 
-import Pagination from "@/src/components/shared/common/pagination"
 import { Button } from "@/src/components/ui/button"
 import ProductSortSelector from "@/src/components/shared/product/product-sort-selector"
 import { getFilterUrl, toSlug } from "@/src/lib/utils/utils"
@@ -278,9 +277,6 @@ export default async function SearchPage(props: {
             emptyMessage={t('Search.No product found')}
             />
       
-          {data.totalPages > 1 && (
-            <Pagination page={page} totalPages={data.totalPages} />
-          )}
         </div>
       </div>
     </div>
