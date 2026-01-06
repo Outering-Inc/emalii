@@ -1,9 +1,7 @@
 import Link from "next/link"
 
 import Pagination from "@/src/components/shared/common/pagination"
-import ProductCard from "@/src/components/shared/product/product-card"
 import { Button } from "@/src/components/ui/button"
-import { Product } from "@/src/lib/db/models/productModel"
 import ProductSortSelector from "@/src/components/shared/product/product-sort-selector"
 import { getFilterUrl, toSlug } from "@/src/lib/utils/utils"
 import Rating from "@/src/components/shared/product/rating"
@@ -14,6 +12,7 @@ import {
    getAllTags 
   } from "@/src/lib/actions/productActions"
 import { getTranslations } from 'next-intl/server'
+import ProductGrid from "@/src/components/shared/product/productGrid"
 
 const sortOrders = [
   { value: 'price-low-to-high', name: 'Price: Low to high' },
@@ -272,14 +271,13 @@ export default async function SearchPage(props: {
             </div>
           </div>
 
-          <div className='grid grid-cols-1 gap-4 md:grid-cols-2  lg:grid-cols-3  '>
-            {data.products.length === 0 && (
-              <div>{t('Search.No product found')}</div>
-            )}
-            {data.products.map((product: Product) => (
-              <ProductCard key={product._id} product={product} />
-            ))}
-          </div>
+          <ProductGrid
+            products={data.products}
+            page={page}
+            totalPages={data.totalPages}
+            emptyMessage={t('Search.No product found')}
+            />
+      
           {data.totalPages > 1 && (
             <Pagination page={page} totalPages={data.totalPages} />
           )}
