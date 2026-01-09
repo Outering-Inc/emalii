@@ -18,7 +18,7 @@ import ProductImageHover from './product-image-hover'
 import AddToCart from './add-to-cart'
 import { generateId, round2 } from '@/src/lib/utils/utils'
 import SelectVariantCategory from './select-variant-category'
-import RatingSummary from './rating-summary'
+import RatingSummaryCategory from './rating-summary-category'
 
 interface ProductCardProps {
   product: LeanProduct
@@ -110,13 +110,14 @@ export default function ProductCardCategory({
       </Link>
 
       <div className="flex justify-center gap-2">
-        <RatingSummary
+        <RatingSummaryCategory
           avgRating={product.avgRating}
           numReviews={product.numReviews}
           asPopover
           ratingDistribution={
             product.ratingDistribution ?? []
           }
+          productSlug={product.slug} // <-- pass the slug here
         />
       </div>
 

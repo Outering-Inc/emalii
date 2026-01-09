@@ -22,19 +22,22 @@ type RatingSummaryProps = {
     rating: number
     count: number
   }[]
+  productSlug: string  // <-- Add this prop
 }
 
-export default function  RatingSummary({
+export default function RatingSummaryCategory({
   asPopover,
   avgRating = 0,
   numReviews = 0,
   ratingDistribution = [],
+  productSlug,
 }: RatingSummaryProps) {
   const t = useTranslations()
+
   const RatingDistribution = () => {
     const ratingPercentageDistribution = ratingDistribution.map((x) => ({
       ...x,
-      percentage: Math.round((x.count / numReviews) * 100),
+      percentage: numReviews ? Math.round((x.count / numReviews) * 100) : 0,
     }))
 
     return (
@@ -60,7 +63,6 @@ export default function  RatingSummary({
                 className='grid grid-cols-[50px_1fr_30px] gap-2 items-center'
               >
                 <div className='text-sm'>
-                  {' '}
                   {t('Product.rating star', { rating })}
                 </div>
                 <Progress value={percentage} className='h-4' />
@@ -71,6 +73,9 @@ export default function  RatingSummary({
       </>
     )
   }
+
+  // Construct full link to product detail page with #reviews
+  const reviewLink = `/product/${productSlug}#reviews`
 
   return asPopover ? (
     <div className='flex items-center gap-1'>
@@ -86,15 +91,14 @@ export default function  RatingSummary({
           <div className='flex flex-col gap-2'>
             <RatingDistribution />
             <Separator />
-
-            <Link className='highlight-link text-center' href='#reviews'>
+            <Link className='highlight-link text-center' href={reviewLink}>
               {t('Product.See customer reviews')}
             </Link>
           </div>
         </PopoverContent>
       </Popover>
-      <div className=' '>
-        <Link href='#reviews' className='highlight-link'>
+      <div>
+        <Link href={reviewLink} className='highlight-link'>
           {t('Product.numReviews ratings', { numReviews })}
         </Link>
       </div>
