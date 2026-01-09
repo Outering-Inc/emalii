@@ -54,7 +54,7 @@ export default function ProductCard({
       <p className="font-bold">{product.brand}</p>
       <Link
         href={`/product/${product.slug}`}
-        className="overflow-hidden text-ellipsis"
+        className="overflow-hidden text-ellipsis text-muted-foreground"
         style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
       >
         {product.name}

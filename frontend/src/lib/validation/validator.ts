@@ -165,14 +165,29 @@ export const ProductInputSchema = z.object({
   isPublished: z.boolean(),
   price: Price('Price'),
   listPrice: Price('List price'),
-  countInStock: z.coerce
-    .number()
-    .int()
-    .nonnegative('count in stock must be a non-negative number'),
+
+    // Inventory (auto-derived)
+  countInStock: z.coerce.number().int().nonnegative().optional().default(0),
   tags: z.array(z.string()).default([]),
   sizes: z.array(z.string()).default([]),
   colors: z.array(z.string()).default([]),
   attributes: z.record(z.string()).optional(), // <-- add this
+   // ✅ Variants
+  variants: z
+    .array(
+      z.object({
+        color: z.string(),
+        size: z.string(),
+        stock: z.coerce.number().int().nonnegative(),
+        sku: z.string().optional(),
+        images: z.array(z.string()).optional(),
+      })
+    )
+    .optional(),
+  variantImages: z
+  .record(z.array(z.string()))
+  .optional()
+  .default({}),
   avgRating: z.coerce
     .number()
     .min(0, 'Average rating must be at least 0')

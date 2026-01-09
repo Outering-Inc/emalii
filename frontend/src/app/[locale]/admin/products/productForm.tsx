@@ -55,6 +55,9 @@ const productDefaultValues: ProductInput =
         colors: [],
         ratingDistribution: [],
         reviews: [],
+         // ✅ Add these two
+        variantImages: {},
+        variants: [], 
       }
     : {
         name: '',
@@ -77,6 +80,10 @@ const productDefaultValues: ProductInput =
         colors: [],
         ratingDistribution: [],
         reviews: [],
+          // ✅ Add these two
+        variantImages: {},
+        variants: [],
+
       }
 
 const ProductForm = ({

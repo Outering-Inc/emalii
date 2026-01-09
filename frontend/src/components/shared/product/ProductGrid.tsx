@@ -1,6 +1,6 @@
 import Pagination from '@/src/components/shared/common/pagination'
-import ProductCard from '@/src/components/shared/product/product-card'
 import { Product } from '@/src/lib/db/models/productModel'
+import ProductCardCategory from './product-card-category'
 
 interface ProductGridProps {
   products: Product[]
@@ -21,7 +21,7 @@ export default function ProductGrid({
         {products.length === 0 && <div>{emptyMessage}</div>}
 
         {products.map((product) => (
-          <ProductCard key={product._id} product={product} />
+          <ProductCardCategory key={product._id} product={product} />
         ))}
       </div>
 
