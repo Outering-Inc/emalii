@@ -39,6 +39,8 @@ interface CartState {
   setShippingAddress: (address: ShippingAddress) => Promise<void>
   setPaymentMethod: (paymentMethod: string) => void
   setDeliveryDateIndex: (index: number) => Promise<void>
+    // 🔥 ADD THIS
+  setPricing: (pricing: Partial<Cart>) => void
   init: () => void
 }
 
@@ -187,6 +189,7 @@ const useCartStore = create<CartState>()(
       setPaymentMethod: (paymentMethod) => {
         set({ cart: { ...get().cart, paymentMethod } })
       },
+      
 
       // -----------------------------
       // Set delivery date index
@@ -200,6 +203,19 @@ const useCartStore = create<CartState>()(
           },
         })
       },
+
+      // -----------------------------
+      // Set pricing (Amazon-style)
+      // -----------------------------
+      setPricing: (pricing) => {
+        set({
+          cart: {
+            ...get().cart,
+          ...pricing, // 👈 Amazon-style overwrite
+          },
+        })
+      },
+
 
       // -----------------------------
       // Reset cart

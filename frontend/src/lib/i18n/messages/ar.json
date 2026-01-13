@@ -217,6 +217,14 @@
   "search": "بحث",
   "imageSearchTitle": "البحث بالصور",
   "imageSearchDesc": "حوّل الصورة إلى منتج فورًا."
-}
+},
+"Checkout": {
+    "SecureCheckout": "الدفع الآمن",
+    "Steps": {
+      "ShippingAddress": "عنوان الشحن",
+      "PaymentMethod": "طريقة الدفع",
+      "ReviewPlaceOrder": "مراجعة الطلب وإتمام الشراء"
+    }
+  }
 
 }

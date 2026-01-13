@@ -216,5 +216,13 @@
     "search": "Tafuta",
     "imageSearchTitle": "Tafuta Kwa Picha",
     "imageSearchDesc": "Geuza picha kuwa bidhaa mara moja."
+  },
+  "Checkout": {
+    "SecureCheckout": "Malipo Salama",
+    "Steps": {
+      "ShippingAddress": "Anwani ya Usafirishaji",
+      "PaymentMethod": "Njia ya Malipo",
+      "ReviewPlaceOrder": "Kagua na Weka Oda"
+    }
   }
 }

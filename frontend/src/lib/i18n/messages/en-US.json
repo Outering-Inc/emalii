@@ -216,11 +216,19 @@
     "Actions": "Actions",
     "Details": "Details"
   },
-    "SearchBar": {
+  "SearchBar": {
     "allCategories": "All Categories",
     "placeholder": "Search on {site}...",
     "search": "Search",
     "imageSearchTitle": "Search By Image",
     "imageSearchDesc": "Turn pictures into products instantly."
+  },
+  "Checkout": {
+    "SecureCheckout": "Secure Checkout",
+    "Steps": {
+      "ShippingAddress": "Shipping Address",
+      "PaymentMethod": "Payment Method",
+      "ReviewPlaceOrder": "Review & Place Order"
+    }
   }
 }

@@ -3,118 +3,71 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { CheckCircle2Icon } from 'lucide-react'
-
-import useCartStore from '@/src/hooks/stores/use-cart-store'
-import { cn } from '@/src/lib/utils/utils'
-import { notFound } from 'next/navigation'
-import { buttonVariants } from '@/src/components/ui/button'
 import { Card, CardContent } from '@/src/components/ui/card'
 import ProductPrice from '@/src/components/shared/product/product-price'
 import BrowsingHistoryList from '@/src/components/shared/common/browsing-history-list'
 import { useTranslations } from 'next-intl'
+import useCartStore from '@/src/hooks/stores/use-cart-store'
 import useSettingStore from '@/src/hooks/stores/use-setting-store'
-
+import { notFound } from 'next/navigation'
 
 export default function CartAddItem({ itemId }: { itemId: string }) {
   const {
     cart: { items, itemsPrice },
   } = useCartStore()
+
   const {
     setting: {
       common: { freeShippingMinPrice },
     },
   } = useSettingStore()
-  const item = items.find((x) => x.clientId === itemId)
 
+  const item = items.find((x) => x.clientId === itemId)
   const t = useTranslations()
+
   if (!item) return notFound()
+
   return (
     <div>
-      <div className='grid grid-cols-1 md:grid-cols-2 md:gap-4'>
-        <Card className='w-full rounded-none'>
-          <CardContent className='flex h-full items-center justify-center  gap-3 py-4'>
-            <Link href={`/product/${item.slug}`}>
-              <Image
-                src={item.image}
-                alt={item.name}
-                width={80}
-                height={80}
-                style={{
-                  maxWidth: '100%',
-                  height: 'auto',
-                }}
-              />
-            </Link>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        <Card className='rounded-none'>
+          <CardContent className='flex gap-4 items-center py-4'>
+            <Image src={item.image} alt={item.name} width={80} height={80} />
             <div>
-              <h3 className='text-xl font-bold flex gap-2 my-2'>
-                <CheckCircle2Icon className='h-6 w-6 text-green-700' />
+              <h3 className='flex gap-2 text-xl font-bold'>
+                <CheckCircle2Icon className='text-green-700' />
                 {t('Cart.Added to cart')}
               </h3>
-              <p className='text-sm'>
-                <span className='font-bold'> {t('Cart.Color')}: </span>{' '}
-                {item.color ?? '-'}
-              </p>
-              <p className='text-sm'>
-                <span className='font-bold'> {t('Cart.Size')}: </span>{' '}
-                {item.size ?? '-'}
-              </p>
+              <p>{t('Cart.Color')}: {item.color}</p>
+              <p>{t('Cart.Size')}: {item.size}</p>
             </div>
           </CardContent>
         </Card>
-        <Card className='w-full rounded-none'>
-          <CardContent className='p-4 h-full'>
-            <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
-              <div className='flex justify-center items-center'>
-                {itemsPrice < freeShippingMinPrice ? (
-                  <div className='text-center '>
-                    {t('Cart.Add')}{' '}
-                    <span className='text-green-700'>
-                      <ProductPrice
-                        price={freeShippingMinPrice - itemsPrice}
-                        plain
-                      />
-                    </span>{' '}
-                    {t(
-                      'Cart.of eligible items to your order to qualify for FREE Shipping'
-                    )}
-                  </div>
-                ) : (
-                  <div className='flex items-center'>
-                    <div>
-                      <span className='text-green-700'>
-                        Your order qualifies for FREE Shipping.
-                      </span>{' '}
-                      Choose this option at checkout.
-                    </div>
-                  </div>
-                )}
+
+        <Card className='rounded-none'>
+          <CardContent className='p-4 space-y-4'>
+            {itemsPrice < freeShippingMinPrice ? (
+              <div>
+                {t('Cart.Add')}{' '}
+                <ProductPrice
+                  price={freeShippingMinPrice - itemsPrice}
+                  plain
+                />{' '}
+                {t('Cart.of eligible items to your order to qualify for FREE Shipping')}
               </div>
-              <div className='lg:border-l lg:border-muted lg:pl-3 flex flex-col items-center gap-3  '>
-                <div className='flex gap-3'>
-                  <span className='text-lg font-bold'>Cart Subtotal:</span>
-                  <ProductPrice className='text-2xl' price={itemsPrice} />
-                </div>
-                <Link
-                  href='/checkout'
-                  className={cn(buttonVariants(), 'rounded-full w-full')}
-                >
-                  Proceed to checkout (
-                  {items.reduce((a, c) => a + c.quantity, 0)} items)
-                </Link>
-                <Link
-                  href='/cart'
-                  className={cn(
-                    buttonVariants({ variant: 'outline' }),
-                    'rounded-full w-full'
-                  )}
-                >
-                  {t('Cart.Go to Cart')}
-                </Link>
+            ) : (
+              <div className='text-green-700'>
+                {t('Cart.Your order qualifies for FREE Shipping')}
               </div>
-            </div>
+            )}
+
+            <Link href='/checkout' className='block text-center font-semibold'>
+              Proceed to Checkout
+            </Link>
           </CardContent>
         </Card>
       </div>
+
       <BrowsingHistoryList />
     </div>
   )

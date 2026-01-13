@@ -211,6 +211,14 @@
   "search": "Rechercher",
   "imageSearchTitle": "Recherche par image",
   "imageSearchDesc": "Transformez une image en produit instantanément."
-}
+},
+"Checkout": {
+    "SecureCheckout": "Paiement sécurisé",
+    "Steps": {
+      "ShippingAddress": "Adresse de livraison",
+      "PaymentMethod": "Mode de paiement",
+      "ReviewPlaceOrder": "Vérifier et passer la commande"
+    }
+  }
 
 }

@@ -20,6 +20,7 @@ import {
   WebPageInputSchema
  } from "@/src/lib/validation/validator";
 import { z } from "zod";
+import { Variant } from "../lib/db/models/productModel";
 
 
 // ------------------ Generic App Data ------------------
@@ -77,6 +78,7 @@ export type OrderList = OrderInput & {
   shippingAddress?: z.infer<typeof ShippingAddressSchema>
   paymentMethod?: string
   itemsPrice?: number
+  discountPrice?: number
   taxPrice?: number
   shippingPrice?: number
 }
@@ -95,6 +97,8 @@ export type ProductInput = z.infer<typeof ProductInputSchema> & {
   isFeatured?: boolean
   featuredOrder?: number
   attributes?: Record<string, string>
+  variantImages?: Record<string, string[]>  // <-- add this
+  variants?: Variant[] 
 }
 
 export type ProductUpdateInput = z.infer<typeof ProductUpdateSchema>

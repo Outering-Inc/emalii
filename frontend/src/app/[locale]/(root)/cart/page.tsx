@@ -11,29 +11,30 @@ import {
   SelectValue,
 } from '@/src/components/ui/select'
 import useCartStore from '@/src/hooks/stores/use-cart-store'
-import useSettingStore from '@/src/hooks/stores/use-setting-store'
 import { useTranslations } from 'next-intl'
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import React from 'react'
+import CartPriceSummary from './[itemId]/cart-pricing-summary'
+import { useCartPrice } from '@/src/hooks/stores/use-cart-price'
 
 export default function CartPage() {
-  const {
-    cart: { items, itemsPrice },
-    updateItem,
-    removeItem,
-  } = useCartStore()
-  const router = useRouter()
-  const {
-    setting: {
-      site,
-      common: { freeShippingMinPrice },
-    },
-  } = useSettingStore()
+  const { updateItem, removeItem } = useCartStore()
+
+    const {
+    items,
+    itemsPrice,
+    listItemsPrice,
+    discount,
+    site,
+    totalItems,
+    remainingForFreeShipping,
+    qualifiesForFreeShipping,
+  } = useCartPrice()
 
   const t = useTranslations()
+
   return (
     <div>
       <div className='grid grid-cols-1 md:grid-cols-4  md:gap-4'>
@@ -155,9 +156,7 @@ export default function CartPage() {
                   ))}
 
                   <div className='flex justify-end text-lg my-2'>
-                    {t('Cart.Subtotal')} (
-                    {items.reduce((acc, item) => acc + item.quantity, 0)}{' '}
-                    {t('Cart.Items')}):{' '}
+                    {t('Cart.Subtotal')} ({totalItems} {t('Cart.Items')}):{' '}
                     <span className='font-bold ml-1'>
                       <ProductPrice price={itemsPrice} plain />
                     </span>{' '}
@@ -165,44 +164,18 @@ export default function CartPage() {
                 </CardContent>
               </Card>
             </div>
+         {/* RIGHT SIDE - Cart Summary */}
             <div>
               <Card className='rounded-none'>
-                <CardContent className='py-4 space-y-4'>
-                  {itemsPrice < freeShippingMinPrice ? (
-                    <div className='flex-1'>
-                      {t('Cart.Add')}{' '}
-                      <span className='text-green-700'>
-                        <ProductPrice
-                          price={freeShippingMinPrice - itemsPrice}
-                          plain
-                        />
-                      </span>{' '}
-                      {t(
-                        'Cart.of eligible items to your order to qualify for FREE Shipping'
-                      )}
-                    </div>
-                  ) : (
-                    <div className='flex-1'>
-                      <span className='text-green-700'>
-                        {t('Cart.Your order qualifies for FREE Shipping')}
-                      </span>{' '}
-                      {t('Cart.Choose this option at checkout')}
-                    </div>
-                  )}
-                  <div className='text-lg'>
-                    {t('Cart.Subtotal')} (
-                    {items.reduce((acc, item) => acc + item.quantity, 0)}{' '}
-                    {t('Cart.items')}):{' '}
-                    <span className='font-bold'>
-                      <ProductPrice price={itemsPrice} plain />
-                    </span>{' '}
-                  </div>
-                  <Button
-                    onClick={() => router.push('/checkout')}
-                    className='rounded-full w-full'
-                  >
-                    {t('Cart.Proceed to Checkout')}
-                  </Button>
+                <CardContent className='py-4'>
+                  <CartPriceSummary
+                    itemsPrice={itemsPrice}
+                    totalItems={totalItems}
+                    qualifiesForFreeShipping={qualifiesForFreeShipping}
+                    remainingForFreeShipping={remainingForFreeShipping}
+                    listItemsPrice={listItemsPrice}
+                    discount={discount}
+                  />
                 </CardContent>
               </Card>
             </div>

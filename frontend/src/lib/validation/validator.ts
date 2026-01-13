@@ -87,6 +87,7 @@ export const OrderItemSchema = z.object({
   price: Price('Price'),
   size: z.string().optional(),
   color: z.string().optional(),
+  listPrice: Price('List price').optional(),
 })
 
 export const ShippingAddressSchema = z.object({
@@ -132,6 +133,7 @@ export const OrderInputSchema = z.object({
 export const CartSchema = z.object({
   items: z.array(OrderItemSchema).min(1, 'Cart must contain at least one item'),
   itemsPrice: z.number(),
+  discountPrice: z.optional(z.number()),
   taxPrice: z.optional(z.number()),
   shippingPrice: z.optional(z.number()),
   totalPrice: z.number(),
@@ -168,6 +170,7 @@ export const ProductInputSchema = z.object({
 
     // Inventory (auto-derived)
   countInStock: z.coerce.number().int().nonnegative().optional().default(0),
+  
   tags: z.array(z.string()).default([]),
   sizes: z.array(z.string()).default([]),
   colors: z.array(z.string()).default([]),

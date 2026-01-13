@@ -41,6 +41,10 @@ import ProductPrice from '@/src/components/shared/product/product-price'
 import { createOrder } from '@/src/lib/actions/orderActions'
 import {  useToast } from '@/src/hooks/client/use-toast'
 import useSettingStore from '@/src/hooks/stores/use-setting-store'
+import CheckoutStepper from './checkout-stepper'
+import { useCartPrice } from '@/src/hooks/client/use-cart-price'
+
+
 
 const shippingAddressDefaultValues =
   process.env.NODE_ENV === 'development'
@@ -77,11 +81,6 @@ const CheckoutForm = () => {
 
   const {
     cart: {
-      items,
-      itemsPrice,
-      shippingPrice,
-      taxPrice,
-      totalPrice,
       shippingAddress,
       deliveryDateIndex,
       paymentMethod = defaultPaymentMethod,
@@ -93,6 +92,8 @@ const CheckoutForm = () => {
     clearCart,
     setDeliveryDateIndex,
   } = useCartStore()
+
+  const { items, itemsPrice, discount,taxPrice,totalPrice,shippingPrice } = useCartPrice()
   const isMounted = useIsMounted()
 
   const shippingAddressForm = useForm<ShippingAddress>({
@@ -116,10 +117,31 @@ const CheckoutForm = () => {
   }, [items, isMounted, router, shippingAddress, shippingAddressForm])
 
   const [isAddressSelected, setIsAddressSelected] = useState<boolean>(false)
-  const [isPaymentMethodSelected, setIsPaymentMethodSelected] =
-    useState<boolean>(false)
-  const [isDeliveryDateSelected, setIsDeliveryDateSelected] =
-    useState<boolean>(false)
+  const [isPaymentMethodSelected, setIsPaymentMethodSelected] = useState<boolean>(false)  
+  const [isDeliveryDateSelected, setIsDeliveryDateSelected] = useState<boolean>(false)
+  
+   
+   // 🔹 INDUSTRY STANDARD: derive active step from your existing logic
+  const activeStep = !isAddressSelected
+    ? 1
+    : isAddressSelected && !isPaymentMethodSelected
+    ? 2
+    : 3
+
+  // 🔹 Allow clicking previous steps only
+  const handleStepClick = (step: number) => {
+    if (step === 1) {
+      setIsAddressSelected(false)
+      setIsPaymentMethodSelected(false)
+      setIsDeliveryDateSelected(false)
+    }
+
+    if (step === 2) {
+      setIsPaymentMethodSelected(false)
+      setIsDeliveryDateSelected(false)
+    }
+  }
+
 
   const handlePlaceOrder = async () => {
     const res = await createOrder({
@@ -130,7 +152,8 @@ const CheckoutForm = () => {
       ),
       deliveryDateIndex,
       paymentMethod,
-      itemsPrice,
+      itemsPrice,        // ✅ discounted price
+      discountPrice: discount, // ✅ discount from hook
       shippingPrice,
       taxPrice,
       totalPrice,
@@ -156,97 +179,118 @@ const CheckoutForm = () => {
   const handleSelectShippingAddress = () => {
     shippingAddressForm.handleSubmit(onSubmitShippingAddress)()
   }
-  const CheckoutSummary = () => (
-    <Card>
-      <CardContent className='p-4'>
-        {!isAddressSelected && (
-          <div className='border-b mb-4'>
-            <Button
-              className='rounded-full w-full'
-              onClick={handleSelectShippingAddress}
-            >
-              Ship to this address
-            </Button>
-            <p className='text-xs text-center py-2'>
-              Choose a shipping address and payment method in order to calculate
-              shipping, handling, and tax.
-            </p>
-          </div>
-        )}
-        {isAddressSelected && !isPaymentMethodSelected && (
-          <div className=' mb-4'>
-            <Button
-              className='rounded-full w-full'
-              onClick={handleSelectPaymentMethod}
-            >
-              Use this payment method
-            </Button>
 
-            <p className='text-xs text-center py-2'>
-              Choose a payment method to continue checking out. You&apos;ll
-              still have a chance to review and edit your order before it&apos;s
-              final.
-            </p>
-          </div>
-        )}
-        {isPaymentMethodSelected && isAddressSelected && (
-          <div>
-            <Button onClick={handlePlaceOrder} className='rounded-full w-full'>
-              Place Your Order
-            </Button>
-            <p className='text-xs text-center py-2'>
-              By placing your order, you agree to {site.name}&apos;s{' '}
-              <Link href='/page/privacy-policy'>privacy notice</Link> and
-              <Link href='/page/conditions-of-use'> conditions of use</Link>.
-            </p>
-          </div>
-        )}
 
+const CheckoutSummary = () => (
+  <Card>
+    <CardContent className='p-4'>
+      {!isAddressSelected && (
+        <div className='border-b mb-4'>
+          <Button
+            className='rounded-full w-full'
+            onClick={handleSelectShippingAddress}
+          >
+            Ship to this address
+          </Button>
+          <p className='text-xs text-center py-2'>
+            Choose a shipping address and payment method in order to calculate
+            shipping, handling, and tax.
+          </p>
+        </div>
+      )}
+
+      {isAddressSelected && !isPaymentMethodSelected && (
+        <div className=' mb-4'>
+          <Button
+            className='rounded-full w-full'
+            onClick={handleSelectPaymentMethod}
+          >
+            Use this payment method
+          </Button>
+
+          <p className='text-xs text-center py-2'>
+            Choose a payment method to continue checking out. You&apos;ll
+            still have a chance to review and edit your order before it&apos;s
+            final.
+          </p>
+        </div>
+      )}
+
+      {isPaymentMethodSelected && isAddressSelected && (
         <div>
-          <div className='text-lg font-bold'>Order Summary</div>
-          <div className='space-y-2'>
-            <div className='flex justify-between'>
-              <span>Items:</span>
-              <span>
-                <ProductPrice price={itemsPrice} plain />
-              </span>
-            </div>
-            <div className='flex justify-between'>
-              <span>Shipping & Handling:</span>
-              <span>
-                {shippingPrice === undefined ? (
-                  '--'
-                ) : shippingPrice === 0 ? (
-                  'FREE'
-                ) : (
-                  <ProductPrice price={shippingPrice} plain />
-                )}
-              </span>
-            </div>
-            <div className='flex justify-between'>
-              <span> Tax:</span>
-              <span>
-                {taxPrice === undefined ? (
-                  '--'
-                ) : (
-                  <ProductPrice price={taxPrice} plain />
-                )}
-              </span>
-            </div>
-            <div className='flex justify-between  pt-4 font-bold text-lg'>
-              <span> Order Total:</span>
-              <span>
-                <ProductPrice price={totalPrice} plain />
-              </span>
-            </div>
+          <Button onClick={handlePlaceOrder} className='rounded-full w-full'>
+            Place Your Order
+          </Button>
+          <p className='text-xs text-center py-2'>
+            By placing your order, you agree to {site.name}&apos;s{' '}
+            <Link href='/page/privacy-policy'>privacy notice</Link> and{' '}
+            <Link href='/page/conditions-of-use'>conditions of use</Link>.
+          </p>
+        </div>
+      )}
+
+      {/* Order Summary */}
+      <div className='mt-4'>
+        <div className='text-lg font-bold'>Order Summary</div>
+        <div className='space-y-2'>
+          <div className='flex justify-between'>
+            <span>Items:</span>
+            <span>
+              <ProductPrice price={itemsPrice} plain />
+            </span>
+          </div>
+
+          {discount > 0 && (
+          <div className='flex justify-between text-green-700'>
+            <span>Discount:</span>
+            <ProductPrice price={discount} plain />
+          </div>
+        )}
+
+          <div className='flex justify-between'>
+            <span>Shipping & Handling:</span>
+            <span>
+              {shippingPrice === undefined ? (
+                '--'
+              ) : shippingPrice === 0 ? (
+                'FREE'
+              ) : (
+                <ProductPrice price={shippingPrice} plain />
+              )}
+            </span>
+          </div>
+
+          <div className='flex justify-between'>
+            <span>Tax:</span>
+            <span>
+              {taxPrice === undefined ? (
+                '--'
+              ) : (
+                <ProductPrice price={taxPrice} plain />
+              )}
+            </span>
+          </div>
+
+          <div className='flex justify-between pt-4 font-bold text-lg'>
+            <span>Order Total:</span>
+            <span>
+              <ProductPrice price={totalPrice} plain />
+            </span>
           </div>
         </div>
-      </CardContent>
-    </Card>
-  )
+      </div>
+    </CardContent>
+  </Card>
+)
+
 
   return (
     <main className='max-w-6xl mx-auto highlight-link'>
+       {/* ✅ AMAZON-STYLE STEPPER */}
+      <CheckoutStepper
+        activeStep={activeStep}
+        onStepClick={handleStepClick}
+      />
       <div className='grid md:grid-cols-4 gap-6'>
         <div className='md:col-span-3'>
           {/* shipping address */}
