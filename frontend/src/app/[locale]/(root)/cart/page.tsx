@@ -27,7 +27,6 @@ export default function CartPage() {
     itemsPrice,
     listItemsPrice,
     discount,
-    site,
     totalItems,
     remainingForFreeShipping,
     qualifiesForFreeShipping,
@@ -44,8 +43,7 @@ export default function CartPage() {
               {t('Cart.Your Shopping Cart is empty')}
             </CardHeader>
             <CardContent>
-              {t.rich('Cart.Continue shopping on', {
-                name: site.name,
+              {t.rich('Cart.Continue shopping on', {              
                 home: (chunks) => <Link href='/'>{chunks}</Link>,
               })}
             </CardContent>

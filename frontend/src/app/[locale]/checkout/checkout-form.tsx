@@ -42,7 +42,7 @@ import { createOrder } from '@/src/lib/actions/orderActions'
 import {  useToast } from '@/src/hooks/client/use-toast'
 import useSettingStore from '@/src/hooks/stores/use-setting-store'
 import CheckoutStepper from './checkout-stepper'
-import { useCartPrice } from '@/src/hooks/client/use-cart-price'
+import { useCartPrice } from '@/src/hooks/stores/use-cart-price'
 
 
 
@@ -81,7 +81,7 @@ const CheckoutForm = () => {
 
   const {
     cart: {
-      shippingAddress,
+      shippingAddress,                  
       deliveryDateIndex,
       paymentMethod = defaultPaymentMethod,
     },
@@ -93,7 +93,7 @@ const CheckoutForm = () => {
     setDeliveryDateIndex,
   } = useCartStore()
 
-  const { items, itemsPrice, discount,taxPrice,totalPrice,shippingPrice } = useCartPrice()
+  const { items, itemsPrice, discount, shippingPrice,taxPrice,totalPrice, } = useCartPrice()
   const isMounted = useIsMounted()
 
   const shippingAddressForm = useForm<ShippingAddress>({

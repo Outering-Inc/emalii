@@ -1,66 +1,79 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import useCartStore from '@/src/hooks/stores/use-cart-store'
-import useSettingStore from '@/src/hooks/stores/use-setting-store'
+import { calculateCartPrices } from '@/src/lib/payments/pricing/pricing-engine'
+//import { calculateCartPrices } from '@/src/lib/pricing/cartPriceEngine'
 
 export function useCartPrice() {
   const {
-    cart: { items },
+    cart: { items, shippingAddress, deliveryDateIndex },
     setPricing,
   } = useCartStore()
 
-  const {
-    setting: {
-      common: { freeShippingMinPrice },
-    },
-  } = useSettingStore()
+  const [loading, setLoading] = useState(false)
 
-  // 1️⃣ Base item price
-  const listItemsPrice = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  )
+  const [derived, setDerived] = useState({
+    listItemsPrice: 0,
+    discount: 0,
+    qualifiesForFreeShipping: false,
+    remainingForFreeShipping: 0,
+  })
 
-  // 2️⃣ Discount
-  const DISCOUNT_PERCENT = 10
-  const discount =
-    DISCOUNT_PERCENT > 0
-      ? Math.round((listItemsPrice * DISCOUNT_PERCENT) / 100)
-      : 0
-
-  const itemsPrice = listItemsPrice - discount
-
-  // 3️⃣ Shipping
-  const shippingPrice =
-    itemsPrice >= freeShippingMinPrice ? 0 : 500 // example
-
-  // 4️⃣ Tax
-  const TAX_RATE = 0.16
-  const taxPrice = Math.round(itemsPrice * TAX_RATE)
-
-  // 5️⃣ Total
-  const totalPrice = itemsPrice + shippingPrice + taxPrice
-
-  // 🔥 Sync prices into cart store
   useEffect(() => {
-    setPricing({
-      itemsPrice,
-      shippingPrice,
-      taxPrice,
-      totalPrice,
-    })
-  }, [itemsPrice, shippingPrice, taxPrice, totalPrice, setPricing])
+    if (!items.length) return
+
+    const run = async () => {
+      setLoading(true)
+
+      const pricing = await calculateCartPrices({
+        items,
+        shippingAddress,
+        deliveryDateIndex,
+        discountPercent: 10, // 🔥 single source
+      })
+
+      // Persist only totals
+      setPricing({
+        itemsPrice: pricing.itemsPrice,
+        shippingPrice: pricing.shippingPrice,
+        taxPrice: pricing.taxPrice,
+        totalPrice: pricing.totalPrice,
+      })
+
+      // Keep derived values in hook
+      setDerived({
+        listItemsPrice: pricing.listItemsPrice,
+        discount: pricing.discount,
+        qualifiesForFreeShipping: pricing.qualifiesForFreeShipping,
+        remainingForFreeShipping: pricing.remainingForFreeShipping,
+      })
+
+      setLoading(false)
+    }
+
+    run()
+  }, [items, shippingAddress, deliveryDateIndex, setPricing])
+
+  const cart = useCartStore((s) => s.cart)
 
   return {
+    loading,
+
+    // items
     items,
-    listItemsPrice,
-    discount,
-    itemsPrice,
-    shippingPrice,
-    taxPrice,
-    totalPrice,
-    freeShippingMinPrice,
-    qualifiesForFreeShipping: itemsPrice >= freeShippingMinPrice,
+    totalItems: items.reduce((sum, i) => sum + i.quantity, 0),
+
+    // prices
+    listItemsPrice: derived.listItemsPrice,
+    discount: derived.discount,
+    itemsPrice: cart.itemsPrice,
+    shippingPrice: cart.shippingPrice,
+    taxPrice: cart.taxPrice,
+    totalPrice: cart.totalPrice,
+
+    // UX helpers
+    qualifiesForFreeShipping: derived.qualifiesForFreeShipping,
+    remainingForFreeShipping: derived.remainingForFreeShipping,
   }
 }
