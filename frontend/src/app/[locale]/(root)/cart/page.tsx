@@ -164,7 +164,7 @@ export default function CartPage() {
             </div>
          {/* RIGHT SIDE - Cart Summary */}
             <div>
-              <Card className='rounded-none'>
+              <Card className='rounded-none '>
                 <CardContent className='py-4'>
                   <CartPriceSummary
                     itemsPrice={itemsPrice}

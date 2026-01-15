@@ -20,9 +20,11 @@ import { useState } from 'react'
 export default function AddToCart({
   item,
   minimal = false,
+  disabled = false,
 }: {
   item: OrderItem
   minimal?: boolean
+  disabled?: boolean
 }) {
   const router = useRouter()
   const { toast } = useToast()
@@ -36,6 +38,7 @@ export default function AddToCart({
 
   return minimal ? (
     <Button
+      disabled={disabled}
       className='rounded-full w-auto'
       onClick={() => {
         try {

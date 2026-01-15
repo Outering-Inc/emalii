@@ -96,7 +96,10 @@ export const ShippingAddressSchema = z.object({
   city: z.string().min(1, 'City is required'),
   postalCode: z.string().min(1, 'Postal code is required'),
   province: z.string().min(1, 'Province is required'),
-  phone: z.string().min(1, 'Phone number is required'),
+  phone: z.string()
+  .min(7, 'Phone number must be at least 7 and 10 digits')
+  .max(10, 'Phone number must be at least 7 and 10 digits')
+  .regex(/^\d+$/, 'Phone number must contain only digits'),
   country: z.string().min(1, 'Country is required'),
 })
 
@@ -187,11 +190,7 @@ export const ProductInputSchema = z.object({
       })
     )
     .optional(),
-  variantImages: z
-  .record(z.array(z.string()))
-  .optional()
-  .default({}),
-  avgRating: z.coerce
+   avgRating: z.coerce
     .number()
     .min(0, 'Average rating must be at least 0')
     .max(5, 'Average rating must be at most 5'),

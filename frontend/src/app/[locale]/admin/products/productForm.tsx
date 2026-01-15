@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 
 import { useRouter } from 'next/navigation'
-import { useForm } from 'react-hook-form'
+import { useFieldArray, useForm } from 'react-hook-form'
 import { Button } from '@/src/components/ui/button'
 import { Card, CardContent } from '@/src/components/ui/card'
 import {
@@ -30,6 +30,7 @@ import z from 'zod'
 import Image from 'next/image'
 import { UploadButton } from '@/src/lib/uploadthing'
 import { Trash } from 'lucide-react'
+import { useEffect } from 'react'
 
 
 const productDefaultValues: ProductInput =
@@ -56,7 +57,6 @@ const productDefaultValues: ProductInput =
         ratingDistribution: [],
         reviews: [],
          // ✅ Add these two
-        variantImages: {},
         variants: [], 
       }
     : {
@@ -81,7 +81,6 @@ const productDefaultValues: ProductInput =
         ratingDistribution: [],
         reviews: [],
           // ✅ Add these two
-        variantImages: {},
         variants: [],
 
       }
@@ -96,6 +95,7 @@ const ProductForm = ({
   productId?: string
 }) => {
   const router = useRouter()
+  const { toast } = useToast() 
    
   const schema = type === 'Update' ? ProductUpdateSchema : ProductInputSchema;
 
@@ -107,47 +107,80 @@ const ProductForm = ({
     resolver: zodResolver(schema),
     defaultValues: type === 'Update' && product ? product : productDefaultValues,
   });
-
-   
-  const { toast } = useToast() 
-  async function onSubmit(values: ProductInput) {
-           // Auto-generate slugs before sending
-      values.slug = toSlug(values.name)
-      values.categorySlug = toSlug(values.category)
-      values.tagsSlug = values.tags.map(toSlug)
-    if (type === 'Create') {
-      const res = await adminCreateProduct(values)
-      if (!res.success) {
-        toast({
-          variant: 'destructive',
-          description: res.message,
-        })
-      } else {
-        toast({
-          description: res.message,
-        })
-        router.push(`/admin/products`)
-      }
-    }
-    if (type === 'Update') {
-      if (!productId) {
-        router.push(`/admin/products`)
-        return
-      }
-      const res = await adminUpdateProduct({ ...values, _id: productId })
-      if (!res.success) {
-        toast({
-          variant: 'destructive',
-          description: res.message,
-        })
-      } else {
-        router.push(`/admin/products`)
-      }
-    }
-  }
   
   const images = form.watch('images')
+  const variants = form.watch('variants')
+   
+  /* ----------------------------- VARIANT ARRAY ----------------------------- */
 
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'variants',
+  })
+   
+ 
+   // ------------------- REAL-TIME STOCK UPDATE -------------------
+  useEffect(() => {
+    const totalStock = variants?.reduce((sum, v) => sum + (v.stock || 0), 0) ?? 0
+    form.setValue('countInStock', totalStock)
+  }, [variants, form])
+  async function onSubmit(values: ProductInput) {
+  // Auto-generate slugs
+  values.slug = toSlug(values.name)
+  values.categorySlug = toSlug(values.category)
+  values.tagsSlug = values.tags.map(toSlug)
+
+  // ✅ Guard variants
+  const variants = values.variants ?? []
+
+  // ❌ Prevent duplicate variants
+  const keys = variants.map(v => `${v.color}-${v.size}`)
+  if (new Set(keys).size !== keys.length) {
+    toast({
+      variant: 'destructive',
+      description: 'Duplicate color/size variants detected',
+    })
+    return
+  }
+
+  // ✅ Derive colors & sizes
+  values.colors = [...new Set(variants.map(v => v.color))]
+  values.sizes = [...new Set(variants.map(v => v.size))]
+
+  // ✅ Derive total stock
+  values.countInStock = variants.reduce((sum, v) => sum + v.stock, 0)
+
+  if (type === 'Create') {
+    const res = await adminCreateProduct(values)
+    if (!res.success) {
+      toast({
+        variant: 'destructive',
+        description: res.message,
+      })
+    } else {
+      toast({ description: res.message })
+      router.push(`/admin/products`)
+    }
+  }
+
+  if (type === 'Update') {
+    if (!productId) {
+      router.push(`/admin/products`)
+      return
+    }
+    const res = await adminUpdateProduct({ ...values, _id: productId })
+    if (!res.success) {
+      toast({
+        variant: 'destructive',
+        description: res.message,
+      })
+    } else {
+      router.push(`/admin/products`)
+    }
+  }
+}
+
+  
 
    return (
     <Form {...form}>
@@ -362,63 +395,144 @@ const ProductForm = ({
         </div>
 
         <div className='flex flex-col gap-5 md:flex-row'>
-          <FormField
-            control={form.control}
-            name='images'
-            render={() => (
-              <FormItem className='w-full'>
-                <FormLabel>Images</FormLabel>
-                <Card>
-                  <CardContent className='space-y-2 mt-2 min-h-48'>
-                    <div className='flex justify-start items-center space-x-2'>
-                      {/* copilot prompt: add delete button as shadcn Button with TrashIcon to remove the image */}
-                      {images.map((image: string) => (
-                        <Card key={image} className='relative '>
-                          <Image
-                            src={image}
-                            alt='product image'
-                            className='w-36 h-36 object-cover object-center rounded-sm'
-                            width={100}
-                            height={100}
-                          />
-                          <Button
-                            variant={'destructive'}
-                            className='absolute top-1 right-1'
-                            type='button'
-                            size='icon'
-                            onClick={() => {
-                              form.setValue(
-                                'images',
-                                images.filter((img) => img !== image)
-                              )
-                            }}
-                          >
-                            <Trash />
-                          </Button>
-                        </Card>
-                      ))}
-                      <FormControl>
-                        <UploadButton
-                          endpoint='imageUploader'
-                          onClientUploadComplete={(res: { url: string }[]) => {
-                            form.setValue('images', [...images, res[0].url])
-                          }}
-                          onUploadError={(error: Error) => {
-                            toast({
-                              variant: 'destructive',
-                              description: `ERROR! ${error.message}`,
-                            })
-                          }}
-                        />
-                      </FormControl>
-                    </div>
-                  </CardContent>
+                    {/* MAIN IMAGES */}
+        <Card>
+          <CardContent className="space-y-2">
+            <FormLabel>Product Images</FormLabel>
+            <div className="flex gap-2 flex-wrap">
+              {images.map((img) => (
+                <Card key={img} className="relative">
+                  <Image src={img} alt="" width={100} height={100} />
+                  <Button
+                    size="icon"
+                    variant="destructive"
+                    className="absolute top-1 right-1"
+                    type="button"
+                    onClick={() =>
+                      form.setValue('images', images.filter((i) => i !== img))
+                    }
+                  >
+                    <Trash size={14} />
+                  </Button>
                 </Card>
+              ))}
+              <UploadButton
+                endpoint="imageUploader"
+                onClientUploadComplete={(res) =>
+                  form.setValue('images', [...images, res[0].url])
+                }
+              />
+            </div>
+          </CardContent>
+        </Card>
 
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        {/* ---------------- VARIANTS ---------------- */}
+        <Card>
+          <CardContent className="space-y-4">
+            <div className="flex justify-between">
+              <FormLabel>Variants (Color & Size)</FormLabel>
+              <Button
+                type="button"
+                onClick={() =>
+                  append({ color: '', size: '', stock: 0, images: [] })
+                  
+                }
+              >
+                + Add Variant
+              </Button>
+            </div>
+
+            {fields.map((field, index) => {
+              const vImages = form.watch(`variants.${index}.images`) || []
+                           
+              return (
+                <Card key={field.id} className="p-4 space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name={`variants.${index}.color`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Color</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="color"
+                              placeholder="e.g., Red, Blue, Green"
+                              {...field} 
+                              value={field.value || ''}
+                             />
+                           </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name={`variants.${index}.size`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Size</FormLabel>
+                          <FormControl><Input placeholder="e.g., S, M, L" {...field} /></FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                 {/* STOCK */}
+                  <FormField
+                    control={form.control}
+                    name={`variants.${index}.stock`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Stock</FormLabel>
+                        <FormControl><Input type="number" {...field} /></FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Variant Images */}
+                  <div className="flex gap-2 flex-wrap">
+                    {vImages.map((img: string) => (
+                      <Card key={img} className="relative">
+                        <Image src={img} alt="" width={80} height={80} />
+                        <Button
+                          size="icon"
+                          variant="destructive"
+                          className="absolute top-1 right-1"
+                          type="button"
+                          onClick={() => {
+                            const updated = vImages.filter((i) => i !== img)
+                            form.setValue(`variants.${index}.images`, updated)
+                            
+                          }}
+                        >
+                          <Trash size={12} />
+                        </Button>
+                      </Card>
+                    ))}
+                  <UploadButton
+                    endpoint="imageUploader"
+                    onClientUploadComplete={(res) => {
+                    form.setValue(
+                      `variants.${index}.images`,
+                      [...vImages, res[0].url]
+                    )
+                  }}
+                />  
+                  </div>
+
+                  <Button
+                    variant="destructive"
+                    type="button"
+                    onClick={() => remove(index)}
+                  >
+                    Remove Variant
+                  </Button>
+                </Card>
+              )
+            })}
+          </CardContent>
+        </Card>
         </div>
 
         <div>

@@ -104,7 +104,8 @@ export default function ProductCardCategory({
 
       <Link
         href={`/product/${product.slug}`}
-        className="block text-sm text-muted-foreground line-clamp-2"
+        className="overflow-hidden text-ellipsis text-muted-foreground"
+        style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
       >
         {product.name}
       </Link>

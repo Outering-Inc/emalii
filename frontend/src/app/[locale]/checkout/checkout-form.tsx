@@ -241,7 +241,7 @@ const CheckoutSummary = () => (
           </div>
 
           {discount > 0 && (
-          <div className='flex justify-between text-green-700'>
+          <div className='flex justify-between text-red-700'>
             <span>Discount:</span>
             <ProductPrice price={discount} plain />
           </div>

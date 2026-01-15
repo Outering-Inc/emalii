@@ -51,7 +51,7 @@ const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       cart: initialState,
-
+      
       // -----------------------------
       // Add item
       // -----------------------------

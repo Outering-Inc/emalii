@@ -72,7 +72,7 @@ const productSchema = new Schema<Product>(
 
     // Media
     images: { type: [String], required: true },
-    variantImages: { type: Map, of: [String], default: {} },
+   
 
     // Description & SEO
     description: { type: String, trim: true },
