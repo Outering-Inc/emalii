@@ -36,67 +36,75 @@ export default function ProductCardCategory({
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // 🔥 Read from URL first (Amazon behavior)
+  /* ---------------- URL → STATE (Amazon behavior) ---------------- */
+
   const urlColor = searchParams.get('color')
   const urlSize = searchParams.get('size')
 
   const [selectedColor, setSelectedColor] = useState(
-    product.colors.includes(urlColor ?? '')
+    product.colors?.includes(urlColor ?? '')
       ? urlColor!
-      : product.colors?.[0]
+      : product.colors?.[0] ?? ''
   )
 
   const [selectedSize, setSelectedSize] = useState(
-    product.sizes.includes(urlSize ?? '')
+    product.sizes?.includes(urlSize ?? '')
       ? urlSize!
-      : product.sizes?.[0]
+      : product.sizes?.[0] ?? ''
   )
 
-  // 🔥 Sync state → URL (NO reload)
+  /* ---------------- STATE → URL (NO reload) ---------------- */
+
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString())
-    params.set('color', selectedColor)
-    params.set('size', selectedSize)
-
-    router.replace(`?${params.toString()}`, {
-      scroll: false,
-    })
+    if (selectedColor) params.set('color', selectedColor)
+    if (selectedSize) params.set('size', selectedSize)
+    router.replace(`?${params.toString()}`, { scroll: false })
   }, [selectedColor, selectedSize])
 
-  /**
-   * ✅ Amazon/Noon-style image resolution
-   */
-  const variantImages =
-    product.variantImages?.[selectedColor]
+  /* ---------------- VARIANT RESOLUTION ---------------- */
+
+  const selectedVariant =
+    product.variants?.find(
+      v => v.color === selectedColor && v.size === selectedSize
+    ) ?? null
 
   const images =
-    variantImages && variantImages.length > 0
-      ? variantImages
-      : product.images
+    selectedVariant?.images?.length
+      ? selectedVariant.images
+      : product.images ?? []
+
+  const mainImage = images[0] || '/images/placeholder.png'
+  const hoverImage = images[1]
+
+  /* ---------------- IMAGE ---------------- */
 
   const ProductImage = () => (
     <Link
       href={`/product/${product.slug}?color=${selectedColor}&size=${selectedSize}`}
+      className="block"
     >
-      <div className="relative h-42 w-full">
-        {images.length > 1 ? (
+      <div className="relative w-full aspect-[3/4] bg-muted">
+        {hoverImage ? (
           <ProductImageHover
-            src={images[0]}
-            hoverSrc={images[1]}
+            src={mainImage}
+            hoverSrc={hoverImage}
             alt={product.name}
           />
         ) : (
           <Image
-            src={images[0]}
+            src={mainImage}
             alt={product.name}
             fill
-            sizes="20vw"
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
             className="object-contain"
           />
         )}
       </div>
     </Link>
   )
+
+  /* ---------------- DETAILS ---------------- */
 
   const ProductDetails = () => (
     <div className="flex-1 space-y-2 text-center">
@@ -105,20 +113,22 @@ export default function ProductCardCategory({
       <Link
         href={`/product/${product.slug}`}
         className="overflow-hidden text-ellipsis text-muted-foreground"
-        style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+        style={{
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+        }}
       >
         {product.name}
       </Link>
 
-      <div className="flex justify-center gap-2">
+      <div className="flex justify-center">
         <RatingSummaryCategory
           avgRating={product.avgRating}
           numReviews={product.numReviews}
           asPopover
-          ratingDistribution={
-            product.ratingDistribution ?? []
-          }
-          productSlug={product.slug} // <-- pass the slug here
+          ratingDistribution={product.ratingDistribution ?? []}
+          productSlug={product.slug}
         />
       </div>
 
@@ -141,26 +151,31 @@ export default function ProductCardCategory({
     </div>
   )
 
+  /* ---------------- ADD TO CART ---------------- */
+
   const AddButton = () => (
     <div className="pt-2">
       <AddToCart
         minimal
+        disabled={(selectedVariant?.stock ?? 0) === 0}
         item={{
           clientId: generateId(),
           product: product._id,
           size: selectedSize,
           color: selectedColor,
-          countInStock: product.countInStock,
+          countInStock: selectedVariant?.stock ?? product.countInStock,
           name: product.name,
           slug: product.slug,
           category: product.category,
           price: round2(product.price),
           quantity: 1,
-          image: images[0],
+          image: mainImage,
         }}
       />
     </div>
   )
+
+  /* ---------------- RENDER ---------------- */
 
   if (hideBorder) {
     return (
