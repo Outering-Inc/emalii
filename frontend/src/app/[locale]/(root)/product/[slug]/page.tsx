@@ -6,9 +6,9 @@ import {
   getRelatedProductsByCategory,
 } from '@/src/lib/actions/productActions'
 
-import SelectVariant from '@/src/components/shared/product/select-variant'
+//import SelectVariant from '@/src/components/shared/product/select-variant'
 import ProductPrice from '@/src/components/shared/product/product-price'
-import ProductGallery from '@/src/components/shared/product/product-gallery'
+
 import { Separator } from '@/src/components/ui/separator'
 
 import ProductSlider from '@/src/components/shared/product/product-slider'
@@ -19,6 +19,9 @@ import RatingSummary from '@/src/components/shared/product/rating-summary'
 import ReviewList from './review-list'
 import { getTranslations } from 'next-intl/server'
 import { features } from 'process'
+import SelectVariantCategory from '@/src/components/shared/product/select-variant-category'
+import ProductGalleryContainer from '@/src/components/shared/product/product-gallery-container'
+import { resolveVariantImages } from '@/src/hooks/stores/resolveVariantImages'
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
@@ -74,17 +77,15 @@ export default async function ProductDetails(props: {
 
   const t = await getTranslations()
 
-  // ✅ SERVER-SIDE VARIANT RESOLUTION
-  const selectedColor =
-    color && product.colors.includes(color) ? color : product.colors[0]
-  const selectedSize =
-    size && product.sizes.includes(size) ? size : product.sizes[0]
+  const selectedColor = color ? color : product.colors[0]
+  const selectedSize = size ? size : product.sizes[0]
+  const images = resolveVariantImages(product, selectedColor, selectedSize)
 
-  const variantImages = product.variantImages?.[selectedColor]
-  const images =
-    variantImages && variantImages.length > 0
-      ? variantImages
-      : product.images
+  // 🔒 FORCE VARIANT SELECTION
+  const hasSelectedVariant =
+  Boolean(color && product.colors.includes(color)) &&
+  Boolean(size && product.sizes.includes(size))
+
 
   // 🔥 RELATED PRODUCTS
   const relatedProducts = await getRelatedProductsByCategory({
@@ -149,7 +150,7 @@ export default async function ProductDetails(props: {
         <div className="grid grid-cols-1 md:grid-cols-5">
           {/* Product Gallery */}
           <div className="col-span-2">
-            <ProductGallery images={images} />
+            <ProductGalleryContainer product={product} />
           </div>
 
           {/* Product Details */}
@@ -183,7 +184,7 @@ export default async function ProductDetails(props: {
 
             {/* 🔥 VARIANT SELECTION */}
             <div>
-              <SelectVariant
+              <SelectVariantCategory
                 product={product}
                 size={selectedSize}
                 color={selectedColor}
@@ -199,46 +200,58 @@ export default async function ProductDetails(props: {
             </div>
           </div>
 
-          {/* Cart Section */}
-          <div>
-            <Card>
-              <CardContent className="p-4 flex flex-col gap-4">
-                <ProductPrice price={product.price} />
+          {/* Cart Section */}                   
+        <div>
+          <Card>
+            <CardContent className="p-4 flex flex-col gap-4">
+              <ProductPrice price={product.price} />
 
-                {product.countInStock > 0 && product.countInStock <= 3 && (
-                  <div className="text-destructive font-bold">
-                    {t('Product.Only X left in stock - order soon', { count: product.countInStock })}
-                  </div>
-                )}
+              {product.countInStock > 0 && product.countInStock <= 3 && (
+                <div className="text-destructive font-bold">
+                  {t('Product.Only X left in stock - order soon', {
+                    count: product.countInStock,
+                  })}
+                </div>
+              )}
 
-                {product.countInStock !== 0 ? (
-                  <div className="text-green-700 text-xl">{t('Product.In Stock')}</div>
-                ) : (
-                  <div className="text-destructive text-xl">{t('Product.Out of Stock')}</div>
-                )}
+              {product.countInStock !== 0 ? (
+                <div className="text-green-700 text-xl">
+                  {t('Product.In Stock')}
+                </div>
+              ) : (
+                <div className="text-destructive text-xl">
+                  {t('Product.Out of Stock')}
+                </div>
+              )}
 
-                {product.countInStock !== 0 && (
-                  <div className="flex justify-center items-center">
-                    <AddToCart
-                      item={{
-                        clientId: generateId(),
-                        product: product._id,
-                        countInStock: product.countInStock,
-                        name: product.name,
-                        slug: product.slug,
-                        category: product.category,
-                        price: round2(product.price),
-                        quantity: 1,
-                        image: images[0],
-                        size: selectedSize,
-                        color: selectedColor,
-                      }}
-                    />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+              {/* 🔒 FORCE VARIANT SELECTION */}
+              {!hasSelectedVariant && (
+                <div className="text-sm text-orange-600 font-medium text-center">
+                  Please select color and size to continue
+                </div>
+              )}
+
+              <div className="flex justify-center items-center">
+                <AddToCart
+                  disabled={!hasSelectedVariant || product.countInStock === 0}
+                  item={{
+                    clientId: generateId(),
+                    product: product._id,
+                    countInStock: product.countInStock,
+                    name: product.name,
+                    slug: product.slug,
+                    category: product.category,
+                    price: round2(product.price),
+                    quantity: 1,
+                    image: images[0],
+                    size: selectedSize,
+                    color: selectedColor,
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
         </div>
       </section>
 

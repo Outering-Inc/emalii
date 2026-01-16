@@ -4,21 +4,23 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
 } from '@/src/components/ui/card'
-import { useRouter, useSearchParams } from 'next/navigation'
 
 import { LeanProduct } from '@/src/types/product'
 import ProductPrice from './product-price'
 import ProductImageHover from './product-image-hover'
 import AddToCart from './add-to-cart'
-import { generateId, round2 } from '@/src/lib/utils/utils'
 import SelectVariantCategory from './select-variant-category'
 import RatingSummaryCategory from './rating-summary-category'
+
+import { generateId, round2 } from '@/src/lib/utils/utils'
 
 interface ProductCardProps {
   product: LeanProduct
@@ -40,6 +42,8 @@ export default function ProductCardCategory({
 
   const urlColor = searchParams.get('color')
   const urlSize = searchParams.get('size')
+
+  /* ---------------- STATE ---------------- */
 
   const [selectedColor, setSelectedColor] = useState(
     product.colors?.includes(urlColor ?? '')
@@ -76,6 +80,14 @@ export default function ProductCardCategory({
 
   const mainImage = images[0] || '/images/placeholder.png'
   const hoverImage = images[1]
+
+  const requiresVariant =
+    (product.colors?.length ?? 0) > 1 ||
+    (product.sizes?.length ?? 0) > 1
+
+  const isOutOfStock = selectedVariant
+    ? selectedVariant.stock === 0
+    : false
 
   /* ---------------- IMAGE ---------------- */
 
@@ -151,29 +163,58 @@ export default function ProductCardCategory({
     </div>
   )
 
-  /* ---------------- ADD TO CART ---------------- */
+  /* ---------------- ADD TO CART (AMAZON STYLE) ---------------- */
 
-  const AddButton = () => (
-    <div className="pt-2">
-      <AddToCart
-        minimal
-        disabled={(selectedVariant?.stock ?? 0) === 0}
-        item={{
-          clientId: generateId(),
-          product: product._id,
-          size: selectedSize,
-          color: selectedColor,
-          countInStock: selectedVariant?.stock ?? product.countInStock,
-          name: product.name,
-          slug: product.slug,
-          category: product.category,
-          price: round2(product.price),
-          quantity: 1,
-          image: mainImage,
-        }}
-      />
-    </div>
-  )
+  const AddButton = () => {
+    if (requiresVariant && !selectedVariant) {
+      return (
+        <div className="pt-2 w-full">
+          <button
+            disabled
+            className="w-full rounded-md border bg-muted py-2 text-sm text-muted-foreground cursor-not-allowed"
+          >
+            Select options
+          </button>
+        </div>
+      )
+    }
+
+    if (isOutOfStock) {
+      return (
+        <div className="pt-2 w-full">
+          <button
+            disabled
+            className="w-full rounded-md border bg-muted py-2 text-sm text-muted-foreground cursor-not-allowed"
+          >
+            Currently unavailable
+          </button>
+        </div>
+      )
+    }
+
+    if (!selectedVariant) return null
+
+    return (
+      <div className="pt-2 w-full">
+        <AddToCart
+          minimal
+          item={{
+            clientId: generateId(),
+            product: product._id,
+            name: product.name,
+            slug: product.slug,
+            category: product.category,
+            image: mainImage,
+            price: round2(product.price),
+            quantity: 1,
+            countInStock: selectedVariant.stock,
+            color: selectedColor,
+            size: selectedSize,
+          }}
+        />
+      </div>
+    )
+  }
 
   /* ---------------- RENDER ---------------- */
 
