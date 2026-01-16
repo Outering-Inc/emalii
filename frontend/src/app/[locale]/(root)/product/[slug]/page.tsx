@@ -23,6 +23,7 @@ import SelectVariantCategory from '@/src/components/shared/product/select-varian
 import ProductGalleryContainer from '@/src/components/shared/product/product-gallery-container'
 import { resolveVariantImages } from '@/src/hooks/stores/resolveVariantImages'
 
+
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>
   searchParams?: Promise<{ color?: string; size?: string }>
@@ -77,14 +78,31 @@ export default async function ProductDetails(props: {
 
   const t = await getTranslations()
 
-  const selectedColor = color ? color : product.colors[0]
-  const selectedSize = size ? size : product.sizes[0]
+  
+  // ------------------------
+  // Variant & Images
+  // ------------------------
+  // Initial selection — do NOT default to first values
+  const selectedColor = color // undefined if not selected
+  const selectedSize = size  // undefined if not selected
   const images = resolveVariantImages(product, selectedColor, selectedSize)
 
-  // 🔒 FORCE VARIANT SELECTION
-  const hasSelectedVariant =
-  Boolean(color && product.colors.includes(color)) &&
-  Boolean(size && product.sizes.includes(size))
+  // Resolve selected variant only if both color and size are selected
+  const selectedVariant =
+    selectedColor && selectedSize
+      ? product.variants?.find(
+          v => v.color === selectedColor && v.size === selectedSize
+        ) ?? null
+      : null
+
+// Determine if variant selection is required
+const requiresVariant = Array.isArray(product.variants) && product.variants.length > 0
+
+// Determine if variant or product is out of stock
+const isOutOfStock = selectedVariant
+  ? selectedVariant.stock <= 0
+  : product.countInStock <= 0
+
 
 
   // 🔥 RELATED PRODUCTS
@@ -94,6 +112,9 @@ export default async function ProductDetails(props: {
     page: Number(page || '1'),
   })
 
+    // ------------------------
+  // Structured Data (SEO)
+  // ------------------------
   const structureData = {
     '@context': 'http://schema.org',
     '@type': 'Product',
@@ -126,17 +147,17 @@ export default async function ProductDetails(props: {
     ],
   }
 
-  // 🔥 PRELOAD VARIANT IMAGES
-  const preloadImages = () => {
-    product.colors.forEach((color) => {
-      product.variantImages?.[color]?.forEach((img) => {
-        const image = new Image()
-        image.src = img
-      })
+   // ------------------------
+  // Preload variant images
+  // ------------------------
+  product.colors.forEach(color => {
+    product.variantImages?.[color]?.forEach(img => {
+      const image = new Image()
+      image.src = img
     })
-  }
+  })
 
-  preloadImages()
+  const mainImage = images[0]
 
   return (
     <div>
@@ -201,57 +222,72 @@ export default async function ProductDetails(props: {
           </div>
 
           {/* Cart Section */}                   
-        <div>
-          <Card>
-            <CardContent className="p-4 flex flex-col gap-4">
-              <ProductPrice price={product.price} />
+         <div className="col-span-1">
+            <Card>
+              <CardContent className="flex flex-col gap-4">
+                <ProductPrice price={product.price} />
 
-              {product.countInStock > 0 && product.countInStock <= 3 && (
-                <div className="text-destructive font-bold">
-                  {t('Product.Only X left in stock - order soon', {
-                    count: product.countInStock,
-                  })}
-                </div>
-              )}
+                {product.countInStock > 0 && product.countInStock <= 3 && (
+                  <div className="text-destructive font-bold">
+                    {t('Product.Only X left in stock - order soon', {
+                      count: product.countInStock,
+                    })}
+                  </div>
+                )}
 
-              {product.countInStock !== 0 ? (
-                <div className="text-green-700 text-xl">
-                  {t('Product.In Stock')}
-                </div>
-              ) : (
-                <div className="text-destructive text-xl">
-                  {t('Product.Out of Stock')}
-                </div>
-              )}
+                {product.countInStock !== 0 ? (
+                  <div className="text-green-700 text-xl">{t('Product.In Stock')}</div>
+                ) : (
+                  <div className="text-destructive text-xl">{t('Product.Out of Stock')}</div>
+                )}
 
-              {/* 🔒 FORCE VARIANT SELECTION */}
-              {!hasSelectedVariant && (
-                <div className="text-sm text-orange-600 font-medium text-center">
-                  Please select color and size to continue
-                </div>
-              )}
+                {/* Add to Cart / Button Logic */}
+                <div className="flex flex-col gap-2 pt-2 w-full">
+                  {/* Variant required but not selected */}
+                  {requiresVariant && (!selectedColor || !selectedSize)  && (
+                    <button
+                      disabled
+                      className="w-full rounded-md border bg-muted py-2 text-sm text-muted-foreground cursor-not-allowed"
+                    >
+                      Select color and size
+                    </button>
+                  )}
 
-              <div className="flex justify-center items-center">
-                <AddToCart
-                  disabled={!hasSelectedVariant || product.countInStock === 0}
-                  item={{
-                    clientId: generateId(),
-                    product: product._id,
-                    countInStock: product.countInStock,
-                    name: product.name,
-                    slug: product.slug,
-                    category: product.category,
-                    price: round2(product.price),
-                    quantity: 1,
-                    image: images[0],
-                    size: selectedSize,
-                    color: selectedColor,
-                  }}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  {/* Variant selected but out of stock */}
+                  {requiresVariant && selectedVariant && isOutOfStock &&(
+                    <button
+                      disabled
+                      className="w-full rounded-md border bg-muted py-2 text-sm text-muted-foreground cursor-not-allowed"
+                    >
+                      Currently unavailable
+                    </button>
+                  )}
+
+                  {/* Valid variant → Add to cart */}
+                  {(!requiresVariant || (selectedColor && selectedSize && selectedVariant && !isOutOfStock)) &&(
+                    <AddToCart
+                      minimal
+                      item={{
+                        clientId: generateId(),
+                        product: product._id,
+                        name: product.name,
+                        slug: product.slug,
+                        category: product.category,
+                        image: mainImage,
+                        price: round2(product.price),
+                        quantity: 1,
+                        countInStock: selectedVariant
+                          ? selectedVariant.stock
+                          : product.countInStock,
+                        color: selectedColor,
+                        size: selectedSize,
+                      }}
+                    />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
 
