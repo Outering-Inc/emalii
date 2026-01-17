@@ -99,7 +99,8 @@
     "Loading": "Inapakia...",
     "Rating": "Kiwango",
     "No reviews yet": "Hakuna maoni bado",
-    "Submitting": "Inatuma..."
+    "Submitting": "Inatuma...",
+    "Only X left in stock - order soon": "Bado {count} imebaki kwenye hisa — agiza haraka"
   },
   "Cart": {
     "Shopping Cart": "Kikapu cha Ununuzi",

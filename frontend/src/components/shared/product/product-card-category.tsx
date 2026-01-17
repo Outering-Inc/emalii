@@ -73,13 +73,6 @@ export default function ProductCardCategory({
       v => v.color === selectedColor && v.size === selectedSize
     ) ?? null
 
-  const images =
-    selectedVariant?.images?.length
-      ? selectedVariant.images
-      : product.images ?? []
-
-  const mainImage = images[0] || '/images/placeholder.png'
-  const hoverImage = images[1]
 
   const requiresVariant =
     (product.colors?.length ?? 0) > 1 ||
@@ -90,6 +83,13 @@ export default function ProductCardCategory({
     : false
 
   /* ---------------- IMAGE ---------------- */
+  const images =
+    selectedVariant?.images?.length
+      ? selectedVariant.images
+      : product.images ?? []
+
+  const mainImage = images[0] || '/images/placeholder.png'
+  const hoverImage = images[1]
 
   const ProductImage = () => (
     <Link

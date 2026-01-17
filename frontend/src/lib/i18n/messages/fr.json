@@ -99,7 +99,8 @@
     "Loading": "Chargement...",
     "Rating": "Évaluation",
     "No reviews yet": "Pas encore d'avis",
-    "Submitting": "Envoi en cours..."
+    "Submitting": "Envoi en cours...",
+    "Only X left in stock - order soon": "Il ne reste que {count} en stock — commandez vite"
   },
   "Cart": {
     "Shopping Cart": "Panier d'achat",
