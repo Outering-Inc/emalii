@@ -427,112 +427,139 @@ const ProductForm = ({
         </Card>
 
         {/* ---------------- VARIANTS ---------------- */}
-        <Card>
-          <CardContent className="space-y-4">
-            <div className="flex justify-between">
-              <FormLabel>Variants (Color & Size)</FormLabel>
-              <Button
-                type="button"
-                onClick={() =>
-                  append({ color: '', size: '', stock: 0, images: [] })
-                  
-                }
-              >
-                + Add Variant
-              </Button>
-            </div>
+         {/* ---------------- VARIANTS ---------------- */}
+<Card>
+  <CardContent className="space-y-4">
+    <div className="flex justify-between items-center">
+      <FormLabel>Variants (Color & Size)</FormLabel>
+      <Button
+        type="button"
+        onClick={() =>
+          append({ color: '', size: '', stock: 0, images: [] })
+        }
+      >
+        + Add Variant
+      </Button>
+    </div>
 
-            {fields.map((field, index) => {
-              const vImages = form.watch(`variants.${index}.images`) || []
-                           
-              return (
-                <Card key={field.id} className="p-4 space-y-3">
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name={`variants.${index}.color`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Color</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="color"
-                              placeholder="e.g., Red, Blue, Green"
-                              {...field} 
-                              value={field.value || ''}
-                             />
-                           </FormControl>
-                        </FormItem>
-                      )}
+    {fields.map((field, index) => {
+      const vImages = form.watch(`variants.${index}.images`) || []
+      const vColor = form.watch(`variants.${index}.color`) || ''
+
+      // Predefined filler colors
+      const fillerColors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ffa500']
+
+      return (
+        <Card key={field.id} className="p-4 space-y-3">
+          <div className="grid grid-cols-2 gap-4">
+            {/* COLOR */}
+            <FormField
+              control={form.control}
+              name={`variants.${index}.color`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Color</FormLabel>
+                  <FormControl className="flex items-center gap-2">
+                    {/* Manual input */}
+                    <input
+                      type="color"
+                      value={field.value || '#000000'}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      className="w-10 h-10 rounded-full border"
                     />
 
-                    <FormField
-                      control={form.control}
-                      name={`variants.${index}.size`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Size</FormLabel>
-                          <FormControl><Input placeholder="e.g., S, M, L" {...field} /></FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                 {/* STOCK */}
-                  <FormField
-                    control={form.control}
-                    name={`variants.${index}.stock`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Stock</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Variant Images */}
-                  <div className="flex gap-2 flex-wrap">
-                    {vImages.map((img: string) => (
-                      <Card key={img} className="relative">
-                        <Image src={img} alt="" width={80} height={80} />
-                        <Button
-                          size="icon"
-                          variant="destructive"
-                          className="absolute top-1 right-1"
-                          type="button"
-                          onClick={() => {
-                            const updated = vImages.filter((i) => i !== img)
-                            form.setValue(`variants.${index}.images`, updated)
-                            
-                          }}
-                        >
-                          <Trash size={12} />
-                        </Button>
-                      </Card>
+                    {/* Filler colors */}
+                    {fillerColors.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`w-8 h-8 rounded-full border ${
+                          vColor === color ? 'ring-2 ring-blue-500' : ''
+                        }`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => field.onChange(color)}
+                      />
                     ))}
-                  <UploadButton
-                    endpoint="imageUploader"
-                    onClientUploadComplete={(res) => {
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* SIZE */}
+            <FormField
+              control={form.control}
+              name={`variants.${index}.size`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Size</FormLabel>
+                  <FormControl>
+                    <Input placeholder="S, M, L" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* STOCK */}
+          <FormField
+            control={form.control}
+            name={`variants.${index}.stock`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Stock</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          {/* Variant Images */}
+          <div className="flex gap-2 flex-wrap">
+            {vImages.map((img: string) => (
+              <Card key={img} className="relative">
+                <Image src={img} alt="" width={80} height={80} />
+                <Button
+                  size="icon"
+                  variant="destructive"
+                  className="absolute top-1 right-1"
+                  type="button"
+                  onClick={() =>
                     form.setValue(
                       `variants.${index}.images`,
-                      [...vImages, res[0].url]
+                      vImages.filter((i) => i !== img)
                     )
-                  }}
-                />  
-                  </div>
+                  }
+                >
+                  <Trash size={12} />
+                </Button>
+              </Card>
+            ))}
+            <UploadButton
+              endpoint="imageUploader"
+              onClientUploadComplete={(res) => {
+                form.setValue(
+                  `variants.${index}.images`,
+                  [...vImages, res[0].url]
+                )
+              }}
+            />
+          </div>
 
-                  <Button
-                    variant="destructive"
-                    type="button"
-                    onClick={() => remove(index)}
-                  >
-                    Remove Variant
-                  </Button>
-                </Card>
-              )
-            })}
-          </CardContent>
+          {/* REMOVE VARIANT */}
+          <Button
+            variant="destructive"
+            type="button"
+            onClick={() => remove(index)}
+          >
+            Remove Variant
+          </Button>
         </Card>
+      )
+    })}
+  </CardContent>
+</Card>
+         
         </div>
 
         <div>
