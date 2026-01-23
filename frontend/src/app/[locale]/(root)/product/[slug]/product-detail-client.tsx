@@ -191,7 +191,7 @@ export default function ProductDetailsClient({
                 {product.countInStock > 0 && product.countInStock <= 3 && (
                   <div className="text-destructive font-bold">
                     {t('Only X left in stock - order soon', {
-                      count: product.countInStock,
+                      count: product.countInStock, // this replaces {count} in your string
                     })}
                   </div>
                 )}
@@ -229,6 +229,7 @@ export default function ProductDetailsClient({
                     item={{
                       clientId: generateId(),
                       product: product._id,
+                      variantId: selectedVariant ? selectedVariant._id : null,
                       name: product.name,
                       slug: product.slug,
                       category: product.category,

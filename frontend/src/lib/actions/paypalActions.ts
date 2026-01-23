@@ -1,76 +1,76 @@
- 'use server'
- 
+'use server'
+
 import { connectToDatabase } from "../db/dbConnect"
 import Order from "../db/models/orderModel"
-import { sendPurchaseReceipt } from "@/src/emails"
 import { revalidatePath } from "next/cache"
 import { formatError } from "../utils/utils"
 import { cache } from "react"
 import { paypal } from "../payments/paypal/paypal"
-
+import { finalizePayment } from "../payments/orchestrator/payment-orchestrator"
 
 // Create PayPal Order
 export const createPayPalOrder = cache(async (orderId: string) => {
+  await connectToDatabase()
+  try {
+    const order = await Order.findById(orderId)
+    if (!order) throw new Error('Order not found')
+
+    const paypalOrder = await paypal.createOrder(order.totalPrice)
+
+    order.paymentResult = {
+      id: paypalOrder.id,
+      email_address: '',
+      status: '',
+      pricePaid: 0,
+    }
+    await order.save()
+
+    return {
+      success: true,
+      message: 'PayPal order created successfully',
+      data: paypalOrder.id,
+    }
+  } catch (err) {
+    return { success: false, message: formatError(err) }
+  }
+})
+
+// Approve PayPal Order -- Finalize Payment
+export const approvePayPalOrder = cache(
+  async (orderId: string, data: { orderID: string }) => {
     await connectToDatabase()
+
     try {
       const order = await Order.findById(orderId)
-      if (order) {
-        const paypalOrder = await paypal.createOrder(order.totalPrice)
-        order.paymentResult = {
-          id: paypalOrder.id,
-          email_address: '',
-          status: '',
-          pricePaid: '0',
-        }
-        await order.save()
-        return {
-          success: true,
-          message: 'PayPal order created successfully',
-          data: paypalOrder.id,
-        }
-      } else {
-        throw new Error('Order not found')
-      }
-    } catch (err) {
-      return { success: false, message: formatError(err) }
-    }
-  })
-  
-  // ApprovePayPalOrder
-  export const approvePayPalOrder = cache(async(
-    orderId: string,
-    data: { orderID: string } //data inside paypal
-  )  => {
-    await connectToDatabase()
-    try {
-      const order = await Order.findById(orderId).populate('user', 'email')
       if (!order) throw new Error('Order not found')
-  
-      const captureData = await paypal.capturePayment(data.orderID)  //capture orderId in paypal
+
+      // 1️⃣ Capture payment from PayPal
+      const captureData = await paypal.capturePayment(data.orderID)
+
       if (
-        !captureData ||
-        captureData.id !== order.paymentResult?.id ||
-        captureData.status !== 'COMPLETED'
-      )
-        throw new Error('Error in paypal payment')
-      order.isPaid = true
-      order.paidAt = new Date()
-      order.paymentResult = {
-        id: captureData.id,
-        status: captureData.status,
-        email_address: captureData.payer.email_address,
-        pricePaid:
-          captureData.purchase_units[0]?.payments?.captures[0]?.amount?.value,
+        captureData.status !== 'COMPLETED' ||
+        captureData.id !== order.paymentResult?.id
+      ) {
+        throw new Error('Invalid PayPal capture')
       }
-      await order.save()
-      await sendPurchaseReceipt({ order })
+
+      // 2️⃣ Delegate EVERYTHING to orchestrator
+      await finalizePayment({
+        orderId,
+        paymentMethod: 'PayPal',
+        paymentData: captureData,
+      })
+
+      // 3️⃣ UI refresh only
       revalidatePath(`/account/orders/${orderId}`)
+
       return {
         success: true,
-        message: 'Your order has been successfully paid by PayPal',
+        message: 'PayPal payment completed successfully',
       }
     } catch (err) {
       return { success: false, message: formatError(err) }
     }
-  })
-  
+  }
+)
+

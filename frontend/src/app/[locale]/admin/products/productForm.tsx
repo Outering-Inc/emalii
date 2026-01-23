@@ -98,6 +98,7 @@ const ProductForm = ({
   const { toast } = useToast() 
    
   const schema = type === 'Update' ? ProductUpdateSchema : ProductInputSchema;
+  
 
  const form = useForm<
     z.input<typeof schema>,

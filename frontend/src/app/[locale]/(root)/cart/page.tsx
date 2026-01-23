@@ -87,13 +87,22 @@ export default function CartPage() {
                           {item.name}
                         </Link>
                         <div>
-                          <p className='text-sm'>
-                            <span className='font-bold'>
-                              {' '}
-                              {t('Cart.Color')}:{' '}
-                            </span>{' '}
+                          <p className="text-sm flex items-center gap-2">
+                            <span className="font-bold">{t('Cart.Color')}:</span>
+
+                            {/* Color dot */}
+                          <span
+                            className="inline-block w-5 h-5 rounded-full border"
+                            style={{ backgroundColor: item.color }}
+                            aria-label={item.color}
+                          />
+
+                            {/* Color text */}
+                          <span className="capitalize text-gray-700">
                             {item.color}
+                          </span>
                           </p>
+
                           <p className='text-sm'>
                             <span className='font-bold'>
                               {' '}

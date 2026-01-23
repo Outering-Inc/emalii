@@ -73,7 +73,6 @@ export default function ProductCardCategory({
       v => v.color === selectedColor && v.size === selectedSize
     ) ?? null
 
-
   const requiresVariant =
     (product.colors?.length ?? 0) > 1 ||
     (product.sizes?.length ?? 0) > 1
@@ -82,7 +81,14 @@ export default function ProductCardCategory({
     ? selectedVariant.stock === 0
     : false
 
+  /* ---------------- VARIANT ID (CRITICAL FIX) ---------------- */
+  // Amazon-style: SKU preferred, fallback is deterministic key
+  const variantId =
+    selectedVariant?.sku ??
+    `${product._id}-${selectedColor}-${selectedSize}`
+
   /* ---------------- IMAGE ---------------- */
+
   const images =
     selectedVariant?.images?.length
       ? selectedVariant.images
@@ -163,7 +169,7 @@ export default function ProductCardCategory({
     </div>
   )
 
-  /* ---------------- ADD TO CART (AMAZON STYLE) ---------------- */
+  /* ---------------- ADD TO CART ---------------- */
 
   const AddButton = () => {
     if (requiresVariant && !selectedVariant) {
@@ -201,6 +207,7 @@ export default function ProductCardCategory({
           item={{
             clientId: generateId(),
             product: product._id,
+            variantId, // ✅ REQUIRED FIX
             name: product.name,
             slug: product.slug,
             category: product.category,

@@ -5,9 +5,8 @@ import { persist } from 'zustand/middleware'
 import { Cart, OrderItem, ShippingAddress } from '@/src/types'
 import { calcDeliveryDateAndPrice } from '@/src/lib/actions/orderActions'
 
-// -----------------------------
-// Initial cart state
-// -----------------------------
+/* ---------------- INITIAL STATE ---------------- */
+
 const initialState: Cart = {
   items: [],
   itemsPrice: 0,
@@ -27,9 +26,8 @@ const initialState: Cart = {
   deliveryDateIndex: 0,
 }
 
-// -----------------------------
-// Cart store interface
-// -----------------------------
+/* ---------------- STORE INTERFACE ---------------- */
+
 interface CartState {
   cart: Cart
   addItem: (item: OrderItem, quantity: number) => Promise<string>
@@ -39,31 +37,28 @@ interface CartState {
   setShippingAddress: (address: ShippingAddress) => Promise<void>
   setPaymentMethod: (paymentMethod: string) => void
   setDeliveryDateIndex: (index: number) => Promise<void>
-    // 🔥 ADD THIS
   setPricing: (pricing: Partial<Cart>) => void
   init: () => void
 }
 
-// -----------------------------
-// Cart store
-// -----------------------------
+/* ---------------- CART STORE ---------------- */
+
 const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       cart: initialState,
-      
-      // -----------------------------
-      // Add item
-      // -----------------------------
+
+      /* ---------------- ADD ITEM ---------------- */
+
       addItem: async (item, quantity) => {
         const { items, shippingAddress } = get().cart
+
+        // ✅ MATCH BY VARIANT ID (AMAZON STYLE)
         const existItem = items.find(
-          (x) =>
-            x.product === item.product &&
-            x.color === item.color &&
-            x.size === item.size
+          x => x.variantId === item.variantId
         )
 
+        // Stock validation
         if (existItem) {
           if (existItem.countInStock < existItem.quantity + quantity) {
             throw new Error('Not enough items in stock')
@@ -74,12 +69,10 @@ const useCartStore = create<CartState>()(
           }
         }
 
-        const updatedCartItems = existItem
-          ? items.map((x) =>
-              x.product === item.product &&
-              x.color === item.color &&
-              x.size === item.size
-                ? { ...existItem, quantity: existItem.quantity + quantity }
+        const updatedItems = existItem
+          ? items.map(x =>
+              x.variantId === item.variantId
+                ? { ...x, quantity: x.quantity + quantity }
                 : x
             )
           : [...items, { ...item, quantity }]
@@ -87,42 +80,43 @@ const useCartStore = create<CartState>()(
         set({
           cart: {
             ...get().cart,
-            items: updatedCartItems,
+            items: updatedItems,
             ...(await calcDeliveryDateAndPrice({
-              items: updatedCartItems,
+              items: updatedItems,
               shippingAddress,
             })),
           },
         })
 
-        const foundItem = updatedCartItems.find(
-          (x) =>
-            x.product === item.product &&
-            x.color === item.color &&
-            x.size === item.size
+        const foundItem = updatedItems.find(
+          x => x.variantId === item.variantId
         )
-        if (!foundItem) throw new Error('Item not found in cart')
+
+        if (!foundItem) {
+          throw new Error('Item not found in cart')
+        }
+
         return foundItem.clientId
       },
 
-      // -----------------------------
-      // Update item quantity
-      // -----------------------------
+      /* ---------------- UPDATE ITEM ---------------- */
+
       updateItem: async (item, quantity) => {
         const { items, shippingAddress } = get().cart
-        const exist = items.find(
-          (x) =>
-            x.product === item.product &&
-            x.color === item.color &&
-            x.size === item.size
-        )
-        if (!exist) return
 
-        const updatedItems = items.map((x) =>
-          x.product === item.product &&
-          x.color === item.color &&
-          x.size === item.size
-            ? { ...exist, quantity }
+        const existItem = items.find(
+          x => x.variantId === item.variantId
+        )
+
+        if (!existItem) return
+
+        if (quantity > existItem.countInStock) {
+          throw new Error('Not enough items in stock')
+        }
+
+        const updatedItems = items.map(x =>
+          x.variantId === item.variantId
+            ? { ...x, quantity }
             : x
         )
 
@@ -138,16 +132,13 @@ const useCartStore = create<CartState>()(
         })
       },
 
-      // -----------------------------
-      // Remove item
-      // -----------------------------
+      /* ---------------- REMOVE ITEM ---------------- */
+
       removeItem: async (item) => {
         const { items, shippingAddress } = get().cart
+
         const updatedItems = items.filter(
-          (x) =>
-            x.product !== item.product ||
-            x.color !== item.color ||
-            x.size !== item.size
+          x => x.variantId !== item.variantId
         )
 
         set({
@@ -162,67 +153,71 @@ const useCartStore = create<CartState>()(
         })
       },
 
-      // -----------------------------
-      // Clear cart
-      // -----------------------------
+      /* ---------------- CLEAR CART ---------------- */
+
       clearCart: () => {
         set({ cart: { ...get().cart, items: [] } })
       },
 
-      // -----------------------------
-      // Set shipping address
-      // -----------------------------
+      /* ---------------- SHIPPING ADDRESS ---------------- */
+
       setShippingAddress: async (shippingAddress) => {
         const { items } = get().cart
+
         set({
           cart: {
             ...get().cart,
             shippingAddress,
-            ...(await calcDeliveryDateAndPrice({ items, shippingAddress })),
+            ...(await calcDeliveryDateAndPrice({
+              items,
+              shippingAddress,
+            })),
           },
         })
       },
 
-      // -----------------------------
-      // Set payment method
-      // -----------------------------
-      setPaymentMethod: (paymentMethod) => {
-        set({ cart: { ...get().cart, paymentMethod } })
-      },
-      
+      /* ---------------- PAYMENT METHOD ---------------- */
 
-      // -----------------------------
-      // Set delivery date index
-      // -----------------------------
+      setPaymentMethod: (paymentMethod) => {
+        set({
+          cart: { ...get().cart, paymentMethod },
+        })
+      },
+
+      /* ---------------- DELIVERY DATE ---------------- */
+
       setDeliveryDateIndex: async (index) => {
         const { items } = get().cart
+
         set({
           cart: {
             ...get().cart,
-            ...(await calcDeliveryDateAndPrice({ items, deliveryDateIndex: index })),
+            ...(await calcDeliveryDateAndPrice({
+              items,
+              deliveryDateIndex: index,
+            })),
           },
         })
       },
 
-      // -----------------------------
-      // Set pricing (Amazon-style)
-      // -----------------------------
+      /* ---------------- PRICING (SERVER-DRIVEN) ---------------- */
+
       setPricing: (pricing) => {
         set({
           cart: {
             ...get().cart,
-          ...pricing, // 👈 Amazon-style overwrite
+            ...pricing,
           },
         })
       },
 
+      /* ---------------- RESET ---------------- */
 
-      // -----------------------------
-      // Reset cart
-      // -----------------------------
       init: () => set({ cart: initialState }),
     }),
-    { name: 'cart-store' }
+    {
+      name: 'cart-store',
+    }
   )
 )
 

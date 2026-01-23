@@ -1,9 +1,10 @@
-import { Document, Model, model, models, Schema } from 'mongoose'
+import { Document, Model, model, models, Schema, Types } from 'mongoose'
 import { ProductInput } from '@/src/types'
 import { slugify } from '@/src/lib/utils/utils'
 
 // ✅ Variant interface
 export interface Variant {
+  _id: string
   color: string
   size: string
   stock: number
@@ -17,7 +18,7 @@ export interface Product extends Document, ProductInput {
   updatedAt: Date
   categorySlug?: string
   tagsSlug?: string[]
-  variants?: Variant[] // NEW: variant-level stock
+  variants?: Types.DocumentArray<Variant> // ✅ important for .id()
 }
 
 const variantSchema = new Schema<Variant>({
@@ -54,7 +55,7 @@ const productSchema = new Schema<Product>(
 
     // Inventory & Availability
     countInStock: { type: Number, required: true },
-    variants: { type: [variantSchema], default: [] }, // NEW
+    variants: { type: [variantSchema], default: [] }, // ✅ subdocument array
 
     isPublished: { type: Boolean, required: true, default: false },
 

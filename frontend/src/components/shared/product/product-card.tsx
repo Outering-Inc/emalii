@@ -2,15 +2,15 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Card, CardContent, CardFooter, CardHeader } from '@/src/components/ui/card'
-
 import { LeanProduct } from '@/src/types/product'
 import Rating from './rating'
 import ProductPrice from './product-price'
 import ProductImageHover from './product-image-hover'
 import AddToCart from './add-to-cart'
 import { formatNumber, generateId, round2 } from '@/src/lib/utils/utils'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface ProductCardProps {
   product: LeanProduct
@@ -25,6 +25,35 @@ export default function ProductCard({
   hideBorder = false,
   hideAddToCart = false,
 }: ProductCardProps) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // ------------------- SELECTED VARIANTS -------------------
+  const urlColor = searchParams.get('color')
+  const urlSize = searchParams.get('size')
+
+  const selectedColor = product.colors.includes(urlColor ?? '') ? urlColor! : product.colors[0] ?? ''
+  const selectedSize = product.sizes.includes(urlSize ?? '') ? urlSize! : product.sizes[0] ?? ''
+
+  // ------------------- SYNC STATE WITH URL -------------------
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (selectedColor) params.set('color', selectedColor)
+    if (selectedSize) params.set('size', selectedSize)
+    router.replace(`?${params.toString()}`, { scroll: false })
+  }, [selectedColor, selectedSize, router, searchParams])
+
+  // ------------------- FIND SELECTED VARIANT -------------------
+  const selectedVariant =
+    product.variants?.find(
+      (v) => v.color === selectedColor && v.size === selectedSize
+    ) ?? null
+
+  // Amazon-style SKU fallback
+  const variantId =
+    selectedVariant?.sku ?? `${product._id}-${selectedColor}-${selectedSize}`
+
+  // ------------------- PRODUCT IMAGE -------------------
   const ProductImage = () => (
     <Link href={`/product/${product.slug}`}>
       <div className="relative h-42 w-full">
@@ -35,20 +64,19 @@ export default function ProductCard({
             alt={product.name}
           />
         ) : (
-          <div className="relative h-42 w-full">
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              sizes="20vw"
-              className="object-contain"
-            />
-          </div>
+          <Image
+            src={product.images[0]}
+            alt={product.name}
+            fill
+            sizes="20vw"
+            className="object-contain"
+          />
         )}
       </div>
     </Link>
   )
 
+  // ------------------- PRODUCT DETAILS -------------------
   const ProductDetails = () => (
     <div className="flex-1 space-y-1">
       <p className="font-bold">{product.brand}</p>
@@ -59,12 +87,10 @@ export default function ProductCard({
       >
         {product.name}
       </Link>
-
       <div className="flex gap-2 justify-center">
         <Rating rating={product.avgRating} />
         <span>({formatNumber(product.numReviews)})</span>
       </div>
-
       <ProductPrice
         isDeal={product.tags.includes('todays-deal')}
         price={product.price}
@@ -74,6 +100,7 @@ export default function ProductCard({
     </div>
   )
 
+  // ------------------- ADD TO CART -------------------
   const AddButton = () => (
     <div className="w-full text-center pt-1">
       <AddToCart
@@ -81,8 +108,9 @@ export default function ProductCard({
         item={{
           clientId: generateId(),
           product: product._id,
-          size: product.sizes[0],
-          color: product.colors[0],
+          variantId,
+          size: selectedSize,
+          color: selectedColor,
           countInStock: product.countInStock,
           name: product.name,
           slug: product.slug,
@@ -95,6 +123,7 @@ export default function ProductCard({
     </div>
   )
 
+  // ------------------- RENDER -------------------
   return hideBorder ? (
     <div className="flex flex-col">
       <ProductImage />

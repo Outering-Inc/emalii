@@ -23,6 +23,10 @@ const orderSchema = new Schema<Order>(
           ref: 'Product',
           required: true,
         },
+        variantId: {
+          type: Schema.Types.ObjectId,
+          required: true,
+        },
         clientId: { type: String, required: true },
         name: { type: String, required: true },
         slug: { type: String, required: true },

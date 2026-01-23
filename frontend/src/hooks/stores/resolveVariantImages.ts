@@ -9,6 +9,7 @@ export function resolveVariantImages(
     product.variants?.find(
       v => v.color === color && v.size === size
     ) ?? null
+    
 
   if (selectedVariant?.images?.length) {
     return selectedVariant.images

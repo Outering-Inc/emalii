@@ -89,13 +89,29 @@ const main = async () => {
   }
 }
 
+const pickVariant = (product: any) => {
+  if (product.variants && product.variants.length > 0) {
+    return product.variants[0] // deterministic seed
+  }
+
+  // fallback for products without variants
+  return {
+    _id: product._id.toString(),
+    color: undefined,
+    size: undefined,
+    price: product.price,
+    countInStock: product.countInStock,
+    image: product.images?.[0],
+  }
+}
+
+
 const generateOrder = async (
   i: number,
   users: any,
   products: any
 ): Promise<OrderInput> => {
   const product1 = await ProductModel.findById(products[i % products.length])
-
   const product2 = await ProductModel.findById(
     products[
       i % products.length >= products.length - 1
@@ -111,50 +127,62 @@ const generateOrder = async (
     ]
   )
 
-  if (!product1 || !product2 || !product3) throw new Error('Product not found')
+  if (!product1 || !product2 || !product3) {
+    throw new Error('Product not found')
+  }
+
+  const v1 = pickVariant(product1)
+  const v2 = pickVariant(product2)
+  const v3 = pickVariant(product3)
 
   const items = [
     {
       clientId: generateId(),
       product: product1._id,
+      variantId: v1._id,
       name: product1.name,
       slug: product1.slug,
       quantity: 1,
-      image: product1.images[0],
+      image: v1.image || product1.images[0],
       category: product1.category,
-      price: product1.price,
-      countInStock: product1.countInStock,
+      price: v1.price ?? product1.price,
+      countInStock: v1.countInStock,
+      color: v1.color,
+      size: v1.size,
     },
     {
       clientId: generateId(),
       product: product2._id,
+      variantId: v2._id,
       name: product2.name,
       slug: product2.slug,
       quantity: 2,
-      image: product2.images[0],
-      category: product1.category,
-      price: product2.price,
-      countInStock: product1.countInStock,
+      image: v2.image || product2.images[0],
+      category: product2.category,
+      price: v2.price ?? product2.price,
+      countInStock: v2.countInStock,
+      color: v2.color,
+      size: v2.size,
     },
     {
       clientId: generateId(),
       product: product3._id,
+      variantId: v3._id,
       name: product3.name,
       slug: product3.slug,
       quantity: 3,
-      image: product3.images[0],
-      category: product1.category,
-      price: product3.price,
-      countInStock: product1.countInStock,
+      image: v3.image || product3.images[0],
+      category: product3.category,
+      price: v3.price ?? product3.price,
+      countInStock: v3.countInStock,
+      color: v3.color,
+      size: v3.size,
     },
   ]
 
-  const order = {
+  const order: OrderInput & { createdAt: Date } = {
     user: users[i % users.length],
-    items: items.map((item) => ({
-      ...item,
-      product: item.product,
-    })),
+    items,
     shippingAddress: data.users[i % users.length].address,
     paymentMethod: data.users[i % users.length].paymentMethod,
     isPaid: true,
@@ -164,13 +192,15 @@ const generateOrder = async (
     createdAt: calculatePastDate(i),
     expectedDeliveryDate: calculateFutureDate(i % 2),
     ...calcDeliveryDateAndPriceForSeed({
-      items: items,
+      items,
       shippingAddress: data.users[i % users.length].address,
       deliveryDateIndex: i % 2,
     }),
   }
+
   return order
 }
+
 
 export const calcDeliveryDateAndPriceForSeed = ({
   items,

@@ -78,6 +78,7 @@ export const UserNameSchema = z.object({
 export const OrderItemSchema = z.object({
   clientId: z.string().min(1, 'clientId is required'),
   product: z.string().min(1, 'Product is required'),
+  variantId: z.string().min(1, 'Variant ID is required'), 
   name: z.string().min(1, 'Name is required'),
   slug: z.string().min(1, 'Slug is required'),
   category: z.string().min(1, 'Category is required'),
@@ -117,7 +118,7 @@ export const OrderInputSchema = z.object({
       id: z.string(),
       status: z.string(),
       email_address: z.string(),
-      pricePaid: z.string(),
+      pricePaid: z.number(),
     })
     .optional(),
   itemsPrice: Price('Items price'),

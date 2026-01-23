@@ -31,6 +31,7 @@ export interface RatingDistributionItem {
 ------------------------------ */
 
 export interface ProductVariant {
+  _id?: string
   color: string
   size?: string
   stock: number
@@ -76,3 +77,4 @@ export interface LeanProduct {
   /* Meta */
   tags: string[]
 }
+
