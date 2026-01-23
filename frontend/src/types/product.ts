@@ -58,9 +58,10 @@ export interface LeanProduct {
   numReviews: number
   ratingDistribution?: RatingDistributionItem[]
 
-  /* Variant selectors */
-  colors: string[]
-  sizes: string[]
+ 
+  /* Derived variant selectors */
+  colors: string[] // DRY: derive from variants if not set in DB
+  sizes: string[]  // DRY: derive from variants if not set in DB
 
   /* Media */
   images: string[]

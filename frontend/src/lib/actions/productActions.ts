@@ -19,7 +19,7 @@ export const getAllCategories = cache(async() => {
 })
 
 // products for card
-export const getProductsForCard = cache(async({
+export const getProductsForCard = cache(async ({
   tag,
   limit = 1000, // fetch all products by default mongoose limit
 }: {
@@ -27,27 +27,39 @@ export const getProductsForCard = cache(async({
   limit?: number
 }) => {
   await connectToDatabase()
-   // ✅ Normalize incoming tag (URL-safe)
+  
+  // ✅ Normalize incoming tag (URL-safe)
   const normalizedTag = slugify(tag)
 
   const products = await ProductModel.find(
     { 
       tags: { $in: [normalizedTag] },
-      isPublished: true },
+      isPublished: true 
+    },
     {
       name: 1,
       href: { $concat: ['/product/', '$slug'] },
       image: { $arrayElemAt: ['$images', 0] },
+      variants: 1, // ✅ Include variants
     }
   )
     .sort({ createdAt: 'desc' })
     .limit(limit)
+
   return JSON.parse(JSON.stringify(products)) as {
     name: string
     href: string
     image: string
+    variants: {
+      _id: string
+      color?: string
+      size?: string
+      stock?: number
+      images?: string[]
+    }[]
   }[]
 })
+
 
 // products for categories grid
 export const getCategoryGrid = cache(async () => {
