@@ -82,10 +82,10 @@ export default function ProductCardCategory({
     : false
 
   /* ---------------- VARIANT ID (CRITICAL FIX) ---------------- */
-  // Amazon-style: SKU preferred, fallback is deterministic key
+  //  Amazon-style variant fallback
   const variantId =
-    selectedVariant?.sku ??
-    `${product._id}-${selectedColor}-${selectedSize}`
+  selectedVariant?._id ?? product._id
+
 
   /* ---------------- IMAGE ---------------- */
 

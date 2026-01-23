@@ -49,9 +49,9 @@ export default function ProductCard({
       (v) => v.color === selectedColor && v.size === selectedSize
     ) ?? null
 
-  // Amazon-style SKU fallback
-  const variantId =
-    selectedVariant?.sku ?? `${product._id}-${selectedColor}-${selectedSize}`
+  // Amazon-style variant fallback
+   const variantId =
+  selectedVariant?._id ?? product._id
 
   // ------------------- PRODUCT IMAGE -------------------
   const ProductImage = () => (
