@@ -17,14 +17,16 @@ import { getSetting } from './admin/setting'
 
 
 
-// CREATE ORDER FROM CART
+/* -------------------------
+  1️⃣ ORDER CREATION ACTION
+------------------------- */
 export const createOrder = cache(async (clientSideCart: Cart) => {
   try {
     await connectToDatabase()
     const session = await auth()
     if (!session) throw new Error('User not authenticated')
 
-    // create order with user snapshot
+    // create order snapshot with validated cart
     const createdOrder = await createOrderFromCart(clientSideCart, session.user.id!)
 
     return {
@@ -37,7 +39,9 @@ export const createOrder = cache(async (clientSideCart: Cart) => {
   }
 })
 
-// CREATE ORDER FROM CART WITH USER SNAPSHOT
+/* -------------------------
+  2️⃣ CREATE ORDER FROM CART
+------------------------- */
 const createOrderFromCart = cache(async (clientSideCart: Cart, userId: string) => {
   await connectToDatabase()
 
@@ -45,11 +49,11 @@ const createOrderFromCart = cache(async (clientSideCart: Cart, userId: string) =
   session.startTransaction()
 
   try {
-    // 1️⃣ Fetch user snapshot
+    // fetch user snapshot
     const user = await UserModel.findById(userId).session(session)
     if (!user) throw new Error('User not found')
 
-    // 2️⃣ Validate variant stock BEFORE order creation
+    // validate variant stock BEFORE order creation
     for (const item of clientSideCart.items) {
       const product = await ProductModel.findById(item.product).session(session)
       if (!product) throw new Error(`Product not found`)
@@ -58,30 +62,20 @@ const createOrderFromCart = cache(async (clientSideCart: Cart, userId: string) =
         (v) => v.color === item.color && v.size === item.size
       )
 
-      if (!variant) {
-        throw new Error(
-          `Variant not found (${item.color}, ${item.size})`
-        )
-      }
-
-      if (variant.stock < item.quantity) {
-        throw new Error(
-          `Only ${variant.stock} left for ${product.name} (${item.color}, ${item.size})`
-        )
-      }
+      if (!variant) throw new Error(`Variant not found (${item.color}, ${item.size})`)
+      if (variant.stock < item.quantity)
+        throw new Error(`Only ${variant.stock} left for ${product.name} (${item.color}, ${item.size})`)
     }
 
-    // 3️⃣ Calculate prices and delivery date (UNCHANGED)
-    const cart = {
-      ...clientSideCart,
-      ...calcDeliveryDateAndPrice({
-        items: clientSideCart.items,
-        shippingAddress: clientSideCart.shippingAddress,
-        deliveryDateIndex: clientSideCart.deliveryDateIndex,
-      }),
-    }
+    // calculate prices and delivery date
+    const cartPrice = await calcDeliveryDateAndPrice({
+      items: clientSideCart.items,
+      shippingAddress: clientSideCart.shippingAddress,
+      deliveryDateIndex: clientSideCart.deliveryDateIndex,
+    })
+    const cart = { ...clientSideCart, ...cartPrice }
 
-    // 4️⃣ Create order snapshot (UNCHANGED)
+    // create order snapshot
     const order = OrderInputSchema.parse({
       user: {
         _id: user._id.toString(),
@@ -98,12 +92,11 @@ const createOrderFromCart = cache(async (clientSideCart: Cart, userId: string) =
       expectedDeliveryDate: cart.expectedDeliveryDate,
     })
 
-    // 5️⃣ Create order inside transaction
+    // create order inside transaction
     const createdOrder = await OrderModel.create([order], { session })
-
     await session.commitTransaction()
-    return createdOrder[0]
 
+    return createdOrder[0]
   } catch (error) {
     await session.abortTransaction()
     throw error
@@ -120,7 +113,9 @@ const createOrderFromCart = cache(async (clientSideCart: Cart, userId: string) =
  * Deduct inventory for an order after successful payment.
  * Amazon-grade: transactional, atomic, variant-level, idempotent.
  */
-
+/* -------------------------
+  3️⃣ DEDUCT INVENTORY (AFTER PAYMENT)
+------------------------- */
 export async function deductInventoryAfterPayment(orderId: string) {
   await mongoose.connect(process.env.MONGO_URI!)
 
@@ -128,58 +123,42 @@ export async function deductInventoryAfterPayment(orderId: string) {
   session.startTransaction()
 
   try {
-    // 1️⃣ Load order inside session
     const order = await OrderModel.findById(orderId).session(session)
     if (!order) throw new Error('Order not found')
 
-    // 2️⃣ Check if inventory already deducted
+    // idempotency check
     if ((order as any).inventoryDeducted) {
-      // Already deducted, no action needed
       console.log('Inventory already deducted for order', orderId)
       await session.commitTransaction()
       return
     }
 
-    // 3️⃣ Loop through each order item
+    // loop through order items
     for (const item of order.items) {
       const product = await ProductModel.findById(item.product).session(session)
       if (!product) throw new Error(`Product ${item.name} not found`)
-
-      // Lookup variant by variantId
-      if (!item.variantId) {
-        throw new Error(`variantId missing for product ${product._id} in order ${orderId}`)
-      }
+      if (!item.variantId) throw new Error(`variantId missing for product ${product._id} in order ${orderId}`)
 
       const variant = product.variants?.id(item.variantId)
       if (!variant) throw new Error(`Variant not found for product ${product._id}`)
+      if (variant.stock < item.quantity)
+        throw new Error(`Insufficient stock for variant ${variant._id} of product ${product._id}`)
 
-      // 4️⃣ Check stock availability
-      if (variant.stock < item.quantity) {
-        throw new Error(
-          `Insufficient stock for variant ${variant._id} of product ${product._id}`
-        )
-      }
-
-      // 5️⃣ Deduct variant stock
+      // deduct variant stock
       variant.stock -= item.quantity
-
-      // 6️⃣ Recalculate product-level stock
       product.countInStock = product.variants!.reduce((sum, v) => sum + v.stock, 0)
-
       await product.save({ session })
     }
 
-    // 7️⃣ Mark order as paid and prevent double deduction
+    // mark order as paid & prevent double deduction
     order.isPaid = true
     order.paidAt = new Date()
-    ;(order as any).inventoryDeducted = true // idempotency flag
+    ;(order as any).inventoryDeducted = true
     await order.save({ session })
 
-    // 8️⃣ Commit transaction
     await session.commitTransaction()
     console.log('Inventory deducted and order marked as paid:', orderId)
   } catch (err) {
-    // Rollback in case of error
     await session.abortTransaction()
     console.error('Error deducting inventory:', err)
     throw err
@@ -189,8 +168,9 @@ export async function deductInventoryAfterPayment(orderId: string) {
 }
 
 
-//Get Order by Id
-export const getOrderById = cache(async(orderId: string): Promise<OrderList> => {
+ // 4️⃣ GET ORDER BY ID
+
+export const getOrderById = cache(async (orderId: string): Promise<OrderList> => {
   await connectToDatabase()
   const order = await OrderModel.findById(orderId)
   return JSON.parse(JSON.stringify(order))
