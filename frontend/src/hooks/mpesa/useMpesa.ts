@@ -19,22 +19,21 @@ interface MpesaTransaction {
 
 export const useMpesa = () => {
   const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false) // means STK sent
+  const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [transaction, setTransaction] = useState<MpesaTransaction | null>(null)
 
-  const initiateStkPush = async (phone: string, amount: number) => {
+  const initiateStkPush = async (phone: string, amount: number, orderId: string) => {
     setLoading(true)
     setSuccess(false)
     setError(null)
 
     try {
-        const res = await fetch('/api/mpesa/initiate', {
+      const res = await fetch('/api/mpesa/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, amount }),
+        body: JSON.stringify({ phone, amount, orderId }),
       })
-
 
       const data = await res.json()
 
@@ -48,7 +47,7 @@ export const useMpesa = () => {
         setTransaction(data.transaction)
       }
 
-      setSuccess(true) // STK SENT (not paid)
+      setSuccess(true)
       return { success: true, data }
     } catch (err: any) {
       console.error('STK Push Error:', err)

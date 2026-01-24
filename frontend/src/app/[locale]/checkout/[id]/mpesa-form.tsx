@@ -40,13 +40,15 @@ export default function MpesaForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto p-4 border rounded">
-      <h2 className="text-xl font-bold">M-Pesa Checkout</h2>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="text-xl">M-Pesa Checkout</div>
 
-      {message && <div className={`p-2 rounded ${success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{message}</div>}
+      {message && <div className="text-destructive">{message}</div>}
 
       <div>
-        <label htmlFor="phone" className="block mb-1 font-medium">Phone Number</label>
+        <label htmlFor="phone" className="block mb-1 font-medium">
+          Phone Number
+        </label>
         <input
           type="text"
           id="phone"
@@ -59,7 +61,13 @@ export default function MpesaForm({
       </div>
 
       <Button className="w-full" size="lg" disabled={loading} type="submit">
-        {loading ? 'Sending STK...' : <div>Pay - <ProductPrice price={priceInCents / 100} plain /></div>}
+        {loading ? (
+          'Sending STK...'
+        ) : (
+          <div>
+            Pay - <ProductPrice price={priceInCents / 100} plain />
+          </div>
+        )}
       </Button>
 
       {transaction && (
