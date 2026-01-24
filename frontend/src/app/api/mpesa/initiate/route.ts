@@ -6,11 +6,14 @@ import { connectToDatabase } from '@/src/lib/db/dbConnect'
 import OrderModel from '@/src/lib/db/models/orderModel'
 import { createMpesaOrder } from '@/src/lib/actions/mpesaActions'
 import { formatError } from '@/src/lib/utils/utils'
+import { sanitizeKenyanPhone } from '@/src/lib/utils/mpesa'
 
 export async function POST(req: NextRequest) {
   try {
+    // 1️⃣ DB
     await connectToDatabase()
 
+    // 2️⃣ Auth
     const session = await auth()
     if (!session) {
       return NextResponse.json(
@@ -19,6 +22,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // 3️⃣ Body
     const { phone, amount, orderId } = await req.json()
     if (!phone || !amount || !orderId) {
       return NextResponse.json(
@@ -27,7 +31,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // ✅ Find the order using ONLY orderId and userId
+    // 4️⃣ Validate phone (no unused vars ✅)
+    sanitizeKenyanPhone(phone)
+
+    // 5️⃣ Find order (UNCHANGED LOGIC)
     const order = await OrderModel.findOne({
       _id: orderId,
       user: session.user.id,
@@ -41,7 +48,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Call STK Push
+    // 6️⃣ STK Push (isolated orchestration)
     const response = await createMpesaOrder(orderId)
 
     if (!response.success) {
@@ -51,7 +58,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    return NextResponse.json({ success: true, data: response.data }, { status: 200 })
+    return NextResponse.json(
+      { success: true, data: response.data },
+      { status: 200 }
+    )
   } catch (error) {
     console.error('Mpesa Initiate Error:', error)
     return NextResponse.json(

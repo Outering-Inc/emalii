@@ -41,3 +41,23 @@ export function extractPayerName(data: RawMpesaCallback): string {
   const value = findMetadataValue(data, 'Name')
   return value?.toString() ?? ''
 }
+
+// Sanitize Kenyan phone numbers to the format 2547XXXXXXXX
+export function sanitizeKenyanPhone(phone: string): string | null {
+  if (!phone) return null
+
+  // Remove spaces, dashes, etc
+  let cleaned = phone.replace(/\D/g, '')
+
+  if (cleaned.startsWith('07') && cleaned.length === 10) {
+    cleaned = '254' + cleaned.slice(1)
+  } else if (cleaned.startsWith('7') && cleaned.length === 9) {
+    cleaned = '254' + cleaned
+  } else if (cleaned.startsWith('254') && cleaned.length === 12) {
+    // valid
+  } else {
+    return null
+  }
+
+  return cleaned
+}
