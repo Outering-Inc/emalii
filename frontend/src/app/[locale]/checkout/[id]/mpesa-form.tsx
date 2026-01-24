@@ -26,15 +26,11 @@ export default function MpesaForm({
       return
     }
 
-    await initiateStkPush(phone, priceInCents / 100)
+    await initiateStkPush(phone, priceInCents / 100, orderId)
 
     if (success) {
       setMessage('✅ STK Push sent! Check your phone.')
 
-      // After success, you may want to handle the transaction further
-      // For example, save transaction data to your database or show a confirmation
-
-      // Navigate to the success page after a short delay
       setTimeout(() => {
         router.push(`/checkout/${orderId}/mpesa-payment-success`)
       }, 2000)
@@ -44,15 +40,13 @@ export default function MpesaForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="text-xl">M-Pesa Checkout</div>
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto p-4 border rounded">
+      <h2 className="text-xl font-bold">M-Pesa Checkout</h2>
 
-      {message && <div className="text-destructive">{message}</div>}
+      {message && <div className={`p-2 rounded ${success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{message}</div>}
 
       <div>
-        <label htmlFor="phone" className="block mb-1 font-medium">
-          Phone Number
-        </label>
+        <label htmlFor="phone" className="block mb-1 font-medium">Phone Number</label>
         <input
           type="text"
           id="phone"
@@ -64,22 +58,10 @@ export default function MpesaForm({
         />
       </div>
 
-      <Button
-        className="w-full"
-        size="lg"
-        disabled={loading}
-        type="submit"
-      >
-        {loading ? (
-          'Sending STK...'
-        ) : (
-          <div>
-            Pay - <ProductPrice price={priceInCents / 100} plain />
-          </div>
-        )}
+      <Button className="w-full" size="lg" disabled={loading} type="submit">
+        {loading ? 'Sending STK...' : <div>Pay - <ProductPrice price={priceInCents / 100} plain /></div>}
       </Button>
 
-      {/* Optionally display transaction data */}
       {transaction && (
         <div className="mt-4 text-sm text-gray-500">
           <p>Transaction Details:</p>
