@@ -7,6 +7,7 @@ import { connectToDatabase } from '../../db/dbConnect'
 import { paypal } from './paypal'
 import { finalizePayment } from '../orchestrator/payment-orchestrator'
 import { formatError } from '../../utils/utils'
+import { PaymentMethod } from '../reconciliation/type'
 
 export const approvePayPalOrder = cache(
   async (orderId: string, data: { orderID: string }) => {
@@ -23,7 +24,7 @@ export const approvePayPalOrder = cache(
       // 2️⃣ Delegate EVERYTHING to orchestrator (DRY)
       await finalizePayment({
         orderId,
-        paymentMethod: 'PayPal',
+        paymentMethod: PaymentMethod.PayPal, // ✅ enum
         paymentData: captureData,
       })
 
