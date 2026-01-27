@@ -4,10 +4,11 @@
 import { cache } from 'react'
 import { connectToDatabase } from '../db/dbConnect'
 import OrderModel from '../db/models/orderModel'
-import MpesaTransaction from '../db/models/mpesaModel'
+import MpesaTransaction, { IMpesaTransaction } from '../db/models/mpesaModel'
 import MpesaCheckoutMapping from '../db/models/mpesaCheckout.model'
 import { mpesa } from '../payments/mpesa/safaricom'
 import { formatError } from '../utils/utils'
+import { normalizeKenyanPhone } from '../utils/mpesa'
 
 export const createMpesaOrder = cache(async (orderId: string) => {
   await connectToDatabase()
@@ -17,19 +18,31 @@ export const createMpesaOrder = cache(async (orderId: string) => {
     const order = await OrderModel.findById(orderId)
     if (!order) throw new Error('Order not found')
 
-    const phone = order.shippingAddress.phone
+    // 2️⃣ Normalize phone
+    const phone = normalizeKenyanPhone(order.shippingAddress.phone)
 
-    // 2️⃣ Prevent duplicate pending transaction
-    const existingTx = await MpesaTransaction.findOne({
-      phone,
-      status: 'PENDING',
-    })
+    // 🔒 3️⃣ STK RETRY SUPPRESSION (app-level)
+    const existingTx = (await MpesaTransaction.findOne({
+      orderId: order._id,
+      status: { $in: ['PENDING', 'SUCCESS'] },
+    })) as IMpesaTransaction | null
 
     if (existingTx) {
-      throw new Error('A transaction is already in progress for this number.')
+      return {
+        success: true,
+        message: 'Payment already initiated',
+        data: {
+          transactionId: existingTx._id.toString(),
+          checkoutRequestId: existingTx.checkoutRequestId,
+          merchantRequestId: existingTx.merchantRequestId,
+          amount: existingTx.amount,
+          phone: existingTx.phone,
+          status: existingTx.status,
+        },
+      }
     }
 
-    // 3️⃣ Initiate STK Push
+    // 4️⃣ Initiate STK Push
     const amount = Math.ceil(order.totalPrice)
     const response = await mpesa.initiateStkPush(amount, phone)
 
@@ -37,15 +50,15 @@ export const createMpesaOrder = cache(async (orderId: string) => {
       throw new Error('Failed to initiate Mpesa STK push')
     }
 
-    // 4️⃣ Persist checkout mapping
+    // 5️⃣ Persist checkout mapping
     await MpesaCheckoutMapping.create({
       orderId: order._id.toString(),
       userId: order.user.toString(),
       checkoutRequestId: response.CheckoutRequestID,
     })
 
-    // 5️⃣ Create MpesaTransaction
-    const transaction = await MpesaTransaction.create({
+    // 6️⃣ Create Mpesa transaction
+    const transaction = (await MpesaTransaction.create({
       orderId: order._id,
       user: order.user,
       phone,
@@ -53,23 +66,50 @@ export const createMpesaOrder = cache(async (orderId: string) => {
       status: 'PENDING',
       merchantRequestId: response.MerchantRequestID,
       checkoutRequestId: response.CheckoutRequestID,
-      paymentData: response, // raw Safaricom response
-    })
+      paymentData: response,
+    })) as IMpesaTransaction
 
-    // 6️⃣ Return clean data object (industry standard)
+    // 7️⃣ Success response
     return {
       success: true,
       message: 'Mpesa STK push initiated successfully',
       data: {
-        transactionId: (transaction._id as any).toString(),
-        checkoutRequestId: response.CheckoutRequestID,
-        merchantRequestId: response.MerchantRequestID,
-        amount,
-        phone,
+        transactionId: transaction._id.toString(),
+        checkoutRequestId: transaction.checkoutRequestId,
+        merchantRequestId: transaction.merchantRequestId,
+        amount: transaction.amount,
+        phone: transaction.phone,
         status: transaction.status,
       },
     }
-  } catch (err) {
+  } catch (err: any) {
+    /**
+     * 🔐 DATABASE-LEVEL RETRY SUPPRESSION
+     * Handles race conditions (duplicate PENDING insert)
+     */
+    if (err?.code === 11000) {
+      const tx = (await MpesaTransaction.findOne({
+        orderId,
+        status: 'PENDING',
+      })) as IMpesaTransaction | null
+
+      if (tx) {
+        return {
+          success: true,
+          message: 'Payment already initiated',
+          data: {
+            transactionId: tx._id.toString(),
+            checkoutRequestId: tx.checkoutRequestId,
+            merchantRequestId: tx.merchantRequestId,
+            amount: tx.amount,
+            phone: tx.phone,
+            status: tx.status,
+          },
+        }
+      }
+    }
+
+    // ❌ Fallback error
     return {
       success: false,
       message: formatError(err),

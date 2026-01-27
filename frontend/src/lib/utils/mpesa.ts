@@ -42,22 +42,27 @@ export function extractPayerName(data: RawMpesaCallback): string {
   return value?.toString() ?? ''
 }
 
-// Sanitize Kenyan phone numbers to the format 2547XXXXXXXX
-export function sanitizeKenyanPhone(phone: string): string | null {
-  if (!phone) return null
-
-  // Remove spaces, dashes, etc
-  let cleaned = phone.replace(/\D/g, '')
-
-  if (cleaned.startsWith('07') && cleaned.length === 10) {
-    cleaned = '254' + cleaned.slice(1)
-  } else if (cleaned.startsWith('7') && cleaned.length === 9) {
-    cleaned = '254' + cleaned
-  } else if (cleaned.startsWith('254') && cleaned.length === 12) {
-    // valid
-  } else {
-    return null
+// Validates and normalizes the Mpesa callback payload
+export function normalizeKenyanPhone(phone: string): string {
+  if (!phone) {
+    throw new Error('Phone number is required')
   }
 
-  return cleaned
+  const cleaned = phone.replace(/\D/g, '')
+
+  if (cleaned.startsWith('07') && cleaned.length === 10) {
+    return '254' + cleaned.slice(1)
+  }
+
+  if (cleaned.startsWith('7') && cleaned.length === 9) {
+    return '254' + cleaned
+  }
+
+  if (cleaned.startsWith('254') && cleaned.length === 12) {
+    return cleaned
+  }
+
+  throw new Error('Invalid Kenyan phone number format')
 }
+
+

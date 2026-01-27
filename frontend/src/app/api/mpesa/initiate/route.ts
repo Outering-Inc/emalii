@@ -6,7 +6,7 @@ import { connectToDatabase } from '@/src/lib/db/dbConnect'
 import OrderModel from '@/src/lib/db/models/orderModel'
 import { createMpesaOrder } from '@/src/lib/actions/mpesaActions'
 import { formatError } from '@/src/lib/utils/utils'
-import { sanitizeKenyanPhone } from '@/src/lib/utils/mpesa'
+import { normalizeKenyanPhone } from '@/src/lib/utils/mpesa'
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,10 +31,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 4️⃣ Validate phone (no unused vars ✅)
-    sanitizeKenyanPhone(phone)
+    // ✅ 4️⃣ Normalize ONCE (IMPORTANT)
+    const normalizedPhone = normalizeKenyanPhone(phone)
 
-    // 5️⃣ Find order (UNCHANGED LOGIC)
+    // 5️⃣ Find order (UNCHANGED)
     const order = await OrderModel.findOne({
       _id: orderId,
       user: session.user.id,
@@ -48,7 +48,11 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 6️⃣ STK Push (isolated orchestration)
+    // ✅ 6️⃣ Persist normalized phone (Amazon/Jumia style)
+    order.shippingAddress.phone = normalizedPhone
+    await order.save()
+
+    // 7️⃣ STK Push (UNCHANGED)
     const response = await createMpesaOrder(orderId)
 
     if (!response.success) {

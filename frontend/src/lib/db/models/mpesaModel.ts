@@ -1,55 +1,81 @@
+// src/lib/db/models/mpesaModel.ts
 import { Schema, model, models, Document, Model, Types } from 'mongoose'
+import type { MpesaCallback } from '@/src/types/mpesa'
 
-// Input interface used for creating a new transaction
 export interface MpesaTransactionInput {
   phone: string
   amount: number
-  mpesaReceiptNumber: string
-  transactionDate: string
-  resultCode: number
-  status?: string
+  mpesaReceiptNumber?: string
+  transactionDate?: string
+  resultCode?: number
+  status: 'PENDING' | 'SUCCESS' | 'FAILED'
   resultDesc?: string
   merchantRequestId?: string
   checkoutRequestId?: string
   user: Types.ObjectId
-  orderId: Types.ObjectId // Refers to the related order
+  orderId: Types.ObjectId
+  paymentData?: MpesaCallback
 }
 
-// Extended interface representing a full document
-export interface IMpesaTransaction extends Document, MpesaTransactionInput {
+export interface IMpesaTransaction
+  extends Document<Types.ObjectId>,
+    MpesaTransactionInput {
+  _id: Types.ObjectId
   createdAt: Date
   updatedAt: Date
 }
 
-// Mongoose schema definition
 const mpesaTransactionSchema = new Schema<IMpesaTransaction>(
   {
     phone: { type: String, required: true },
     amount: { type: Number, required: true },
-    mpesaReceiptNumber: { type: String, required: true },
-    transactionDate: { type: String, required: true },
-    resultCode: { type: Number, required: true },
-    resultDesc: { type: String },
-    merchantRequestId: { type: String },
-    checkoutRequestId: { type: String },
+
+    mpesaReceiptNumber: String,
+    transactionDate: String,
+    resultCode: Number,
+    resultDesc: String,
+
+    merchantRequestId: String,
+    checkoutRequestId: String,
+
+    status: {
+      type: String,
+      enum: ['PENDING', 'SUCCESS', 'FAILED'],
+      required: true,
+      index: true,
+    },
+
     user: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
+
     orderId: {
       type: Schema.Types.ObjectId,
       ref: 'Order',
-      required: true, // Ensure that each transaction is associated with an order
+      required: true,
+      index: true,
     },
+
+    paymentData: Object,
   },
+  { timestamps: true }
+)
+
+/**
+ * 🔒 ONE pending transaction per order
+ */
+mpesaTransactionSchema.index(
+  { orderId: 1, status: 1 },
   {
-    timestamps: true,
+    unique: true,
+    partialFilterExpression: { status: 'PENDING' },
   }
 )
 
-// Export the model
 const MpesaTransaction: Model<IMpesaTransaction> =
-  models.MpesaTransaction || model<IMpesaTransaction>('MpesaTransaction', mpesaTransactionSchema)
+  models.MpesaTransaction ||
+  model<IMpesaTransaction>('MpesaTransaction', mpesaTransactionSchema)
 
 export default MpesaTransaction

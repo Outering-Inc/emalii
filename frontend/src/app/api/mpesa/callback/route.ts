@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+'use server'
+
 import mongoose from 'mongoose'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -6,12 +7,13 @@ import { z } from 'zod'
 import { connectToDatabase } from '@/src/lib/db/dbConnect'
 import MpesaTransaction from '@/src/lib/db/models/mpesaModel'
 import MpesaCheckoutMapping from '@/src/lib/db/models/mpesaCheckout.model'
+
 import { validateCallback } from '@/src/lib/payments/mpesa/validateCallback'
-import type { MpesaCallback } from '@/src/types/mpesa'
+import type { ParsedMpesaCallback } from '@/src/lib/payments/mpesa/validateCallback'
+
 import { reconcileOrderPayment } from '@/src/lib/payments/orchestrator/reconciliation-orchestrator'
 import { finalizePayment } from '@/src/lib/payments/orchestrator/payment-orchestrator'
 import { PaymentMethod, PaymentResult } from '@/src/lib/payments/reconciliation/type'
-
 
 // ----------------------
 // Optional metadata schema
@@ -29,21 +31,17 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json()
-    const meta = callbackSchema.parse(body)
+    const meta = callbackSchema.safeParse(body)
 
-    // Validate & normalize Mpesa payload
-    const parsed: MpesaCallback = validateCallback(body)
-    parsed.user = meta.user
-    parsed.orderId = meta.orderId
+    // 1️⃣ Validate & normalize Mpesa payload
+    const parsed: ParsedMpesaCallback = validateCallback(body)
 
-    if (!parsed.checkoutRequestID || !parsed.mpesaReceiptNumber) {
-      return NextResponse.json(
-        { error: 'Invalid Mpesa callback payload' },
-        { status: 400 }
-      )
+    if (meta.success) {
+      if (meta.data.user) parsed.user = meta.data.user
+      if (meta.data.orderId) parsed.orderId = meta.data.orderId
     }
 
-    // Resolve order/user via checkout mapping
+    // 2️⃣ Resolve order/user via checkout mapping (SOURCE OF TRUTH)
     const mapping = await MpesaCheckoutMapping.findOne({
       checkoutRequestId: parsed.checkoutRequestID,
     })
@@ -60,8 +58,8 @@ export async function POST(req: Request) {
       )
     }
 
-    // Persist Mpesa transaction (idempotent)
-    const transaction = (await MpesaTransaction.findOneAndUpdate(
+    // 3️⃣ Persist Mpesa transaction (IDEMPOTENT)
+    const transaction = await MpesaTransaction.findOneAndUpdate(
       { checkoutRequestId: parsed.checkoutRequestID },
       {
         phone: parsed.phone,
@@ -75,34 +73,27 @@ export async function POST(req: Request) {
         status: parsed.resultCode === 0 ? 'SUCCESS' : 'FAILED',
         user: parsed.user ? new mongoose.Types.ObjectId(parsed.user) : undefined,
         orderId: new mongoose.Types.ObjectId(parsed.orderId),
-        paymentData: parsed, // raw callback for audit & reconciliation
+        paymentData: parsed, // normalized callback snapshot
       },
       { upsert: true, new: true }
-    ).lean()) as unknown as {
-      _id: mongoose.Types.ObjectId
-      paymentData: PaymentResult
-      status: string
-    }
+    )
 
-    // ✅ Only reconcile if payment succeeded
+    // 4️⃣ ONLY reconcile successful payments
     if (parsed.resultCode === 0 && transaction.paymentData) {
-      // Prepare PaymentResult object safely
       const paymentResult: PaymentResult = {
-        id: transaction.paymentData.id ?? 'N/A',
-        status: transaction.paymentData.status ?? 'UNKNOWN',
-        email_address: transaction.paymentData.email_address ?? '',
-        pricePaid: transaction.paymentData.pricePaid ?? 0,
-        raw: (transaction.paymentData as any)?.raw ?? {},
+        id: parsed.mpesaReceiptNumber,
+        status: 'SUCCESS',
+        pricePaid: parsed.amount,
+        raw: parsed,
       }
 
-      // Reconcile payment via orchestrator (delegates to Mpesa reconciliation)     
       const reconciliation = await reconcileOrderPayment(
-          PaymentMethod.Mpesa,
-          paymentResult,
-          parsed.amount
-        )
+        PaymentMethod.Mpesa,
+        paymentResult,
+        parsed.amount
+      )
 
-      // Finalize payment if reconciliation matched
+      // 5️⃣ Finalize order if reconciliation matched
       if (reconciliation.status === 'MATCHED') {
         await finalizePayment({
           orderId: parsed.orderId,
@@ -112,19 +103,22 @@ export async function POST(req: Request) {
       }
     }
 
+    // 6️⃣ Always ACK Mpesa (CRITICAL)
     return NextResponse.json({
-      message: 'Mpesa callback processed successfully',
+      ResultCode: 0,
+      ResultDesc: 'Accepted',
       data: {
-        transactionId: transaction._id.toString(),
         checkoutRequestId: parsed.checkoutRequestID,
         status: transaction.status,
       },
     })
   } catch (error) {
     console.error('Mpesa callback error:', error)
-    return NextResponse.json(
-      { message: 'Internal Server Error', error: (error as Error).message },
-      { status: 500 }
-    )
+
+    // 🔒 Still ACK Mpesa even on internal error
+    return NextResponse.json({
+      ResultCode: 0,
+      ResultDesc: 'Accepted',
+    })
   }
 }

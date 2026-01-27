@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { sanitizeKenyanPhone } from '@/src/lib/utils/mpesa'
 import { useState } from 'react'
-//import { sanitizeKenyanPhone } from '@/src/lib/utils/phone'
+import { normalizeKenyanPhone } from '@/src/lib/utils/mpesa'
 
 interface MpesaTransaction {
   _id: string
@@ -36,7 +35,7 @@ export const useMpesa = () => {
 
     try {
       // ✅ SANITIZE (reused util)
-      const sanitizedPhone = sanitizeKenyanPhone(phone)
+      const sanitizedPhone = normalizeKenyanPhone(phone)
 
       const res = await fetch('/api/mpesa/initiate', {
         method: 'POST',
