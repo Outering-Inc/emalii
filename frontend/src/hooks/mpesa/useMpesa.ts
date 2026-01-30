@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
-
 import { useState } from 'react'
 import { normalizeKenyanPhone } from '@/src/lib/utils/mpesa'
 
-interface MpesaTransaction {
+export interface MpesaTransaction {
   _id: string
   phone: string
   amount: number
@@ -16,19 +15,18 @@ export const useMpesa = () => {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [transaction, setTransaction] =
-    useState<MpesaTransaction | null>(null)
+  const [transaction, setTransaction] = useState<MpesaTransaction | null>(null)
 
   const initiateStkPush = async (
     phone: string,
     amount: number,
     orderId: string
   ) => {
-    if (loading) return // 🔒 frontend retry suppression
+    if (loading) return // prevent duplicate clicks
 
     setLoading(true)
-    setSuccess(false)
     setError(null)
+    setSuccess(false)
 
     try {
       const sanitizedPhone = normalizeKenyanPhone(phone)
@@ -36,28 +34,18 @@ export const useMpesa = () => {
       const res = await fetch('/api/mpesa/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: sanitizedPhone,
-          amount,
-          orderId,
-        }),
+        body: JSON.stringify({ phone: sanitizedPhone, amount, orderId }),
       })
 
       const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Failed to initiate payment')
 
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to initiate payment')
-      }
+      if (data.data) setTransaction(data.data)
 
-      if (data.data) {
-        setTransaction(data.data)
-      }
-
-      setSuccess(true)
+      // ✅ DO NOT set success here
       return { success: true }
     } catch (err: any) {
       setError(err.message || 'Payment failed')
-      setSuccess(false)
       return { success: false }
     } finally {
       setLoading(false)
@@ -67,6 +55,7 @@ export const useMpesa = () => {
   return {
     loading,
     success,
+    setSuccess, // expose setter for callback effect
     error,
     transaction,
     initiateStkPush,
