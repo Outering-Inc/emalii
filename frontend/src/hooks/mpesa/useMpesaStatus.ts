@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react'
 
 export function useMpesaStatus(checkoutRequestId?: string) {
-  const [status, setStatus] = useState<'PENDING' | 'SUCCESS' | 'FAILED'>(
-    'PENDING'
-  )
+  const [status, setStatus] =
+    useState<'PENDING' | 'SUCCESS' | 'FAILED'>('PENDING')
 
   useEffect(() => {
     if (!checkoutRequestId) return
@@ -21,7 +20,7 @@ export function useMpesaStatus(checkoutRequestId?: string) {
         setStatus(data.status)
         clearInterval(interval)
       }
-    }, 3000) // ⏱ every 3s
+    }, 3000)
 
     return () => clearInterval(interval)
   }, [checkoutRequestId])

@@ -5,7 +5,6 @@ import { useMpesa } from '@/src/hooks/mpesa/useMpesa'
 import { useMpesaStatus } from '@/src/hooks/mpesa/useMpesaStatus'
 import { MpesaPayButton } from '@/src/components/shared/common/mpesaButton'
 
-
 export default function MpesaForm({
   priceInCents,
   orderId,
@@ -19,7 +18,7 @@ export default function MpesaForm({
   const {
     loading,
     success,
-   
+    setSuccess,
     initiateStkPush,
     transaction,
   } = useMpesa()
@@ -40,16 +39,20 @@ export default function MpesaForm({
     await initiateStkPush(phone, priceInCents / 100, orderId)
   }
 
-  // ✅ Auto detect result
+  // 🔗 WIRE STATUS → SUCCESS
   useEffect(() => {
     if (paymentStatus === 'SUCCESS') {
+      setSuccess(true)
       setMessage('✅ Payment successful!')
     }
 
     if (paymentStatus === 'FAILED') {
+      setSuccess(false)
       setMessage('❌ Payment failed or cancelled')
     }
-  }, [paymentStatus])
+  }, [paymentStatus, setSuccess])
+
+  const isPending = loading || paymentStatus === 'PENDING'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -61,16 +64,16 @@ export default function MpesaForm({
         value={phone}
         onChange={(e) => setPhone(e.target.value)}
         placeholder="2547XXXXXXXX"
-        disabled={loading || success}
+        disabled={isPending || success}
         className="w-full p-2 border rounded"
       />
 
       <MpesaPayButton
-        loading={loading || paymentStatus === 'PENDING'}
+        loading={isPending}
         priceInCents={priceInCents}
       />
 
-      {success && paymentStatus === 'PENDING' && (
+      {isPending && (
         <p className="text-sm text-gray-500">
           Waiting for payment confirmation…
         </p>

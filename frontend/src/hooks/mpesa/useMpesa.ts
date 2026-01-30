@@ -15,14 +15,15 @@ export const useMpesa = () => {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [transaction, setTransaction] = useState<MpesaTransaction | null>(null)
+  const [transaction, setTransaction] =
+    useState<MpesaTransaction | null>(null)
 
   const initiateStkPush = async (
     phone: string,
     amount: number,
     orderId: string
   ) => {
-    if (loading) return // prevent duplicate clicks
+    if (loading) return
 
     setLoading(true)
     setError(null)
@@ -41,12 +42,8 @@ export const useMpesa = () => {
       if (!res.ok) throw new Error(data.message || 'Failed to initiate payment')
 
       if (data.data) setTransaction(data.data)
-
-      // ✅ DO NOT set success here
-      return { success: true }
     } catch (err: any) {
       setError(err.message || 'Payment failed')
-      return { success: false }
     } finally {
       setLoading(false)
     }
@@ -55,7 +52,7 @@ export const useMpesa = () => {
   return {
     loading,
     success,
-    setSuccess, // expose setter for callback effect
+    setSuccess,
     error,
     transaction,
     initiateStkPush,
