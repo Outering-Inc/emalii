@@ -1,10 +1,10 @@
 'use client'
 
-import { FormEvent, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/src/components/ui/button'
+import { FormEvent, useEffect, useState } from 'react'
 import { useMpesa } from '@/src/hooks/mpesa/useMpesa'
-import ProductPrice from '@/src/components/shared/product/product-price'
+import { useMpesaStatus } from '@/src/hooks/mpesa/useMpesaStatus'
+import { MpesaPayButton } from '@/src/components/shared/common/mpesaButton'
+
 
 export default function MpesaForm({
   priceInCents,
@@ -14,67 +14,66 @@ export default function MpesaForm({
   orderId: string
 }) {
   const [phone, setPhone] = useState('')
-  const { loading, success, error, initiateStkPush, transaction } = useMpesa()
   const [message, setMessage] = useState('')
-  const router = useRouter()
+
+  const {
+    loading,
+    success,
+   
+    initiateStkPush,
+    transaction,
+  } = useMpesa()
+
+  const paymentStatus = useMpesaStatus(
+    transaction?.checkoutRequestId
+  )
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
 
     if (!phone) {
-      setMessage('❌ Please enter your phone number.')
+      setMessage('❌ Enter phone number')
       return
     }
 
+    setMessage('')
     await initiateStkPush(phone, priceInCents / 100, orderId)
-
-    if (success) {
-      setMessage('✅ STK Push sent! Check your phone.')
-
-      setTimeout(() => {
-        router.push(`/checkout/${orderId}/mpesa-payment-success`)
-      }, 2000)
-    } else if (error) {
-      setMessage(`❌ Error: ${error}`)
-    }
   }
+
+  // ✅ Auto detect result
+  useEffect(() => {
+    if (paymentStatus === 'SUCCESS') {
+      setMessage('✅ Payment successful!')
+    }
+
+    if (paymentStatus === 'FAILED') {
+      setMessage('❌ Payment failed or cancelled')
+    }
+  }, [paymentStatus])
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="text-xl">M-Pesa Checkout</div>
+      <h2 className="text-xl">M-Pesa Checkout</h2>
 
-      {message && <div className="text-destructive">{message}</div>}
+      {message && <div>{message}</div>}
 
-      <div>
-        <label htmlFor="phone" className="block mb-1 font-medium">
-          Phone Number
-        </label>
-        <input
-          type="text"
-          id="phone"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="e.g. 2547XXXXXXXX"
-          className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring focus:ring-green-300"
-          required
-        />
-      </div>
+      <input
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        placeholder="2547XXXXXXXX"
+        disabled={loading || success}
+        className="w-full p-2 border rounded"
+      />
 
-      <Button className="w-full" size="lg" disabled={loading} type="submit">
-        {loading ? (
-          'Sending STK...'
-        ) : (
-          <div>
-            Pay - <ProductPrice price={priceInCents / 100} plain />
-          </div>
-        )}
-      </Button>
+      <MpesaPayButton
+        loading={loading || paymentStatus === 'PENDING'}
+        priceInCents={priceInCents}
+      />
 
-      {transaction && (
-        <div className="mt-4 text-sm text-gray-500">
-          <p>Transaction Details:</p>
-          <pre>{JSON.stringify(transaction, null, 2)}</pre>
-        </div>
+      {success && paymentStatus === 'PENDING' && (
+        <p className="text-sm text-gray-500">
+          Waiting for payment confirmation…
+        </p>
       )}
     </form>
   )

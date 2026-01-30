@@ -15,6 +15,9 @@ import { reconcileOrderPayment } from '@/src/lib/payments/orchestrator/reconcili
 import { finalizePayment } from '@/src/lib/payments/orchestrator/payment-orchestrator'
 import { PaymentMethod, PaymentResult } from '@/src/lib/payments/reconciliation/type'
 
+// 🔔 Socket (ADDED – no logic change)
+import { getSocketServer } from '@/src/lib/socket/server'
+
 // ----------------------
 // Optional metadata schema
 // ----------------------
@@ -77,6 +80,13 @@ export async function POST(req: Request) {
       },
       { upsert: true, new: true }
     )
+
+    // 🔔 REAL-TIME NOTIFICATION (ADDED)
+    // Does NOT affect logic; polling still works if socket fails
+    const io = getSocketServer()
+    io?.emit(`mpesa:${parsed.checkoutRequestID}`, {
+      status: transaction.status, // SUCCESS | FAILED
+    })
 
     // 4️⃣ ONLY reconcile successful payments
     if (parsed.resultCode === 0 && transaction.paymentData) {

@@ -8,33 +8,29 @@ interface MpesaTransaction {
   _id: string
   phone: string
   amount: number
-  mpesaReceiptNumber: string
-  transactionDate: string
-  resultCode: number
   status: string
-  merchantRequestId: string
   checkoutRequestId: string
-  user: string
-  orderId: string
 }
 
 export const useMpesa = () => {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [transaction, setTransaction] = useState<MpesaTransaction | null>(null)
+  const [transaction, setTransaction] =
+    useState<MpesaTransaction | null>(null)
 
   const initiateStkPush = async (
     phone: string,
     amount: number,
     orderId: string
   ) => {
+    if (loading) return // 🔒 frontend retry suppression
+
     setLoading(true)
     setSuccess(false)
     setError(null)
 
     try {
-      // ✅ SANITIZE (reused util)
       const sanitizedPhone = normalizeKenyanPhone(phone)
 
       const res = await fetch('/api/mpesa/initiate', {
@@ -53,20 +49,26 @@ export const useMpesa = () => {
         throw new Error(data.message || 'Failed to initiate payment')
       }
 
-      if (data.transaction) {
-        setTransaction(data.transaction)
+      if (data.data) {
+        setTransaction(data.data)
       }
 
       setSuccess(true)
-      return { success: true, data }
+      return { success: true }
     } catch (err: any) {
-      console.error('STK Push Error:', err)
       setError(err.message || 'Payment failed')
+      setSuccess(false)
       return { success: false }
     } finally {
       setLoading(false)
     }
   }
 
-  return { loading, success, error, initiateStkPush, transaction }
+  return {
+    loading,
+    success,
+    error,
+    transaction,
+    initiateStkPush,
+  }
 }
