@@ -2,7 +2,8 @@
 
 import { FormEvent, useEffect, useState } from 'react'
 import { useMpesa } from '@/src/hooks/mpesa/useMpesa'
-import { useMpesaStatus } from '@/src/hooks/mpesa/useMpesaStatus'
+import { useMpesaSocketStatus } from '@/src/hooks/mpesa/useMpesaSocketStatus'
+import { useMpesaPollingStatus } from '@/src/hooks/mpesa/useMpesaPollingStatus'
 import { MpesaPayButton } from '@/src/components/shared/common/mpesaButton'
 
 export default function MpesaForm({
@@ -23,9 +24,17 @@ export default function MpesaForm({
     transaction,
   } = useMpesa()
 
-  const paymentStatus = useMpesaStatus(
+  const socketStatus = useMpesaSocketStatus(
     transaction?.checkoutRequestId
   )
+
+  const pollingStatus = useMpesaPollingStatus(
+    transaction?.checkoutRequestId,
+    socketStatus === 'PENDING'
+  )
+
+  const finalStatus =
+    socketStatus !== 'PENDING' ? socketStatus : pollingStatus
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -39,20 +48,19 @@ export default function MpesaForm({
     await initiateStkPush(phone, priceInCents / 100, orderId)
   }
 
-  // 🔗 WIRE STATUS → SUCCESS
   useEffect(() => {
-    if (paymentStatus === 'SUCCESS') {
+    if (finalStatus === 'SUCCESS') {
       setSuccess(true)
       setMessage('✅ Payment successful!')
     }
 
-    if (paymentStatus === 'FAILED') {
+    if (finalStatus === 'FAILED') {
       setSuccess(false)
-      setMessage('❌ Payment failed or cancelled')
+      setMessage('❌ Payment failed. Try again.')
     }
-  }, [paymentStatus, setSuccess])
+  }, [finalStatus, setSuccess])
 
-  const isPending = loading || paymentStatus === 'PENDING'
+  const isPending = loading || finalStatus === 'PENDING'
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
