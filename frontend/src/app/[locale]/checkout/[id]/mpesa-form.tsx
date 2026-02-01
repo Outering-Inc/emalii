@@ -1,12 +1,16 @@
 'use client'
 
 import { FormEvent, useEffect, useState } from 'react'
+
 import { useMpesa } from '@/src/hooks/mpesa/useMpesa'
 import { useMpesaSocketStatus } from '@/src/hooks/mpesa/useMpesaSocketStatus'
 import { useMpesaPollingStatus } from '@/src/hooks/mpesa/useMpesaPollingStatus'
 import { useMpesaOnlineStatus } from '@/src/hooks/mpesa/useMpesaOnlineStatus'
-import { MpesaPayButton } from '@/src/components/shared/common/mpesaButton'
 
+import { usePersistMpesaIntent } from '@/src/hooks/mpesa/usePersistMpesaIntent'
+import { useRestoreMpesaIntent } from '@/src/hooks/mpesa/useRestoreMpesaIntent'
+
+import { MpesaPayButton } from '@/src/components/shared/common/mpesaButton'
 
 
 export default function MpesaForm({
@@ -27,19 +31,39 @@ export default function MpesaForm({
     setSuccess,
     initiateStkPush,
     transaction,
+    setTransaction,
     cooldownUntil,
     canRetry,
   } = useMpesa()
 
+  /**
+   * 🔁 Restore pending intent after refresh
+   */
+  useRestoreMpesaIntent(setTransaction)
+
+  /**
+   * 💾 Persist pending intent
+   */
+  usePersistMpesaIntent(transaction)
+
+  /**
+   * 🔔 Socket (primary)
+   */
   const socketStatus = useMpesaSocketStatus(
     transaction?.checkoutRequestId
   )
 
+  /**
+   * 🧭 Polling (fallback)
+   */
   const pollingStatus = useMpesaPollingStatus(
     transaction?.checkoutRequestId,
     socketStatus === 'PENDING'
   )
 
+  /**
+   * 🧠 Final resolved status
+   */
   const finalStatus =
     socketStatus !== 'PENDING' ? socketStatus : pollingStatus
 
@@ -65,6 +89,9 @@ export default function MpesaForm({
     await initiateStkPush(phone, priceInCents / 100, orderId)
   }
 
+  /**
+   * 🎯 Resolve payment result
+   */
   useEffect(() => {
     if (finalStatus === 'SUCCESS') {
       setSuccess(true)

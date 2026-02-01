@@ -1,3 +1,17 @@
+// ------------------ Mpesa Frontend Transaction ------------------
+export type MpesaTransaction = {
+  checkoutRequestId: string
+  merchantRequestId?: string
+  phone: string
+  amount: number
+  orderId: string
+
+  status?: 'PENDING' | 'SUCCESS' | 'FAILED'
+
+  createdAt?: string
+}
+
+
 // --- Mpesa Callback Types ---
 export interface RawMpesaCallback {
   Body: {
