@@ -6,8 +6,8 @@ import { useMpesa } from '@/src/hooks/mpesa/useMpesa'
 import { useMpesaSocketStatus } from '@/src/hooks/mpesa/useMpesaSocketStatus'
 import { useMpesaPollingStatus } from '@/src/hooks/mpesa/useMpesaPollingStatus'
 import { useMpesaOnlineStatus } from '@/src/hooks/mpesa/useMpesaOnlineStatus'
-
 import { useRestoreMpesaIntent } from '@/src/hooks/mpesa/useRestoreMpesaIntent'
+
 import { MpesaPayButton } from '@/src/components/shared/common/mpesaButton'
 
 export default function MpesaForm({
@@ -19,6 +19,7 @@ export default function MpesaForm({
 }) {
   const [phone, setPhone] = useState('')
   const [message, setMessage] = useState('')
+  const [hasRestored, setHasRestored] = useState(false) // ✅ REQUIRED
 
   const online = useMpesaOnlineStatus()
 
@@ -34,27 +35,30 @@ export default function MpesaForm({
   } = useMpesa()
 
   /**
-   * 🔁 Restore pending intent AFTER refresh
-   * 🧠 BUT only if user has NOT started typing a phone number
+   * 🔁 Restore pending intent ONLY ONCE
+   * 🧠 Only if user has NOT typed phone
    */
-  useRestoreMpesaIntent((tx) => {
-    if (!phone) {
-      setTransaction(tx)
-    }
-  })
+  useRestoreMpesaIntent(
+    (tx) => {
+      if (!phone && tx && !hasRestored) {
+        setTransaction(tx)
+      }
+    },
+    setHasRestored
+  )
 
   /**
    * 🔔 Socket (primary)
    */
   const socketStatus = useMpesaSocketStatus(
-    transaction?.checkoutRequestId
+    transaction?.checkoutRequestId || undefined
   )
 
   /**
    * 🧭 Polling (fallback)
    */
   const pollingStatus = useMpesaPollingStatus(
-    transaction?.checkoutRequestId,
+    transaction?.checkoutRequestId || undefined,
     socketStatus === 'PENDING'
   )
 
@@ -66,6 +70,9 @@ export default function MpesaForm({
       ? socketStatus
       : pollingStatus
 
+  /**
+   * 🚀 User-triggered STK push ONLY
+   */
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
 
@@ -116,7 +123,9 @@ export default function MpesaForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl">M-Pesa Checkout</h2>
+      <h2 className="text-xl font-semibold">
+        M-Pesa Checkout
+      </h2>
 
       {message && <div>{message}</div>}
 

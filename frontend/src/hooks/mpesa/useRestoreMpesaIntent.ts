@@ -4,7 +4,8 @@
 import { useEffect } from 'react'
 
 export function useRestoreMpesaIntent(
-  restore: (tx: any) => void
+  setTransaction: (tx: any) => void,
+  setHasRestored: (v: boolean) => void
 ) {
   useEffect(() => {
     const saved = localStorage.getItem('mpesa:pending')
@@ -12,9 +13,10 @@ export function useRestoreMpesaIntent(
 
     try {
       const tx = JSON.parse(saved)
-      restore(tx)
+      setTransaction(tx)
+      setHasRestored(true) // 👈 mark as restored ONLY
     } catch {
       localStorage.removeItem('mpesa:pending')
     }
-  }, [restore])
+  }, [setTransaction, setHasRestored])
 }
