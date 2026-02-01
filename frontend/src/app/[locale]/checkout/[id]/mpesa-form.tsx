@@ -7,11 +7,8 @@ import { useMpesaSocketStatus } from '@/src/hooks/mpesa/useMpesaSocketStatus'
 import { useMpesaPollingStatus } from '@/src/hooks/mpesa/useMpesaPollingStatus'
 import { useMpesaOnlineStatus } from '@/src/hooks/mpesa/useMpesaOnlineStatus'
 
-import { usePersistMpesaIntent } from '@/src/hooks/mpesa/usePersistMpesaIntent'
 import { useRestoreMpesaIntent } from '@/src/hooks/mpesa/useRestoreMpesaIntent'
-
 import { MpesaPayButton } from '@/src/components/shared/common/mpesaButton'
-
 
 export default function MpesaForm({
   priceInCents,
@@ -37,14 +34,14 @@ export default function MpesaForm({
   } = useMpesa()
 
   /**
-   * 🔁 Restore pending intent after refresh
+   * 🔁 Restore pending intent AFTER refresh
+   * 🧠 BUT only if user has NOT started typing a phone number
    */
-  useRestoreMpesaIntent(setTransaction)
-
-  /**
-   * 💾 Persist pending intent
-   */
-  usePersistMpesaIntent(transaction)
+  useRestoreMpesaIntent((tx) => {
+    if (!phone) {
+      setTransaction(tx)
+    }
+  })
 
   /**
    * 🔔 Socket (primary)
@@ -65,7 +62,9 @@ export default function MpesaForm({
    * 🧠 Final resolved status
    */
   const finalStatus =
-    socketStatus !== 'PENDING' ? socketStatus : pollingStatus
+    socketStatus !== 'PENDING'
+      ? socketStatus
+      : pollingStatus
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -86,7 +85,11 @@ export default function MpesaForm({
     }
 
     setMessage('')
-    await initiateStkPush(phone, priceInCents / 100, orderId)
+    await initiateStkPush(
+      phone,
+      priceInCents / 100,
+      orderId
+    )
   }
 
   /**
@@ -96,6 +99,7 @@ export default function MpesaForm({
     if (finalStatus === 'SUCCESS') {
       setSuccess(true)
       setMessage('✅ Payment successful!')
+      localStorage.removeItem('mpesa:pending')
     }
 
     if (finalStatus === 'FAILED') {
