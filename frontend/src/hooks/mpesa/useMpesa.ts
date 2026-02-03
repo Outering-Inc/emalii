@@ -27,7 +27,7 @@ export function useMpesa() {
     setError(null)
 
     try {
-      const res = await fetch('/api/mpesa/stk', {
+      const res = await fetch('/api/mpesa/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, amount, orderId }),

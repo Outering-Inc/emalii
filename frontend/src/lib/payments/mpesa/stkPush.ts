@@ -1,63 +1,69 @@
 // lib/payments/mpesa/stkPush.ts
-
 import { normalizeKenyanPhone } from '../../utils/mpesa'
 import { getMpesaAccessToken } from './safaricom'
 
-// Define the structure of the parameters for the STK Push request
 type STKParams = {
   phoneNumber: string
   orderId: string
   amount: number
 }
 
-// Function to initiate the STK Push request
 export async function initiateStkPush({
   phoneNumber,
   amount,
   orderId,
 }: STKParams) {
   try {
-    // Step 0: Normalize phone using your util
+    // 1️⃣ Normalize phone number
     const normalizedPhone = normalizeKenyanPhone(phoneNumber)
+    console.log('📞 Normalized Phone:', normalizedPhone)
 
-    // Step 1: Get the access token needed for the authorization header
+    // 2️⃣ Get access token
     const token = await getMpesaAccessToken()
+    console.log('🔑 Access Token:', token)
 
-    // Step 2: Generate a timestamp in the required format (yyyyMMddHHmmss)
+    // 3️⃣ Timestamp for password
     const timestamp = new Date().toISOString().replace(/[-:.TZ]/g, '').slice(0, 14)
+    console.log('⏰ Timestamp:', timestamp)
 
-    // Step 3: Fetch the environment variables for the shortcode and passkey
+    // 4️⃣ Environment variables
     const shortcode = process.env.MPESA_SHORTCODE
     const passkey = process.env.MPESA_PASSKEY
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
 
-    // Ensure all necessary environment variables are present
     if (!shortcode || !passkey || !baseUrl) {
-      throw new Error('Missing required environment variables for MPESA integration')
+      throw new Error('❌ Missing environment variables for MPESA integration')
     }
 
-    // Step 4: Generate the password for authentication by base64 encoding
+    // 5️⃣ Password generation
     const password = Buffer.from(`${shortcode}${passkey}${timestamp}`).toString('base64')
 
-    // Step 5: Construct the payload for the STK Push request
+    // 6️⃣ Payload
     const payload = {
       BusinessShortCode: shortcode,
       Password: password,
       Timestamp: timestamp,
       TransactionType: 'CustomerPayBillOnline',
       Amount: amount,
-      PartyA: normalizedPhone,  // Payer's phone number (normalized)
-      PartyB: shortcode,         // Your business shortcode (receiver)
-      PhoneNumber: normalizedPhone,  // Payer's phone number (normalized)
-      CallBackURL: `${baseUrl}/api/mpesa/callback`,  // Callback URL to receive payment status
-      AccountReference: orderId,  // Unique order ID for tracking
-      TransactionDesc: 'Payment for Order',  // Transaction description
+      PartyA: normalizedPhone,
+      PartyB: shortcode,
+      PhoneNumber: normalizedPhone,
+      CallBackURL: `${baseUrl}/api/mpesa/callback`,
+      AccountReference: orderId,
+      TransactionDesc: 'Payment for Order',
     }
 
-    console.log('📤 STK Push Payload:', payload)
+    console.log('📤 STK Push Payload:', JSON.stringify(payload, null, 2))
 
-    // Step 6: Send the request to MPESA API (sandbox or production)
-    const response = await fetch('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
+    // 7️⃣ Determine endpoint
+    const endpoint = process.env.MPESA_ENV === 'production'
+      ? 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
+      : 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest'
+
+    console.log('🌐 Sending STK Push to:', endpoint)
+
+    // 8️⃣ Send request
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -66,20 +72,18 @@ export async function initiateStkPush({
       body: JSON.stringify(payload),
     })
 
-    // Step 7: Handle the response from MPESA
     const result = await response.json()
     console.log('📥 STK Push Response:', result)
 
-    // Check for any errors in the response
+    // 9️⃣ Check response
     if (result.ResponseCode !== '0') {
-      throw new Error(`MPESA Error: ${result.ResponseDescription}`)
+      throw new Error(`MPESA Error: ${result.ResponseDescription} | ResponseCode: ${result.ResponseCode}`)
     }
 
-    // Return the response result if successful
+    console.log('✅ STK Push initiated successfully')
     return result
   } catch (error) {
-    // Log detailed error information for debugging purposes
-    console.error('STK Push Error:', error)
+    console.error('❌ STK Push Error:', error)
     throw new Error(`Failed to initiate STK Push: ${error instanceof Error ? error.message : error}`)
   }
 }
