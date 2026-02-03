@@ -1,16 +1,21 @@
 'use client'
-import { Button } from '@/src/components/ui/button'
-import ProductPrice from '@/src/components/shared/product/product-price'
 
-interface MpesaPayButtonProps {
+export function MpesaPayButton({
+  loading,
+  priceInCents,
+}: {
   loading: boolean
   priceInCents: number
-}
-
-export function MpesaPayButton({ loading, priceInCents }: MpesaPayButtonProps) {
+}) {
   return (
-    <Button className="w-full" size="lg" disabled={loading} type="submit">
-      {loading ? 'Sending STK…' : <>Pay – <ProductPrice price={priceInCents / 100} plain /></>}
-    </Button>
+    <button
+      type="submit"
+      disabled={loading}
+      className="w-full bg-green-600 text-white rounded p-2 disabled:opacity-50"
+    >
+      {loading
+        ? 'Processing…'
+        : `Pay KES ${priceInCents / 100}`}
+    </button>
   )
 }

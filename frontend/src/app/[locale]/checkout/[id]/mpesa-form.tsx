@@ -23,7 +23,7 @@ export default function MpesaForm({
   const [message, setMessage] = useState('')
   const [hasRestored, setHasRestored] = useState(false)
 
-  // 🔑 Explicit payment lifecycle
+  // 🔑 Explicit STK lifecycle
   const [stkInitiated, setStkInitiated] = useState(false)
   const [stkSentAt, setStkSentAt] = useState<number | null>(null)
 
@@ -41,7 +41,7 @@ export default function MpesaForm({
   } = useMpesa()
 
   /**
-   * 🔁 Restore pending intent (ONLY if STK was already sent)
+   * 🔁 Restore pending intent (refresh-safe)
    */
   useRestoreMpesaIntent(
     (tx) => {
@@ -55,14 +55,14 @@ export default function MpesaForm({
   )
 
   /**
-   * 🔔 Socket status
+   * 🔔 Socket realtime status
    */
   const socketStatus = useMpesaSocketStatus(
     transaction?.checkoutRequestId
   )
 
   /**
-   * 🧭 Polling fallback
+   * 🧭 Polling fallback when socket is slow
    */
   const pollingStatus = useMpesaPollingStatus(
     transaction?.checkoutRequestId,
@@ -70,7 +70,7 @@ export default function MpesaForm({
   )
 
   /**
-   * 🧠 Final status resolution
+   * 🧠 Final resolved status
    */
   const finalStatus =
     socketStatus !== 'PENDING'
@@ -78,7 +78,7 @@ export default function MpesaForm({
       : pollingStatus
 
   /**
-   * ⏱ Time since STK sent
+   * ⏱ Time since STK push
    */
   const elapsed =
     stkSentAt
@@ -86,7 +86,7 @@ export default function MpesaForm({
       : 0
 
   /**
-   * 🚀 User-triggered STK push
+   * 🚀 Trigger STK Push
    */
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -136,7 +136,7 @@ export default function MpesaForm({
   }, [finalStatus, setSuccess])
 
   /**
-   * 🧠 Dynamic status message
+   * 🧠 Dynamic status messaging
    */
   useEffect(() => {
     if (!stkInitiated) return
