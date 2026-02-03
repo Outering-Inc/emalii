@@ -17,16 +17,23 @@ export function useMpesaPollingStatus(
         const res = await fetch(
           `/api/mpesa/status?checkoutRequestId=${checkoutRequestId}`
         )
-        const data = await res.json()
+        const json = await res.json()
 
-        if (data.status && data.status !== 'PENDING') {
-          setStatus(data.status)
+        // ✅ handle both shapes
+        const resolvedStatus =
+          json.status ?? json.data?.status
+
+        if (
+          resolvedStatus === 'SUCCESS' ||
+          resolvedStatus === 'FAILED'
+        ) {
+          setStatus(resolvedStatus)
           clearInterval(interval)
         }
       } catch {
         // silent retry
       }
-    }, 5000) // slower, safer
+    }, 5000)
 
     return () => clearInterval(interval)
   }, [checkoutRequestId, enabled])
