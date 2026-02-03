@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client'
 
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useEffect, useState, useCallback } from 'react'
 
 import { useMpesa } from '@/src/hooks/mpesa/useMpesa'
 import { useMpesaSocketStatus } from '@/src/hooks/mpesa/useMpesaSocketStatus'
@@ -9,8 +10,10 @@ import { useMpesaOnlineStatus } from '@/src/hooks/mpesa/useMpesaOnlineStatus'
 import { useRestoreMpesaIntent } from '@/src/hooks/mpesa/useRestoreMpesaIntent'
 
 import { MpesaPayButton } from '@/src/components/shared/common/mpesaButton'
+import { normalizeKenyanPhone } from '@/src/lib/utils/mpesa'
 
 const SOFT_TIMEOUT = 40 // seconds
+const RETRY_DELAY_MS = 1500 // 1.5 seconds automatic retry delay
 
 export default function MpesaForm({
   priceInCents,
@@ -22,6 +25,8 @@ export default function MpesaForm({
   const [phone, setPhone] = useState('')
   const [message, setMessage] = useState('')
   const [hasRestored, setHasRestored] = useState(false)
+  const [autoRetryTriggered, setAutoRetryTriggered] = useState(false)
+  const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
 
   // 🔑 Explicit STK lifecycle
   const [stkInitiated, setStkInitiated] = useState(false)
@@ -57,9 +62,7 @@ export default function MpesaForm({
   /**
    * 🔔 Socket realtime status
    */
-  const socketStatus = useMpesaSocketStatus(
-    transaction?.checkoutRequestId
-  )
+  const socketStatus = useMpesaSocketStatus(transaction?.checkoutRequestId)
 
   /**
    * 🧭 Polling fallback when socket is slow
@@ -73,9 +76,7 @@ export default function MpesaForm({
    * 🧠 Final resolved status
    */
   const finalStatus =
-    socketStatus !== 'PENDING'
-      ? socketStatus
-      : pollingStatus
+    socketStatus !== 'PENDING' ? socketStatus : pollingStatus
 
   /**
    * ⏱ Time since STK push
@@ -88,34 +89,50 @@ export default function MpesaForm({
   /**
    * 🚀 Trigger STK Push
    */
-  async function handleSubmit(e: FormEvent) {
-    e.preventDefault()
+  const handleSubmit = useCallback(
+    async (e?: FormEvent) => {
+      if (e) e.preventDefault()
 
-    if (!online) {
-      setMessage('📡 No internet connection')
-      return
-    }
+      if (!online) {
+        setMessage('📡 No internet connection')
+        return
+      }
 
-    if (!phone) {
-      setMessage('❌ Enter phone number')
-      return
-    }
+      if (!phone) {
+        setMessage('❌ Enter phone number')
+        return
+      }
 
-    if (!canRetry) {
-      setMessage('⏳ Please wait before retrying')
-      return
-    }
+      if (!canRetry) {
+        setMessage('⏳ Please wait before retrying')
+        return
+      }
 
-    setMessage('')
-    setStkInitiated(true)
-    setStkSentAt(Date.now())
+      setMessage('')
+      setStkInitiated(true)
+      setStkSentAt(Date.now())
+      setAutoRetryTriggered(false)
+      setRetryCountdown(null)
 
-    await initiateStkPush(
-      phone,
-      priceInCents / 100,
-      orderId
-    )
-  }
+      try {
+        const normalizedPhone = normalizeKenyanPhone(phone)
+
+        await initiateStkPush(
+          normalizedPhone,
+          priceInCents / 100,
+          orderId
+        )
+      } catch (error: any) {
+        console.error('STK Push failed:', error)
+        setMessage(
+          `❌ Failed to send M-Pesa prompt: ${error.message ?? 'Unknown error'}`
+        )
+        setStkInitiated(false)
+        setStkSentAt(null)
+      }
+    },
+    [online, phone, canRetry, initiateStkPush, priceInCents, orderId]
+  )
 
   /**
    * 🎯 Payment resolution
@@ -125,6 +142,8 @@ export default function MpesaForm({
       setSuccess(true)
       setMessage('✅ Payment successful!')
       localStorage.removeItem('mpesa:pending')
+      setAutoRetryTriggered(false)
+      setRetryCountdown(null)
     }
 
     if (finalStatus === 'FAILED') {
@@ -132,11 +151,13 @@ export default function MpesaForm({
       setMessage('❌ Payment failed. You can retry.')
       setStkInitiated(false)
       setStkSentAt(null)
+      setAutoRetryTriggered(false)
+      setRetryCountdown(null)
     }
   }, [finalStatus, setSuccess])
 
   /**
-   * 🧠 Dynamic status messaging
+   * 🧠 Dynamic status messaging + automatic retry with countdown
    */
   useEffect(() => {
     if (!stkInitiated) return
@@ -145,8 +166,31 @@ export default function MpesaForm({
       setMessage('📱 Sending M-Pesa prompt…')
     } else if (elapsed < SOFT_TIMEOUT) {
       setMessage('⏳ Waiting for confirmation…')
+    } else if (!autoRetryTriggered) {
+      setAutoRetryTriggered(true)
+      let countdown = Math.floor(RETRY_DELAY_MS / 1000)
+      setRetryCountdown(countdown)
+
+      const interval = setInterval(() => {
+        countdown -= 1
+        setRetryCountdown(countdown)
+      }, 1000)
+
+      const timeout = setTimeout(() => {
+        clearInterval(interval)
+        setRetryCountdown(null)
+        if (finalStatus === 'PENDING' && canRetry) {
+          handleSubmit()
+        }
+      }, RETRY_DELAY_MS)
+
+      return () => {
+        clearTimeout(timeout)
+        clearInterval(interval)
+        setRetryCountdown(null)
+      }
     }
-  }, [elapsed, stkInitiated])
+  }, [elapsed, stkInitiated, autoRetryTriggered, handleSubmit, finalStatus, canRetry])
 
   const isPending =
     loading || (stkInitiated && finalStatus === 'PENDING')
@@ -170,6 +214,12 @@ export default function MpesaForm({
       </h2>
 
       {message && <div>{message}</div>}
+
+      {retryCountdown !== null && (
+        <p className="text-sm text-blue-600">
+          ⏳ Retrying STK push in {retryCountdown}s…
+        </p>
+      )}
 
       {!online && (
         <p className="text-sm text-orange-600">

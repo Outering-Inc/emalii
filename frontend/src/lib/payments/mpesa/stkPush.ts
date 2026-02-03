@@ -1,5 +1,6 @@
 // lib/payments/mpesa/stkPush.ts
 
+import { normalizeKenyanPhone } from '../../utils/mpesa'
 import { getMpesaAccessToken } from './safaricom'
 
 // Define the structure of the parameters for the STK Push request
@@ -10,8 +11,15 @@ type STKParams = {
 }
 
 // Function to initiate the STK Push request
-export async function initiateStkPush({ phoneNumber, amount, orderId }: STKParams) {
+export async function initiateStkPush({
+  phoneNumber,
+  amount,
+  orderId,
+}: STKParams) {
   try {
+    // Step 0: Normalize phone using your util
+    const normalizedPhone = normalizeKenyanPhone(phoneNumber)
+
     // Step 1: Get the access token needed for the authorization header
     const token = await getMpesaAccessToken()
 
@@ -38,13 +46,15 @@ export async function initiateStkPush({ phoneNumber, amount, orderId }: STKParam
       Timestamp: timestamp,
       TransactionType: 'CustomerPayBillOnline',
       Amount: amount,
-      PartyA: phoneNumber,  // Payer's phone number
-      PartyB: shortcode,    // Your business shortcode (receiver)
-      PhoneNumber: phoneNumber,  // Payer's phone number
+      PartyA: normalizedPhone,  // Payer's phone number (normalized)
+      PartyB: shortcode,         // Your business shortcode (receiver)
+      PhoneNumber: normalizedPhone,  // Payer's phone number (normalized)
       CallBackURL: `${baseUrl}/api/mpesa/callback`,  // Callback URL to receive payment status
       AccountReference: orderId,  // Unique order ID for tracking
       TransactionDesc: 'Payment for Order',  // Transaction description
     }
+
+    console.log('📤 STK Push Payload:', payload)
 
     // Step 6: Send the request to MPESA API (sandbox or production)
     const response = await fetch('https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest', {
@@ -58,6 +68,7 @@ export async function initiateStkPush({ phoneNumber, amount, orderId }: STKParam
 
     // Step 7: Handle the response from MPESA
     const result = await response.json()
+    console.log('📥 STK Push Response:', result)
 
     // Check for any errors in the response
     if (result.ResponseCode !== '0') {
