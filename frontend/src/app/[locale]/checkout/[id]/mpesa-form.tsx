@@ -19,7 +19,10 @@ export default function MpesaForm({
 }) {
   const [phone, setPhone] = useState('')
   const [message, setMessage] = useState('')
-  const [hasRestored, setHasRestored] = useState(false) // ✅ REQUIRED
+  const [hasRestored, setHasRestored] = useState(false)
+
+  // 🔑 NEW: explicit STK flag
+  const [stkInitiated, setStkInitiated] = useState(false)
 
   const online = useMpesaOnlineStatus()
 
@@ -35,30 +38,30 @@ export default function MpesaForm({
   } = useMpesa()
 
   /**
-   * 🔁 Restore pending intent ONLY ONCE
-   * 🧠 Only if user has NOT typed phone
+   * 🔁 Restore pending intent (ONLY if STK had been sent)
    */
   useRestoreMpesaIntent(
     (tx) => {
-      if (!phone && tx && !hasRestored) {
+      if (!stkInitiated && tx && !hasRestored) {
         setTransaction(tx)
+        setStkInitiated(true)
       }
     },
     setHasRestored
   )
 
   /**
-   * 🔔 Socket (primary)
+   * 🔔 Socket status (primary)
    */
   const socketStatus = useMpesaSocketStatus(
-    transaction?.checkoutRequestId || undefined
+    transaction?.checkoutRequestId
   )
 
   /**
    * 🧭 Polling (fallback)
    */
   const pollingStatus = useMpesaPollingStatus(
-    transaction?.checkoutRequestId || undefined,
+    transaction?.checkoutRequestId,
     socketStatus === 'PENDING'
   )
 
@@ -71,13 +74,13 @@ export default function MpesaForm({
       : pollingStatus
 
   /**
-   * 🚀 User-triggered STK push ONLY
+   * 🚀 STK push (user-triggered only)
    */
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
 
     if (!online) {
-      setMessage('📡 No internet. Waiting to reconnect…')
+      setMessage('📡 No internet connection')
       return
     }
 
@@ -92,6 +95,8 @@ export default function MpesaForm({
     }
 
     setMessage('')
+    setStkInitiated(true) // ✅ LOCK FLOW STARTS HERE
+
     await initiateStkPush(
       phone,
       priceInCents / 100,
@@ -100,7 +105,7 @@ export default function MpesaForm({
   }
 
   /**
-   * 🎯 Resolve payment result
+   * 🎯 Resolve payment
    */
   useEffect(() => {
     if (finalStatus === 'SUCCESS') {
@@ -112,13 +117,19 @@ export default function MpesaForm({
     if (finalStatus === 'FAILED') {
       setSuccess(false)
       setMessage('❌ Payment failed. You can retry.')
+      setStkInitiated(false) // 🔓 allow retry
     }
   }, [finalStatus, setSuccess])
 
-  const isPending = loading || finalStatus === 'PENDING'
+  // 🔑 FIXED pending logic
+  const isPending =
+    loading || (stkInitiated && finalStatus === 'PENDING')
 
   const secondsLeft = cooldownUntil
-    ? Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000))
+    ? Math.max(
+        0,
+        Math.ceil((cooldownUntil - Date.now()) / 1000)
+      )
     : 0
 
   return (
@@ -131,7 +142,7 @@ export default function MpesaForm({
 
       {!online && (
         <p className="text-sm text-orange-600">
-          Offline — payment status will sync automatically
+          Offline — will sync automatically
         </p>
       )}
 
