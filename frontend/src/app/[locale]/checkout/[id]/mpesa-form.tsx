@@ -2,6 +2,7 @@
 'use client'
 
 import { FormEvent, useEffect, useState, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { useMpesa } from '@/src/hooks/mpesa/useMpesa'
 import { useMpesaSocketStatus } from '@/src/hooks/mpesa/useMpesaSocketStatus'
@@ -22,13 +23,12 @@ export default function MpesaForm({
   priceInCents: number
   orderId: string
 }) {
+  const router = useRouter()
   const [phone, setPhone] = useState('')
   const [message, setMessage] = useState('')
   const [hasRestored, setHasRestored] = useState(false)
   const [autoRetryTriggered, setAutoRetryTriggered] = useState(false)
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
-
-  // 🔑 Explicit STK lifecycle
   const [stkInitiated, setStkInitiated] = useState(false)
   const [stkSentAt, setStkSentAt] = useState<number | null>(null)
 
@@ -45,9 +45,7 @@ export default function MpesaForm({
     canRetry,
   } = useMpesa()
 
-  /**
-   * 🔁 Restore pending intent (refresh-safe)
-   */
+  // Restore pending intent
   useRestoreMpesaIntent(
     (tx) => {
       if (!stkInitiated && tx && !hasRestored) {
@@ -59,36 +57,26 @@ export default function MpesaForm({
     setHasRestored
   )
 
-  /**
-   * 🔔 Socket realtime status
-   */
+  // Socket realtime status
   const socketStatus = useMpesaSocketStatus(transaction?.checkoutRequestId)
 
-  /**
-   * 🧭 Polling fallback when socket is slow
-   */
+  // Polling fallback
   const pollingStatus = useMpesaPollingStatus(
     transaction?.checkoutRequestId,
     socketStatus === 'PENDING'
   )
 
-  /**
-   * 🧠 Final resolved status
-   */
+  // Final resolved status
   const finalStatus =
     socketStatus !== 'PENDING' ? socketStatus : pollingStatus
 
-  /**
-   * ⏱ Time since STK push
-   */
+  // Time since STK push
   const elapsed =
     stkSentAt
       ? Math.floor((Date.now() - stkSentAt) / 1000)
       : 0
 
-  /**
-   * 🚀 Trigger STK Push
-   */
+  // Trigger STK Push
   const handleSubmit = useCallback(
     async (e?: FormEvent) => {
       if (e) e.preventDefault()
@@ -134,31 +122,27 @@ export default function MpesaForm({
     [online, phone, canRetry, initiateStkPush, priceInCents, orderId]
   )
 
-  /**
-   * 🎯 Payment resolution
-   */
+  // Payment resolution
   useEffect(() => {
     if (finalStatus === 'SUCCESS') {
       setSuccess(true)
-      setMessage('✅ Payment successful!')
       localStorage.removeItem('mpesa:pending')
       setAutoRetryTriggered(false)
       setRetryCountdown(null)
+      router.push(`/checkout/${orderId}/mpesa-payment-success`)
     }
 
     if (finalStatus === 'FAILED') {
       setSuccess(false)
-      setMessage('❌ Payment failed. You can retry.')
       setStkInitiated(false)
       setStkSentAt(null)
       setAutoRetryTriggered(false)
       setRetryCountdown(null)
+      router.push(`/checkout/${orderId}/mpesa-payment-failed`)
     }
-  }, [finalStatus, setSuccess])
+  }, [finalStatus, setSuccess, orderId, router])
 
-  /**
-   * 🧠 Dynamic status messaging + automatic retry with countdown
-   */
+  // Dynamic status messaging + auto retry
   useEffect(() => {
     if (!stkInitiated) return
 
@@ -207,75 +191,96 @@ export default function MpesaForm({
       )
     : 0
 
+  // Overlay condition
+  const isProcessing = stkInitiated && finalStatus === 'PENDING'
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <h2 className="text-xl font-semibold">
-        M-Pesa Checkout
-      </h2>
+      <div className="relative">
+        {/* ✅ MOBILE-FIRST MPESA OVERLAY */}
+        {isProcessing && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 sm:absolute sm:rounded-lg">
+            <div className="bg-white w-[90%] max-w-sm rounded-xl p-6 text-center shadow-xl">
+              {/* M-Pesa green spinner */}
+              <div className="mx-auto mb-4 h-12 w-12 rounded-full border-4 border-green-600 border-t-transparent animate-spin" />
 
-      {message && <div>{message}</div>}
+              <h3 className="text-lg font-semibold text-gray-900">
+                Processing M-Pesa Payment
+              </h3>
 
-      {retryCountdown !== null && (
-        <p className="text-sm text-blue-600">
-          ⏳ Retrying STK push in {retryCountdown}s…
-        </p>
-      )}
+              <p className="mt-2 text-sm text-gray-600">
+                Check your phone and enter your M-Pesa PIN.
+              </p>
 
-      {!online && (
-        <p className="text-sm text-orange-600">
-          Offline — payment will sync automatically
-        </p>
-      )}
+              <p className="mt-3 text-xs text-gray-400">
+                Do not close or refresh this page
+              </p>
+            </div>
+          </div>
+        )}
 
-      {/* 📞 Phone input */}
-      <input
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        placeholder="2547XXXXXXXX"
-        disabled={isPending || success}
-        className="w-full p-2 border rounded"
-      />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <h2 className="text-xl font-semibold">M-Pesa Checkout</h2>
 
-      {/* 💳 Pay button */}
-      <MpesaPayButton
-        loading={isPending || !canRetry}
-        priceInCents={priceInCents}
-      />
+          {message && <p>{message}</p>}
 
-      {/* ⏳ Cooldown */}
-      {!canRetry && (
-        <p className="text-sm text-gray-500">
-          Retry available in {secondsLeft}s
-        </p>
-      )}
+          {retryCountdown !== null && (
+            <p className="text-sm text-blue-600">
+              ⏳ Retrying STK push in {retryCountdown}s…
+            </p>
+          )}
 
-      {/* 🔄 Retry UX */}
-      {showRetryOptions && (
-        <div className="space-y-2 border rounded p-3">
-          <p className="text-sm text-orange-600">
-            Didn’t receive the M-Pesa prompt?
-          </p>
+          {!online && (
+            <p className="text-sm text-orange-600">
+              Offline — payment will sync automatically
+            </p>
+          )}
 
-          <button
-            type="button"
-            onClick={() => {
-              setStkInitiated(false)
-              setStkSentAt(null)
-            }}
-            className="text-sm underline"
-          >
-            Edit phone number
-          </button>
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="2547XXXXXXXX"
+            disabled={isPending || success}
+            className="w-full p-2 border rounded"
+          />
 
-          <button
-            type="submit"
-            disabled={!canRetry}
-            className="w-full border rounded p-2"
-          >
-            Retry STK Push
-          </button>
-        </div>
-      )}
-    </form>
-  )
-}
+          <MpesaPayButton
+            loading={isPending || !canRetry}
+            priceInCents={priceInCents}
+          />
+
+          {!canRetry && (
+            <p className="text-sm text-gray-500">
+              Retry available in {secondsLeft}s
+            </p>
+          )}
+
+          {showRetryOptions && (
+            <div className="space-y-2 border rounded p-3">
+              <p className="text-sm text-orange-600">
+                Didn’t receive the M-Pesa prompt?
+              </p>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setStkInitiated(false)
+                  setStkSentAt(null)
+                }}
+                className="text-sm underline"
+              >
+                Edit phone number
+              </button>
+
+              <button
+                type="submit"
+                disabled={!canRetry}
+                className="w-full border rounded p-2"
+              >
+                Retry STK Push
+              </button>
+            </div>
+          )}
+        </form>
+      </div>
+    )
+  }
