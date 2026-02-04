@@ -32,9 +32,11 @@ export default function MpesaForm({
 
   const [phone, setPhone] = useState('')
   const [message, setMessage] = useState('')
-  const [hasRestored, setHasRestored] = useState(false)
+  
   const [autoRetryTriggered, setAutoRetryTriggered] = useState(false)
   const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
+
+  // 🔑 Explicit payment lifecycle
   const [stkInitiated, setStkInitiated] = useState(false)
   const [stkSentAt, setStkSentAt] = useState<number | null>(null)
 
@@ -59,18 +61,10 @@ export default function MpesaForm({
   /* -------------------------------------------------
    🔁 RESTORE PENDING INTENT
    Only restores **if the user already initiated the push**
+   🔄 Restore previous transaction without auto-trigger
   -------------------------------------------------- */
-  useRestoreMpesaIntent(
-    (tx) => {
-      if (!stkInitiated && tx && hasRestored) {
-        // Only restore if user had previously attempted push
-        setTransaction(tx)
-        setStkInitiated(true)
-        setStkSentAt(Date.now())
-      }
-    },
-    setHasRestored
-  )
+  useRestoreMpesaIntent(setTransaction)
+
 
   /* -------------------------------------------------
    📡 REALTIME + POLLING STATUS
@@ -83,7 +77,10 @@ export default function MpesaForm({
     transaction?.checkoutRequestId,
     socketStatus === 'PENDING'
   )
-
+  
+  /**
+   * 🧠 Final status resolution
+   */
   const finalStatus =
     socketStatus !== 'PENDING' ? socketStatus : pollingStatus
 
@@ -106,7 +103,7 @@ export default function MpesaForm({
       : 0
 
   /* -------------------------------------------------
-   🚀 SUBMIT STK PUSH
+   🚀 SUBMIT STK PUSH   --- User-triggered STK push
   -------------------------------------------------- */
   const handleSubmit = useCallback(
     async (e?: FormEvent) => {
@@ -132,7 +129,7 @@ export default function MpesaForm({
       setStkSentAt(Date.now())
       setAutoRetryTriggered(false)
       setRetryCountdown(null)
-      setHasRestored(true) // mark user has tried once
+      
 
       try {
         const normalizedPhone = normalizeKenyanPhone(phone)
