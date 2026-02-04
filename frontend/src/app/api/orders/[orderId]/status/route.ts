@@ -1,16 +1,18 @@
 'use server'
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/src/lib/db/dbConnect'
 import OrderModel from '@/src/lib/db/models/orderModel'
 
 export async function GET(
-  _req: Request,
-  { params }: { params: { orderId: string } }
+  _req: NextRequest,
+  context: { params: { orderId: string } }
 ) {
   await connectToDatabase()
 
-  const order = await OrderModel.findById(params.orderId)
+  const { orderId } = context.params
+
+  const order = await OrderModel.findById(orderId)
 
   if (!order) {
     return NextResponse.json(
