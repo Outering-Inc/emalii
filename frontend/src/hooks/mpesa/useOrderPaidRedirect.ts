@@ -7,17 +7,22 @@ export function useOrderPaidRedirect(orderId: string) {
   const router = useRouter()
 
   useEffect(() => {
-    const cancelled = false
+    if (!orderId) return
 
-
-    async function checkPaid() {
+    const checkPaid = async () => {
       try {
-        const res = await fetch(`/api/orders/${orderId}/status`)
+        const res = await fetch(
+          `/api/orders/${orderId}/status`
+        )
+
         if (!res.ok) return
 
         const data = await res.json()
-        if (!cancelled && data.isPaid) {
-          router.replace(`/checkout/${orderId}/mpesa-payment-success`)
+
+        if (data.isPaid) {
+          router.replace(
+            `/checkout/${orderId}/mpesa-payment-success`
+          )
         }
       } catch {
         // silent
