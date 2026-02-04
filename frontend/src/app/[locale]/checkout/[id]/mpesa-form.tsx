@@ -10,7 +10,12 @@ import { useMpesaPollingStatus } from '@/src/hooks/mpesa/useMpesaPollingStatus'
 import { useMpesaOnlineStatus } from '@/src/hooks/mpesa/useMpesaOnlineStatus'
 import { useRestoreMpesaIntent } from '@/src/hooks/mpesa/useRestoreMpesaIntent'
 
+import { useOrderPaidRedirect } from '@/src/hooks/mpesa/useOrderPaidRedirect'
+import { useSilentOrderWatcher } from '@/src/hooks/mpesa/useSilentOrderWatcher'
+
+import { MpesaRecoveryGate } from '@/src/components/shared/common/mpesa-recovery-gate'
 import { MpesaPayButton } from '@/src/components/shared/common/mpesaButton'
+
 import { normalizeKenyanPhone } from '@/src/lib/utils/mpesa'
 
 const SOFT_TIMEOUT = 40
@@ -46,9 +51,14 @@ export default function MpesaForm({
     canRetry,
   } = useMpesa()
 
-  /* ----------------------------
-   RESTORE PENDING INTENT
-  ----------------------------- */
+  /* -------------------------------------------------
+   🔄 RECOVERY GATE (runs once on mount)
+  -------------------------------------------------- */
+  // rendered in JSX (see bottom)
+
+  /* -------------------------------------------------
+   🔁 RESTORE PENDING INTENT
+  -------------------------------------------------- */
   useRestoreMpesaIntent(
     (tx) => {
       if (!stkInitiated && tx && !hasRestored) {
@@ -60,9 +70,9 @@ export default function MpesaForm({
     setHasRestored
   )
 
-  /* ----------------------------
-   REALTIME + POLLING STATUS
-  ----------------------------- */
+  /* -------------------------------------------------
+   📡 REALTIME + POLLING STATUS
+  -------------------------------------------------- */
   const socketStatus = useMpesaSocketStatus(
     transaction?.checkoutRequestId
   )
@@ -75,17 +85,27 @@ export default function MpesaForm({
   const finalStatus =
     socketStatus !== 'PENDING' ? socketStatus : pollingStatus
 
-  /* ----------------------------
-   ELAPSED TIME
-  ----------------------------- */
+  /* -------------------------------------------------
+   🔐 ORDER isPaid REDIRECT (instant)
+  -------------------------------------------------- */
+  useOrderPaidRedirect(transaction?.orderId || '')
+
+  /* -------------------------------------------------
+   🕵️ SILENT ORDER WATCHER (background safety net)
+  -------------------------------------------------- */
+  useSilentOrderWatcher(transaction?.orderId || '', !!transaction)
+
+  /* -------------------------------------------------
+   ⏱ ELAPSED TIME
+  -------------------------------------------------- */
   const elapsed =
     stkSentAt
       ? Math.floor((Date.now() - stkSentAt) / 1000)
       : 0
 
-  /* ----------------------------
-   SUBMIT STK PUSH
-  ----------------------------- */
+  /* -------------------------------------------------
+   🚀 SUBMIT STK PUSH
+  -------------------------------------------------- */
   const handleSubmit = useCallback(
     async (e?: FormEvent) => {
       if (e) e.preventDefault()
@@ -132,9 +152,9 @@ export default function MpesaForm({
     [online, phone, canRetry, initiateStkPush, priceInCents, orderId]
   )
 
-  /* ----------------------------
-   FINAL RESOLUTION (SUCCESS / FAIL)
-  ----------------------------- */
+  /* -------------------------------------------------
+   ✅ FINAL RESOLUTION (SUCCESS / FAIL)
+  -------------------------------------------------- */
   useEffect(() => {
     if (finalStatus === 'SUCCESS') {
       setSuccess(true)
@@ -154,37 +174,9 @@ export default function MpesaForm({
     }
   }, [finalStatus, orderId, router, setSuccess])
 
-  /* ----------------------------
-   🔐 ORDER isPaid FALLBACK (CRITICAL FIX)
-  ----------------------------- */
-  useEffect(() => {
-    if (!transaction?.orderId) return
-
-    const checkPaid = async () => {
-      try {
-        const res = await fetch(
-          `/api/orders/${transaction.orderId}/status`
-        )
-        const data = await res.json()
-
-        if (data.isPaid) {
-          localStorage.removeItem('mpesa:pending')
-          router.replace(
-            `/checkout/${transaction.orderId}/mpesa-payment-success`
-          )
-        }
-      } catch {
-        // silent
-      }
-    }
-
-    const interval = setInterval(checkPaid, 7000)
-    return () => clearInterval(interval)
-  }, [transaction?.orderId, router])
-
-  /* ----------------------------
-   STATUS MESSAGING + AUTO RETRY
-  ----------------------------- */
+  /* -------------------------------------------------
+   🔁 STATUS MESSAGING + AUTO RETRY
+  -------------------------------------------------- */
   useEffect(() => {
     if (!stkInitiated) return
 
@@ -227,9 +219,9 @@ export default function MpesaForm({
     canRetry,
   ])
 
-  /* ----------------------------
-   UI FLAGS
-  ----------------------------- */
+  /* -------------------------------------------------
+   🧩 UI FLAGS
+  -------------------------------------------------- */
   const isPending =
     loading || (stkInitiated && finalStatus === 'PENDING')
 
@@ -248,11 +240,14 @@ export default function MpesaForm({
   const isProcessing =
     stkInitiated && finalStatus === 'PENDING'
 
-  /* ----------------------------
-   RENDER
-  ----------------------------- */
+  /* -------------------------------------------------
+   🖼 RENDER
+  -------------------------------------------------- */
   return (
     <div className="relative">
+      {/* 🔄 Recovery Gate */}
+      <MpesaRecoveryGate orderId={orderId} />
+
       {isProcessing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="bg-white w-[90%] max-w-sm rounded-xl p-6 text-center shadow-xl">

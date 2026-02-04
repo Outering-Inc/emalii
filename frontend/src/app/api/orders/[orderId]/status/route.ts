@@ -4,13 +4,18 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/src/lib/db/dbConnect'
 import OrderModel from '@/src/lib/db/models/orderModel'
 
-export async function GET(
-  _req: NextRequest,
-  context: { params: { orderId: string } }
-) {
+export async function GET(req: NextRequest) {
   await connectToDatabase()
 
-  const { orderId } = context.params
+  // Get orderId from query params instead of route params
+  const orderId = req.nextUrl.searchParams.get('orderId')
+
+  if (!orderId) {
+    return NextResponse.json(
+      { isPaid: false, reason: 'Missing orderId' },
+      { status: 400 }
+    )
+  }
 
   const order = await OrderModel.findById(orderId)
 

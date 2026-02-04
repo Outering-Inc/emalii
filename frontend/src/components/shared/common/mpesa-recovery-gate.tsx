@@ -14,9 +14,7 @@ export function MpesaRecoveryGate({
   useEffect(() => {
     const recover = async () => {
       try {
-        const res = await fetch(
-          `/api/orders/${orderId}/status`
-        )
+        const res = await fetch(`/api/orders/${orderId}/status`)
         const data = await res.json()
 
         if (data.isPaid) {
