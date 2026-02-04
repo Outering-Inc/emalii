@@ -13,8 +13,8 @@ import { useRestoreMpesaIntent } from '@/src/hooks/mpesa/useRestoreMpesaIntent'
 import { useOrderPaidRedirect } from '@/src/hooks/mpesa/useOrderPaidRedirect'
 import { useSilentOrderWatcher } from '@/src/hooks/mpesa/useSilentOrderWatcher'
 
-import { MpesaRecoveryGate } from '@/src/components/shared/common/mpesa-recovery-gate'
-import { MpesaPayButton } from '@/src/components/shared/common/mpesaButton'
+import { MpesaRecoveryGate } from '@/src/components/mpesa/mpesa-recovery-gate'
+import { MpesaPayButton } from '@/src/components/mpesa/mpesaButton'
 
 import { normalizeKenyanPhone } from '@/src/lib/utils/mpesa'
 
@@ -52,16 +52,18 @@ export default function MpesaForm({
   } = useMpesa()
 
   /* -------------------------------------------------
-   🔄 RECOVERY GATE (runs once on mount)
+   🔄 RECOVERY GATE
   -------------------------------------------------- */
   // rendered in JSX (see bottom)
 
   /* -------------------------------------------------
    🔁 RESTORE PENDING INTENT
+   Only restores **if the user already initiated the push**
   -------------------------------------------------- */
   useRestoreMpesaIntent(
     (tx) => {
-      if (!stkInitiated && tx && !hasRestored) {
+      if (!stkInitiated && tx && hasRestored) {
+        // Only restore if user had previously attempted push
         setTransaction(tx)
         setStkInitiated(true)
         setStkSentAt(Date.now())
@@ -86,12 +88,12 @@ export default function MpesaForm({
     socketStatus !== 'PENDING' ? socketStatus : pollingStatus
 
   /* -------------------------------------------------
-   🔐 ORDER isPaid REDIRECT (instant)
+   🔐 ORDER isPaid REDIRECT
   -------------------------------------------------- */
   useOrderPaidRedirect(transaction?.orderId || '')
 
   /* -------------------------------------------------
-   🕵️ SILENT ORDER WATCHER (background safety net)
+   🕵️ SILENT ORDER WATCHER
   -------------------------------------------------- */
   useSilentOrderWatcher(transaction?.orderId || '', !!transaction)
 
@@ -130,6 +132,7 @@ export default function MpesaForm({
       setStkSentAt(Date.now())
       setAutoRetryTriggered(false)
       setRetryCountdown(null)
+      setHasRestored(true) // mark user has tried once
 
       try {
         const normalizedPhone = normalizeKenyanPhone(phone)
@@ -287,9 +290,11 @@ export default function MpesaForm({
           className="w-full p-2 border rounded"
         />
 
+        {/* 🔘 Only enable the pay button if user entered phone */}
         <MpesaPayButton
           loading={isPending || !canRetry}
           priceInCents={priceInCents}
+          disabled={!phone || isPending || success}
         />
 
         {!canRetry && (

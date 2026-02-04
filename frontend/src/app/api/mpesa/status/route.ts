@@ -8,8 +8,7 @@ import OrderModel from '@/src/lib/db/models/orderModel'
 export async function GET(req: NextRequest) {
   await connectToDatabase()
 
-  const checkoutRequestId =
-    req.nextUrl.searchParams.get('checkoutRequestId')
+  const checkoutRequestId = req.nextUrl.searchParams.get('checkoutRequestId')
 
   if (!checkoutRequestId) {
     return NextResponse.json(
@@ -19,11 +18,10 @@ export async function GET(req: NextRequest) {
   }
 
   // 1️⃣ Find Mpesa transaction
-  const tx = await MpesaTransaction.findOne({
-    checkoutRequestId,
-  })
+  const tx = await MpesaTransaction.findOne({ checkoutRequestId })
 
   if (!tx) {
+    // No transaction yet → PENDING
     return NextResponse.json({ status: 'PENDING' })
   }
 
