@@ -7,7 +7,7 @@ export function useMpesaPollingStatus(
   enabled = true
 ) {
   const [status, setStatus] =
-    useState<'PENDING' | 'SUCCESS' | 'FAILED'>('PENDING')
+    useState<'PENDING' | 'SUCCESS' | 'FAILED' | 'EXPIRED'>('PENDING')
 
   useEffect(() => {
     if (!checkoutRequestId || !enabled) return
@@ -15,13 +15,20 @@ export function useMpesaPollingStatus(
     const interval = setInterval(async () => {
       try {
         const res = await fetch(
-          `/api/mpesa/status?checkoutRequestId=${checkoutRequestId}`
+          `/api/orders/${checkoutRequestId}/status`
         )
         const json = await res.json()
 
+        // ✅ handle TTL expired
+        if (json.expired) {
+          setStatus('FAILED') // treat expired as failed for UI purposes
+          clearInterval(interval)
+          return
+        }
+
         // ✅ handle both shapes
         const resolvedStatus =
-          json.status ?? json.data?.status
+          json.mpesaPaymentStatus ?? json.data?.status
 
         if (
           resolvedStatus === 'SUCCESS' ||

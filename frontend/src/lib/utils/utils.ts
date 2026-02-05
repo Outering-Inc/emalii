@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { NextRequest } from "next/server"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import qs from 'query-string'
+
 
 //Defining a function to generate a URL with updated query parameters
 export function formUrlQuery({
@@ -76,7 +78,7 @@ export const toSlug = (text: string): string =>
     export const generateId = () =>
       Array.from({ length: 24 }, () => Math.floor(Math.random() * 10)).join('')
     
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
 export const formatError = (error: any): string => {
   if (error.name === 'ZodError') {
     const fieldErrors = Object.keys(error.errors).map((field) => {
@@ -228,3 +230,30 @@ export const slugify = (value: string) =>
     .replace(/(^-|-$)/g, '')
 
 
+
+
+
+export function getOrderIdFromRequest(req: NextRequest | URL) {
+  let pathname: string
+
+  if ('nextUrl' in req && req.nextUrl instanceof URL) {
+    // TypeScript now knows nextUrl is URL
+    pathname = req.nextUrl.pathname
+  } else if (req instanceof URL) {
+    pathname = req.pathname
+  } else {
+    throw new Error('Cannot extract pathname from request')
+  }
+
+  const segments = pathname.split('/').filter(Boolean) // remove empty segments
+  const orderIndex = segments.indexOf('orders')
+  if (orderIndex === -1 || !segments[orderIndex + 1]) {
+    throw new Error('Order ID not found in path')
+  }
+
+  return segments[orderIndex + 1]
+}
+
+
+
+    

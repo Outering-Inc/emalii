@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 
 import data from '@/src/lib/data'
 import { ClientSetting, SiteCurrency } from '@/src/types'
