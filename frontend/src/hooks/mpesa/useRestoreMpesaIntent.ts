@@ -1,17 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 'use client'
 
 import { useEffect } from 'react'
-
-interface MpesaPendingTx {
-  checkoutRequestId: string
-  orderId: string
-  amount?: number
-  [key: string]: any
-}
+import type { MpesaPendingTx } from '@/src/types/mpesa'
 
 export function useRestoreMpesaIntent(
-  setTransaction: (tx: MpesaPendingTx) => void
+  setTransaction: (tx: MpesaPendingTx | null) => void
 ) {
   useEffect(() => {
     const saved = localStorage.getItem('mpesa:pending')
@@ -20,7 +14,7 @@ export function useRestoreMpesaIntent(
     try {
       const tx: MpesaPendingTx = JSON.parse(saved)
 
-      // Only restore if it has the minimal required fields
+      // ✅ minimal restore validation (unchanged logic)
       if (tx.checkoutRequestId && tx.orderId) {
         setTransaction({
           checkoutRequestId: tx.checkoutRequestId,
@@ -28,7 +22,7 @@ export function useRestoreMpesaIntent(
           amount: tx.amount,
         })
       } else {
-        localStorage.removeItem('mpesa:pending') // invalid data
+        localStorage.removeItem('mpesa:pending')
       }
     } catch {
       localStorage.removeItem('mpesa:pending')

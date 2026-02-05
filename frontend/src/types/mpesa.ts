@@ -27,6 +27,7 @@ export interface RawMpesaCallback {
   };
 }
 
+// Normalized callback data after validationand extraction
 export interface MpesaCallback {
   checkoutRequestID: string;
   mpesaReceiptNumber: string;
@@ -40,7 +41,14 @@ export interface MpesaCallback {
   orderId?: string;
 }
 
+// ------------------ M-Pesa Online Status ------------------
 export type CallbackMetadataItem = {
   Name: string;
   Value: string | number;
 };
+
+// ------------------ Pending Transaction (for frontend state) ------------------
+export type MpesaPendingTx = Partial<MpesaTransaction> & {
+  checkoutRequestId: string
+  orderId: string
+}

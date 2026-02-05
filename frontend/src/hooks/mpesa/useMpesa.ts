@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { MpesaTransaction } from '@/src/types/mpesa'
+import { MpesaPendingTx, MpesaTransaction } from '@/src/types/mpesa'
 
 export function useMpesa() {
   const [loading, setLoading] = useState(false)
@@ -10,7 +10,8 @@ export function useMpesa() {
   const [error, setError] = useState<string | null>(null)
 
   const [transaction, setTransaction] =
-    useState<MpesaTransaction | null>(null)
+  useState<MpesaTransaction | MpesaPendingTx | null>(null)
+
 
   const [cooldownUntil, setCooldownUntil] =
     useState<number | null>(null)
