@@ -17,23 +17,20 @@ export function useMpesaPollingStatus(
         const res = await fetch(
           `/api/orders/${checkoutRequestId}/status`
         )
-        const json = await res.json()
 
-        // ✅ handle TTL expired
-        if (json.expired) {
-          setStatus('FAILED') // treat expired as failed for UI purposes
+        // 🔴 HARD STOP on TTL
+        if (res.status === 410) {
+          setStatus('FAILED')
           clearInterval(interval)
           return
         }
 
-        // ✅ handle both shapes
-        const resolvedStatus =
-          json.mpesaPaymentStatus ?? json.data?.status
+        const json = await res.json()
 
-        if (
-          resolvedStatus === 'SUCCESS' ||
-          resolvedStatus === 'FAILED'
-        ) {
+        const resolvedStatus =
+          json.status ?? json.data?.status
+
+        if (resolvedStatus === 'SUCCESS' || resolvedStatus === 'FAILED') {
           setStatus(resolvedStatus)
           clearInterval(interval)
         }

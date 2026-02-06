@@ -1,38 +1,65 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import OrderModel from '@/src/lib/db/models/orderModel'
 import { deductInventoryAfterPayment } from '@/src/lib/actions/orderActions'
 import { sendPurchaseReceipt } from '@/src/emails'
-
 import { reconcileOrderPayment } from './reconciliation-orchestrator'
-import { PaymentMethod } from '../reconciliation/type'
-
+import { PaymentMethod, PaymentResult } from '../reconciliation/type'
+import { acquirePaymentLock } from '../idempotency/acquirePaymentLock'
+import { PaymentState } from '../state-machine/paymentState'
 
 interface FinalizePaymentArgs {
   orderId: string
   paymentMethod: PaymentMethod
-  paymentData: any
+  paymentData: PaymentResult
 }
 
-export async function finalizePayment({ orderId, paymentMethod, paymentData }: FinalizePaymentArgs) {
-  console.log(`[Payment Orchestrator] Finalizing payment for order ${orderId} using ${paymentMethod}`)
+export async function finalizePayment({
+  orderId,
+  paymentMethod,
+  paymentData,
+}: FinalizePaymentArgs) {
+  console.log(`[Payment] Finalizing order ${orderId}`)
 
+  const providerReference =
+    paymentData.id ?? paymentData.raw?.providerReference
+
+  if (!providerReference) {
+    throw new Error('Missing provider reference for idempotency')
+  }
+
+  // 🔐 STEP 1: Idempotency lock (GLOBAL safety)
+  const lockAcquired = await acquirePaymentLock(orderId, providerReference)
+
+  if (!lockAcquired) {
+    console.log(`[Payment] Duplicate finalize attempt ignored`)
+    return { alreadyProcessed: true }
+  }
+
+  // 🔒 STEP 2: Fetch fresh order state
   const order = await OrderModel.findById(orderId).populate('user', 'email')
   if (!order) throw new Error('Order not found')
 
+  // 🚫 STEP 3: Business idempotency (extra safety)
   if (order.isPaid) {
-    console.log(`[Payment Orchestrator] Order ${orderId} already paid`)
+    console.log(`[Payment] Order already marked as paid`)
     return { alreadyPaid: true }
   }
 
-  // ✅ Step 1: Reconciliation orchestrator
-  const reconciliation = await reconcileOrderPayment(paymentMethod, paymentData, Number(order.totalPrice))
+  // ✅ STEP 4: Reconcile payment
+  const reconciliation = await reconcileOrderPayment(
+    paymentMethod,
+    paymentData,
+    Number(order.totalPrice)
+  )
 
   if (reconciliation.status !== 'MATCHED') {
-    throw new Error(`Payment verification failed: ${reconciliation.failureReason}`)
+    throw new Error(
+      `Payment verification failed: ${reconciliation.failureReason}`
+    )
   }
 
-  // ✅ Step 2: Mark order as paid
-  order.isPaid = true
+  // 💾 STEP 5: Atomic order update
+  order.paymentState = PaymentState.CAPTURED // 🔥 NEW: sync state
+  order.isPaid = true  // Auto-sync with state
   order.paidAt = new Date()
   order.paymentMethod = paymentMethod
   order.paymentResult = {
@@ -40,20 +67,28 @@ export async function finalizePayment({ orderId, paymentMethod, paymentData }: F
     status: 'COMPLETED',
     pricePaid: reconciliation.paidAmount ?? 0,
     email_address: order.user?.email ?? '',
+    
   }
 
-  await order.save()
-  console.log(`[Payment Orchestrator] Order ${orderId} marked as paid`)
+await order.save()
+console.log(`[Payment] Order ${orderId} marked as PAID (CAPTURED state)`)
 
-  // ✅ Step 3: Post-payment tasks
+
+  await order.save()
+  console.log(`[Payment] Order ${orderId} marked as PAID`)
+
+  // 🔁 STEP 6: Post-payment side effects (SAFE to retry)
   await Promise.allSettled([
     deductInventoryAfterPayment(orderId).catch(err =>
-      console.error(`[Payment Orchestrator] Inventory deduction failed:`, err)
+      console.error(`[Inventory] Failed:`, err)
     ),
     sendPurchaseReceipt({ order }).catch(err =>
-      console.error(`[Payment Orchestrator] Sending receipt failed:`, err)
+      console.error(`[Email] Failed:`, err)
     ),
   ])
 
-  return { success: true, paidAmount: reconciliation.paidAmount }
+  return {
+    success: true,
+    paidAmount: reconciliation.paidAmount,
+  }
 }

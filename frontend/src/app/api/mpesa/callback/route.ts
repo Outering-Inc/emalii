@@ -12,11 +12,11 @@ import { validateCallback } from '@/src/lib/payments/mpesa/validateCallback'
 import type { ParsedMpesaCallback } from '@/src/lib/payments/mpesa/validateCallback'
 
 import { reconcileOrderPayment } from '@/src/lib/payments/orchestrator/reconciliation-orchestrator'
-import { finalizePayment } from '@/src/lib/payments/orchestrator/payment-orchestrator'
 import { PaymentMethod, PaymentResult } from '@/src/lib/payments/reconciliation/type'
 
-// 🔔 Socket (ADDED – no logic change)
+// 🔔 Socket (real-time notifications, no logic change)
 import { getSocketServer } from '@/src/lib/socket/server'
+import paymentJobModel from '@/src/lib/db/models/paymentJobModel'
 
 // ----------------------
 // Optional metadata schema
@@ -81,8 +81,7 @@ export async function POST(req: Request) {
       { upsert: true, new: true }
     )
 
-    // 🔔 REAL-TIME NOTIFICATION (ADDED)
-    // Does NOT affect logic; polling still works if socket fails
+    // 🔔 REAL-TIME NOTIFICATION
     const io = getSocketServer()
     io?.emit(`mpesa:${parsed.checkoutRequestID}`, {
       status: transaction.status, // SUCCESS | FAILED
@@ -105,11 +104,32 @@ export async function POST(req: Request) {
 
       // 5️⃣ Finalize order if reconciliation matched
       if (reconciliation.status === 'MATCHED') {
-        await finalizePayment({
-          orderId: parsed.orderId,
-          paymentMethod: PaymentMethod.Mpesa,
-          paymentData: paymentResult,
-        })
+
+        // 5️⃣ Add payment job to queue for async processing (e.g. send receipt, update order state)
+          await paymentJobModel.findOneAndUpdate(
+            {
+              orderId: parsed.orderId,
+              providerReference: paymentResult.id,
+            },
+            {
+              orderId: parsed.orderId,
+              providerReference: paymentResult.id,
+              paymentMethod: PaymentMethod.Mpesa,
+              paymentData: paymentResult,
+              status: 'PENDING',
+            },
+            { upsert: true }
+          )
+
+
+        // ✅ Auto-sync paymentState for REFUNDED, REVERSED, DISPUTED (example)
+        // You can trigger refunds or disputes here if needed
+        // const order = await OrderModel.findById(parsed.orderId)
+        // if (order && someConditionForRefund) {
+        //   order.paymentState = PaymentState.REFUNDED
+        //   order.isPaid = false
+        //   await order.save()
+        // }
       }
     }
 

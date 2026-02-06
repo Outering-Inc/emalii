@@ -3,8 +3,9 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { finalizePayment } from '@/src/lib/payments/orchestrator/payment-orchestrator'
-import { PaymentMethod } from '@/src/lib/payments/reconciliation/type'
+import paymentJobModel from '@/src/lib/db/models/paymentJobModel'
+import { PaymentMethod, PaymentResult } from '@/src/lib/payments/reconciliation/type'
+import { connectToDatabase } from '@/src/lib/db/dbConnect'
 
 if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
   throw new Error('Missing Stripe env variables')
@@ -15,6 +16,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 })
 
 export async function POST(req: NextRequest) {
+  await connectToDatabase()
+
   const sig = req.headers.get('stripe-signature')
   if (!sig) {
     return NextResponse.json({ message: 'Missing Stripe signature' }, { status: 400 })
@@ -34,6 +37,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Invalid signature' }, { status: 400 })
   }
 
+  // Only handle successful payment_intent events
   if (event.type !== 'payment_intent.succeeded') {
     return NextResponse.json({ message: 'Event ignored' })
   }
@@ -45,16 +49,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ message: 'Missing orderId in metadata' }, { status: 400 })
   }
 
-  await finalizePayment({
-    orderId,
-    paymentMethod: PaymentMethod.Stripe,
-    paymentData: {
-      id: paymentIntent.id,
-      amount: paymentIntent.amount_received / 100,
-      currency: paymentIntent.currency,
-      raw: paymentIntent,
-    },
-  })
+  // 🔹 Normalize PaymentResult
+  const paymentResult: PaymentResult = {
+    id: paymentIntent.id,
+    status: 'SUCCESS',
+    pricePaid: paymentIntent.amount_received / 100,
+    raw: paymentIntent,
+  }
 
-  return NextResponse.json({ message: 'Stripe payment processed successfully' })
+  // 🔹 Enqueue Stripe payment job instead of finalizing immediately
+  await paymentJobModel.findOneAndUpdate(
+    { orderId, providerReference: paymentResult.id },
+    {
+      orderId,
+      providerReference: paymentResult.id,
+      paymentMethod: PaymentMethod.Stripe,
+      paymentData: paymentResult,
+      status: 'PENDING',
+      attempts: 0,
+    },
+    { upsert: true }
+  )
+
+  return NextResponse.json({ message: 'Stripe payment enqueued successfully' })
 }

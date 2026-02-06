@@ -1,6 +1,7 @@
 'use server'
 
 import { NextRequest, NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import { connectToDatabase } from '@/src/lib/db/dbConnect'
 import OrderModel from '@/src/lib/db/models/orderModel'
 import { auth } from '@/src/lib/auth'
@@ -16,29 +17,29 @@ export async function GET(req: NextRequest) {
     /* ================= AUTH ================= */
     const session = await auth()
     if (!session?.user?.id) {
+      return NextResponse.json({ isPaid: false }, { status: 401 })
+    }
+
+    /* ================= ID ================= */
+    const orderId = getOrderIdFromRequest(req)
+
+    // 🛡️ Guard against CheckoutRequestID misuse
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
       return NextResponse.json(
-        { isPaid: false },
-        { status: 401 }
+        { isPaid: false, status: 'PENDING' },
+        { status: 200 }
       )
     }
 
     /* ================= ORDER ================= */
-    const orderId = getOrderIdFromRequest(req)
     const order = await OrderModel.findById(orderId)
-
     if (!order) {
-      return NextResponse.json(
-        { isPaid: false },
-        { status: 404 }
-      )
+      return NextResponse.json({ isPaid: false }, { status: 404 })
     }
 
     /* ================= OWNERSHIP ================= */
     if (order.user.toString() !== session.user.id) {
-      return NextResponse.json(
-        { isPaid: false },
-        { status: 403 }
-      )
+      return NextResponse.json({ isPaid: false }, { status: 403 })
     }
 
     /* ================= TTL ================= */
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         isPaid: order.isPaid,
-        status: order.mpesaPaymentStatus,
+        status: order.isPaid ? 'SUCCESS' : order.paymentState ?? 'PENDING',
         paidAt: order.paidAt?.toISOString() ?? null,
         mpesaTransactionId: order.mpesaTransactionId ?? null,
       },
@@ -65,10 +66,6 @@ export async function GET(req: NextRequest) {
       }
     )
   } catch {
-    // 🔒 Never leak internals
-    return NextResponse.json(
-      { isPaid: false },
-      { status: 500 }
-    )
+    return NextResponse.json({ isPaid: false }, { status: 500 })
   }
 }

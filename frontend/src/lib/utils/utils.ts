@@ -4,6 +4,7 @@ import { NextRequest } from "next/server"
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import qs from 'query-string'
+import mongoose from "mongoose"
 
 
 //Defining a function to generate a URL with updated query parameters
@@ -254,6 +255,34 @@ export function getOrderIdFromRequest(req: NextRequest | URL) {
   return segments[orderIndex + 1]
 }
 
+
+/**
+ * Extracts the [checkoutId] dynamic segment from a NextRequest
+ */
+// src/lib/utils/getCheckoutId.ts
+
+export function getCheckoutId(req: NextRequest): string | null {
+  // 1️⃣ Check URL query
+  const url = new URL(req.url)
+  const idFromQuery = url.searchParams.get('checkoutId')
+  if (idFromQuery && mongoose.Types.ObjectId.isValid(idFromQuery)) {
+    return idFromQuery
+  }
+
+  // 2️⃣ Check path parameters (if using /api/payments/[checkoutId])
+  const match = req.nextUrl.pathname.match(/\/api\/payments\/([a-f\d]{24})/)
+  if (match && mongoose.Types.ObjectId.isValid(match[1])) {
+    return match[1]
+  }
+
+  // 3️⃣ Could add header fallback if needed
+  const idFromHeader = req.headers.get('x-checkout-id')
+  if (idFromHeader && mongoose.Types.ObjectId.isValid(idFromHeader)) {
+    return idFromHeader
+  }
+
+  return null
+}
 
 
     

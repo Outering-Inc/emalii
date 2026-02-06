@@ -1,0 +1,13 @@
+export enum PaymentState {
+  INITIATED = 'INITIATED',
+  AUTHORIZED = 'AUTHORIZED',
+  CAPTURE_PENDING = 'CAPTURE_PENDING',
+  CAPTURED = 'CAPTURED',
+
+  // 🆕 New terminal & exception states
+  REFUNDED = 'REFUNDED',
+  REVERSED = 'REVERSED',
+  DISPUTED = 'DISPUTED',
+
+  FAILED = 'FAILED',
+}
