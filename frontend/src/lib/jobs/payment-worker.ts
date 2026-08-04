@@ -10,6 +10,7 @@ import { acquirePaymentLock } from '@/src/lib/payments/idempotency/acquirePaymen
  * Amazon-style async payment finalization worker
  */
 export async function processPaymentJobs() {
+  // 1️⃣ Fetch a pending job (attempts < 5)
   const job = await paymentJobModel.findOneAndUpdate(
     {
       status: 'PENDING',
@@ -66,18 +67,20 @@ export async function processPaymentJobs() {
     })
 
     /**
-     * 🔁 Final transition: CAPTURE_PENDING → CAPTURED
+     * 🔁 Final Update Order transition: CAPTURE_PENDING → CAPTURED
      */
     order.paymentState = applyPaymentTransition(
       order.paymentState,
       PaymentState.CAPTURED
     )
+    // 6️⃣ Mark job as DONE and update order
     order.isPaid = true
     order.paidAt = new Date()
     await order.save()
 
     job.status = 'DONE'
   } catch (e: any) {
+    // 7️⃣ Retry logic
     job.status = job.attempts >= 5 ? 'FAILED' : 'PENDING'
     job.lastError = e.message
   }

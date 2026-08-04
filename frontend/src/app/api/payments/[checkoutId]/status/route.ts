@@ -7,6 +7,7 @@ import OrderModel from '@/src/lib/db/models/orderModel'
 import { auth } from '@/src/lib/auth'
 import { getCheckoutId } from '@/src/lib/utils/utils'
 
+
 // ⏱ TTL for orders to auto-fail (like abandoned carts)
 const STATUS_TTL = 1000 * 60 * 15 // 15 minutes
 
@@ -49,8 +50,9 @@ export async function GET(req: NextRequest) {
       isPaid: order.isPaid,
       status: order.isPaid ? 'SUCCESS' : order.paymentState ?? 'PENDING',
       paidAt: order.paidAt?.toISOString() ?? null,
-      mpesaTransactionId: order.mpesaTransactionId ?? null,
-     
+      mpesaTransactionId: order.paymentReference?.provider === 'MPESA' ? order.paymentReference.transactionId : null,
+      stripeTransactionId: order.paymentReference?.provider === 'STRIPE' ? order.paymentReference.transactionId : null,
+      paypalTransactionId: order.paymentReference?.provider === 'PAYPAL' ? order.paymentReference.transactionId : null,
       paymentMethod: order.paymentMethod ?? null,
     }
 

@@ -8,44 +8,31 @@ import 'react-medium-image-zoom/dist/styles.css'
 export default function ProductGallery({ images }: { images: string[] }) {
   const [selectedImage, setSelectedImage] = useState(0)
 
-  // ✅ Reset image when variant changes
+  // ✅ IMPORTANT: reset when variant images change
   useEffect(() => {
     setSelectedImage(0)
   }, [images])
 
-  if (!images.length) {
-    return (
-      <div className="relative h-[400px] bg-muted">
-        <Image
-          src="/images/placeholder.png"
-          alt="placeholder"
-          fill
-          className="object-contain"
-        />
-      </div>
-    )
-  }
-
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-2">
       {/* Thumbnails */}
-      <div className="flex flex-col gap-2 mt-6">
+      <div className="flex flex-col gap-2 mt-8">
         {images.map((image, index) => (
           <button
-            key={image}
-            onMouseEnter={() => setSelectedImage(index)}
+            key={image} // better than index
             onClick={() => setSelectedImage(index)}
-            className={`rounded-lg overflow-hidden border transition ${
+            onMouseOver={() => setSelectedImage(index)}
+            className={`bg-white rounded-lg overflow-hidden transition ${
               selectedImage === index
-                ? 'ring-2 ring-primary'
-                : 'ring-1 ring-muted'
+                ? 'ring-2 ring-blue-500'
+                : 'ring-1 ring-gray-300'
             }`}
           >
             <Image
               src={image}
-              alt="thumbnail"
-              width={48}
-              height={48}
+              alt="product thumbnail"
+              width={40}
+              height={40}
               className="object-contain"
             />
           </button>
@@ -53,11 +40,11 @@ export default function ProductGallery({ images }: { images: string[] }) {
       </div>
 
       {/* Main Image */}
-      <div className="flex-1">
+      <div className="w-full">
         <Zoom>
-          <div className="relative h-[420px]">
+          <div className="relative h-[400px]">
             <Image
-              key={images[selectedImage]}
+              key={images[selectedImage]} // 🔥 forces correct zoom refresh
               src={images[selectedImage]}
               alt="product image"
               fill

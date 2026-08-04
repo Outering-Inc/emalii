@@ -44,7 +44,7 @@ export interface ProductVariant {
 ------------------------------ */
 
 export interface LeanProduct {
-  _id: string
+   _id: string
   slug: string
   name: string
   brand: string

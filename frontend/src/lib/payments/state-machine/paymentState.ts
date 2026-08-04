@@ -3,6 +3,7 @@ export enum PaymentState {
   AUTHORIZED = 'AUTHORIZED',
   CAPTURE_PENDING = 'CAPTURE_PENDING',
   CAPTURED = 'CAPTURED',
+  
 
   // 🆕 New terminal & exception states
   REFUNDED = 'REFUNDED',
@@ -10,4 +11,5 @@ export enum PaymentState {
   DISPUTED = 'DISPUTED',
 
   FAILED = 'FAILED',
+  PROCESSING = "PROCESSING",
 }

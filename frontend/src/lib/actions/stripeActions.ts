@@ -45,7 +45,14 @@ export const createStripePayment = cache(async (orderId: string) => {
     return {
       success: true,
       message: 'Stripe PaymentIntent created successfully',
-      data: paymentIntent.client_secret,
+      data: {
+        orderId: order._id.toString(),
+        paymentMethod: 'STRIPE',
+        checkoutId: paymentIntent.id,
+        checkoutUrl: '', // Optional frontend: you can pass client_secret
+        clientSecret: paymentIntent.client_secret,
+        status: 'PENDING',
+      },
     }
   } catch (err) {
     return { success: false, message: formatError(err) }

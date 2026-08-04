@@ -284,5 +284,7 @@ export function getCheckoutId(req: NextRequest): string | null {
   return null
 }
 
-
+export function toMinorUnits(amount: string): number {
+  return Math.round(Number(amount) * 100)
+}
     

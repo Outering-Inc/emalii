@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Button } from '@/src/components/ui/button'
 import {
   Tooltip,
@@ -24,12 +25,13 @@ export default function SelectVariantCategory({
   disableOutOfStock = false,
   onChange,
 }: SelectVariantProps) {
-  // ✅ Always render selectors if colors/sizes exist
-  const hasColors = product.colors.length > 0
-  const hasSizes = product.sizes.length > 0
+  const hasColors = product.colors.length > 1
+  const hasSizes = product.sizes.length > 1
 
-  const selectedColor = color || product.colors[0] || ''
-  const selectedSize = size || product.sizes[0] || ''
+  const selectedColor = color || product.colors[0]
+  const selectedSize = size || product.sizes[0]
+
+  /* ---------------- VARIANT HELPERS ---------------- */
 
   const variants = product.variants ?? []
 
@@ -44,7 +46,9 @@ export default function SelectVariantCategory({
 
   const isColorOutOfStock = (c: string) => {
     if (!disableOutOfStock) return false
-    return variants.filter(v => v.color === c).every(v => v.stock === 0)
+    return variants
+      .filter(v => v.color === c)
+      .every(v => v.stock === 0)
   }
 
   const isSizeOutOfStock = (s: string) => {
@@ -54,8 +58,11 @@ export default function SelectVariantCategory({
   }
 
   const selectedVariant = getVariant(selectedColor, selectedSize)
+
   const canSelect =
     selectedVariant && selectedVariant.stock > 0 && selectedColor && selectedSize
+
+  /* ---------------- UI ---------------- */
 
   return (
     <TooltipProvider>
@@ -66,12 +73,15 @@ export default function SelectVariantCategory({
             <div>
               <p className="text-xs font-medium mb-1">
                 Color:{' '}
-                <span className="font-normal capitalize">{selectedColor}</span>
+                <span className="font-normal capitalize">
+                  {selectedColor}
+                </span>
               </p>
 
               <div className="flex gap-2 flex-wrap">
                 {product.colors.map(c => {
                   const disabled = isColorOutOfStock(c)
+
                   return (
                     <Tooltip key={c}>
                       <TooltipTrigger asChild>
@@ -80,14 +90,30 @@ export default function SelectVariantCategory({
                           disabled={disabled}
                           style={{ backgroundColor: c }}
                           className={`h-7 w-7 p-0 rounded-full border ${
-                            selectedColor === c ? 'ring-2 ring-primary' : ''
+                            selectedColor === c
+                              ? 'ring-2 ring-primary'
+                              : ''
                           } ${disabled ? 'opacity-40 cursor-not-allowed' : ''}`}
                           onClick={() => {
                             if (disabled) return
                             const nextSize = firstAvailableSizeForColor(c)
                             onChange?.({ color: c, size: nextSize })
                           }}
-                        />
+                        >
+                          <Link
+                            replace
+                            scroll={false}
+                            href={`?${new URLSearchParams({
+                              color: c,
+                              size: firstAvailableSizeForColor(c),
+                            })}`}
+                          >
+                            <span
+                              className="h-5 w-5 rounded-full border"
+                              style={{ backgroundColor: c }}
+                            />
+                          </Link>
+                        </Button>
                       </TooltipTrigger>
                       <TooltipContent>
                         {disabled ? 'Out of stock' : c}
@@ -104,12 +130,16 @@ export default function SelectVariantCategory({
             <div>
               <p className="text-xs font-medium mb-1">
                 Size:{' '}
-                <span className="font-normal uppercase">{selectedSize}</span>
+                <span className="font-normal uppercase">
+                  {selectedSize}
+                </span>
               </p>
 
               <div className="grid grid-cols-4 gap-1">
                 {product.sizes.map(s => {
+                  const v = getVariant(selectedColor, s)
                   const disabled = isSizeOutOfStock(s)
+
                   return (
                     <Tooltip key={s}>
                       <TooltipTrigger asChild>
@@ -125,18 +155,24 @@ export default function SelectVariantCategory({
                             onChange?.({ color: selectedColor, size: s })
                           }}
                         >
-                          {s.toUpperCase()}
+                          <Link
+                            replace
+                            scroll={false}
+                            href={`?${new URLSearchParams({
+                              color: selectedColor,
+                              size: s,
+                            })}`}
+                          >
+                            {s.toUpperCase()}
+                          </Link>
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
                         {disabled
                           ? 'Unavailable'
-                          : (() => {
-                              const v = getVariant(selectedColor, s)
-                              return v && v.stock <= 5
-                                ? `Only ${v.stock} left`
-                                : 'In stock'
-                            })()}
+                          : v && v.stock <= 5
+                          ? `Only ${v.stock} left`
+                          : 'In stock'}
                       </TooltipContent>
                     </Tooltip>
                   )

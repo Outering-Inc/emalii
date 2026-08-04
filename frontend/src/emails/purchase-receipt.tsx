@@ -15,35 +15,57 @@ import {
 } from '@react-email/components'
 
 import { formatCurrency } from '@/src/lib/utils/utils'
-import { Order } from '../lib/db/models/orderModel'
 import { getSetting } from '../lib/actions/admin/setting'
+import { Order } from '../lib/db/models/orderModel'
 
 type OrderInformationProps = {
   order: Order
 }
 
+const dateFormatter = new Intl.DateTimeFormat('en', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+})
+
+/* ================= PREVIEW (DEV ONLY) ================= */
 PurchaseReceiptEmail.PreviewProps = {
   order: {
-    _id: '123',
+    _id: '1234567890',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+
+    paymentMethod: 'PAYPAL',
+    paymentState: 'CAPTURED',
+
     isPaid: true,
     paidAt: new Date(),
-    totalPrice: 100,
+
+    paymentReference: {
+      provider: 'PAYPAL',
+      transactionId: 'PAYPAL_TX_987654',
+      status: 'COMPLETED',
+    },
+
     itemsPrice: 100,
     taxPrice: 0,
     shippingPrice: 0,
+    totalPrice: 100,
+
     user: {
       name: 'John Doe',
       email: 'john.doe@example.com',
     },
+
     shippingAddress: {
       fullName: 'John Doe',
       street: '123 Main St',
       city: 'New York',
       postalCode: '12345',
       country: 'USA',
-      phone: '123-456-7890',
       province: 'New York',
+      phone: '123-456-7890',
     },
+
     items: [
       {
         clientId: '123',
@@ -55,62 +77,108 @@ PurchaseReceiptEmail.PreviewProps = {
         slug: 'product-1',
         category: 'Category 1',
         countInStock: 10,
+        variantId: 'v1',
       },
     ],
-    paymentMethod: 'PayPal',
-    expectedDeliveryDate: new Date(),
-    isDelivered: true,
-  } as Order,
-} satisfies OrderInformationProps
-const dateFormatter = new Intl.DateTimeFormat('en', { dateStyle: 'medium' })
 
+    expectedDeliveryDate: new Date(),
+    isDelivered: false,
+  } as unknown as Order,
+} satisfies OrderInformationProps
+
+/* ================= COMPONENT ================= */
 export default async function PurchaseReceiptEmail({
   order,
 }: OrderInformationProps) {
   const { site } = await getSetting()
+
   return (
     <Html>
-      <Preview>View order receipt</Preview>
+      <Preview>Your order receipt</Preview>
       <Tailwind>
         <Head />
-        <Body className='font-sans bg-white'>
-          <Container className='max-w-xl'>
+        <Body className="font-sans bg-white">
+          <Container className="max-w-xl">
             <Heading>Purchase Receipt</Heading>
-            <Section>
+
+            {/* ================= ORDER META ================= */}
+            <Section className="mb-4">
               <Row>
                 <Column>
-                  <Text className='mb-0 text-gray-500 whitespace-nowrap text-nowrap mr-4'>
-                    Order ID
-                  </Text>
-                  <Text className='mt-0 mr-4'>{order._id.toString()}</Text>
+                  <Text className="text-gray-500 m-0">Order ID</Text>
+                  <Text className="m-0">{order._id.toString()}</Text>
                 </Column>
+
                 <Column>
-                  <Text className='mb-0 text-gray-500 whitespace-nowrap text-nowrap mr-4'>
-                    Purchased On
-                  </Text>
-                  <Text className='mt-0 mr-4'>
+                  <Text className="text-gray-500 m-0">Purchased On</Text>
+                  <Text className="m-0">
                     {dateFormatter.format(order.createdAt)}
                   </Text>
                 </Column>
+
                 <Column>
-                  <Text className='mb-0 text-gray-500 whitespace-nowrap text-nowrap mr-4'>
-                    Price Paid
-                  </Text>
-                  <Text className='mt-0 mr-4'>
+                  <Text className="text-gray-500 m-0">Total Paid</Text>
+                  <Text className="m-0">
                     {formatCurrency(order.totalPrice)}
                   </Text>
                 </Column>
               </Row>
             </Section>
-            <Section className='border border-solid border-gray-500 rounded-lg p-4 md:p-6 my-4'>
+
+            {/* ================= PAYMENT INFO ================= */}
+            <Section className="border border-gray-300 rounded-lg p-4 mb-4">
+              <Heading as="h3">Payment Details</Heading>
+
+              <Row>
+                <Column>
+                  <Text className="m-0 text-gray-500">Method</Text>
+                </Column>
+                <Column align="right">
+                  <Text className="m-0 font-semibold">
+                    {order.paymentMethod}
+                  </Text>
+                </Column>
+              </Row>
+
+              {order.paymentReference && (
+                <>
+                  <Row>
+                    <Column>
+                      <Text className="m-0 text-gray-500">Transaction ID</Text>
+                    </Column>
+                    <Column align="right">
+                      <Text className="m-0">
+                        {order.paymentReference.transactionId}
+                      </Text>
+                    </Column>
+                  </Row>
+
+                  {order.paymentReference.status && (
+                    <Row>
+                      <Column>
+                        <Text className="m-0 text-gray-500">Status</Text>
+                      </Column>
+                      <Column align="right">
+                        <Text className="m-0">
+                          {order.paymentReference.status}
+                        </Text>
+                      </Column>
+                    </Row>
+                  )}
+                </>
+              )}
+            </Section>
+
+            {/* ================= ITEMS ================= */}
+            <Section className="border border-gray-300 rounded-lg p-4">
               {order.items.map((item) => (
-                <Row key={item.product} className='mt-8'>
-                  <Column className='w-20'>
+                <Row key={item.clientId} className="mt-6">
+                  <Column className="w-20">
                     <Link href={`${site.url}/product/${item.slug}`}>
                       <Img
-                        width='80'
+                        width="80"
                         alt={item.name}
-                        className='rounded'
+                        className="rounded"
                         src={
                           item.image.startsWith('/')
                             ? `${site.url}${item.image}`
@@ -119,28 +187,34 @@ export default async function PurchaseReceiptEmail({
                       />
                     </Link>
                   </Column>
-                  <Column className='align-top'>
-                    <Link href={`${site.url}/product/${item.slug}`}>
-                      <Text className='mx-2 my-0'>
-                        {item.name} x {item.quantity}
-                      </Text>
-                    </Link>
+
+                  <Column className="align-top">
+                    <Text className="m-0">
+                      {item.name} × {item.quantity}
+                    </Text>
                   </Column>
-                  <Column align='right' className='align-top'>
-                    <Text className='m-0 '>{formatCurrency(item.price)}</Text>
+
+                  <Column align="right">
+                    <Text className="m-0">
+                      {formatCurrency(item.price)}
+                    </Text>
                   </Column>
                 </Row>
               ))}
+
+              {/* ================= TOTALS ================= */}
               {[
-                { name: 'Items', price: order.itemsPrice },
-                { name: 'Tax', price: order.taxPrice },
-                { name: 'Shipping', price: order.shippingPrice },
-                { name: 'Total', price: order.totalPrice },
-              ].map(({ name, price }) => (
-                <Row key={name} className='py-1'>
-                  <Column align='right'>{name}:</Column>
-                  <Column align='right' width={70} className='align-top'>
-                    <Text className='m-0'>{formatCurrency(price)}</Text>
+                { label: 'Items', value: order.itemsPrice },
+                { label: 'Tax', value: order.taxPrice },
+                { label: 'Shipping', value: order.shippingPrice },
+                { label: 'Total', value: order.totalPrice },
+              ].map(({ label, value }) => (
+                <Row key={label} className="py-1">
+                  <Column align="right">{label}:</Column>
+                  <Column align="right" width={80}>
+                    <Text className="m-0">
+                      {formatCurrency(value)}
+                    </Text>
                   </Column>
                 </Row>
               ))}

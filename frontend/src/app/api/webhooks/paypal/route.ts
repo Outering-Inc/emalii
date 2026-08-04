@@ -1,13 +1,33 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use server'
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import mongoose from 'mongoose'
 import { z } from 'zod'
-import { connectToDatabase } from '@/src/lib/db/dbConnect'
-import OrderModel from '@/src/lib/db/models/orderModel'
-import paymentJobModel from '@/src/lib/db/models/paymentJobModel'
-import { PaymentMethod, PaymentResult } from '@/src/lib/payments/reconciliation/type'
 
-// Zod schema for PayPal webhook event
+import { connectToDatabase } from '@/src/lib/db/dbConnect'
+import paymentJobModel from '@/src/lib/db/models/paymentJobModel'
+import webhookEventModel from '@/src/lib/db/models/webhookEventModel'
+
+import {
+  PaymentMethod,
+  PaymentResult,
+} from '@/src/lib/payments/reconciliation/type'
+
+import { verifyPayPalWebhookSignature } from '@/src/lib/payments/paypal/verifyWebhook'
+import { guardWebhookReplay } from '@/src/lib/security/webhookIdempotency'
+import { emitPaymentEvent } from '@/src/lib/socket/events/paymentEvents'
+
+/* ================= ENV GUARD ================= */
+if (
+  !process.env.PAYPAL_WEBHOOK_ID ||
+  !process.env.PAYPAL_APP_SECRET ||
+  !process.env.PAYMENT_CURRENCY
+) {
+  throw new Error('Missing PayPal env variables')
+}
+
+/* ================= PAYPAL SCHEMA ================= */
 const paypalWebhookSchema = z.object({
   id: z.string(),
   event_type: z.string(),
@@ -18,60 +38,143 @@ const paypalWebhookSchema = z.object({
       currency_code: z.string(),
       value: z.string(),
     }),
-    payer: z.object({
-      email_address: z.string(),
-    }),
+    custom_id: z.string().optional(),
+    supplementary_data: z
+      .object({
+        related_ids: z
+          .object({
+            order_id: z.string().optional(),
+          })
+          .optional(),
+      })
+      .optional(),
   }),
+  time_created: z.string(),
 })
 
-export async function POST(req: Request) {
+/* ================= WEBHOOK HANDLER ================= */
+export async function POST(req: NextRequest) {
   await connectToDatabase()
 
+  const rawBody = await req.text()
+
+  /* ================= VERIFY SIGNATURE ================= */
+  const isValid = await verifyPayPalWebhookSignature(req, rawBody)
+    if (!isValid) {
+      return NextResponse.json({ message: 'Invalid signature' }, { status: 400 })
+    }
+
+  let payload: z.infer<typeof paypalWebhookSchema>
   try {
-    const body = await req.json()
+    payload = paypalWebhookSchema.parse(JSON.parse(rawBody))
+  } catch {
+    return NextResponse.json({ received: true })
+  }
 
-    // 1️⃣ Validate webhook payload
-    const parsed = paypalWebhookSchema.parse(body)
+  /* ================= GLOBAL IDEMPOTENCY ================= */
+  const isNew = await guardWebhookReplay('paypal', payload.id)
+  if (!isNew) {
+    return NextResponse.json({ received: true })
+  }
 
-    // 2️⃣ Only process completed captures
-    if (parsed.event_type !== 'PAYMENT.CAPTURE.COMPLETED') {
-      return NextResponse.json({ message: 'Event ignored' })
-    }
+  /* ================= EVENT FILTER ================= */
+  if (payload.event_type !== 'PAYMENT.CAPTURE.COMPLETED') {
+    return NextResponse.json({ received: true })
+  }
 
-    // 3️⃣ Find internal order
-    const order = await OrderModel.findOne({
-      'paymentResult.id': parsed.resource.id,
+  const orderId =
+    payload.resource.custom_id ||
+    payload.resource.supplementary_data?.related_ids?.order_id
+
+  if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
+    console.error('[PayPalWebhook] Invalid orderId', {
+      eventId: payload.id,
     })
+    return NextResponse.json({ received: true })
+  }
 
-    if (!order) {
-      return NextResponse.json({ message: 'Order not found' }, { status: 404 })
-    }
+  /* ================= SANITY CHECKS ================= */
+  if (payload.resource.status !== 'COMPLETED') {
+    return NextResponse.json({ received: true })
+  }
 
-    // 4️⃣ Normalize PayPal → Payment Result
-    const paymentResult: PaymentResult = {
-      id: parsed.resource.id,
-      status: parsed.resource.status,
-      pricePaid: Number(parsed.resource.amount.value),
-      raw: parsed.resource,
-    }
+  if (
+    payload.resource.amount.currency_code !==
+    process.env.PAYMENT_CURRENCY
+  ) {
+    console.error('[PayPalWebhook] Currency mismatch', {
+      eventId: payload.id,
+    })
+    return NextResponse.json({ received: true })
+  }
 
-    // 5️⃣ 🔹 Enqueue payment job (instead of finalizing)
-    await paymentJobModel.findOneAndUpdate(
-      { orderId: order._id, providerReference: paymentResult.id },
-      {
-        orderId: order._id,
-        paymentMethod: PaymentMethod.PayPal,
-        paymentData: paymentResult,
-        providerReference: paymentResult.id,
-        status: 'PENDING',
-        attempts: 0,
-      },
-      { upsert: true }
+  const amount = Number(payload.resource.amount.value)
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return NextResponse.json({ received: true })
+  }
+
+  /* ================= TRANSACTION ================= */
+  const session = await mongoose.startSession()
+  session.startTransaction()
+
+  try {
+    /* ================= EVENT LEDGER ================= */
+    await webhookEventModel.create(
+      [
+        {
+          provider: 'paypal',
+          eventId: payload.id,
+          orderId,
+          receivedAt: new Date(),
+          payloadHash: payload.id,
+        },
+      ],
+      { session }
     )
 
-    return NextResponse.json({ message: 'PayPal webhook enqueued successfully' })
+    /* ================= PAYMENT RESULT ================= */
+    const paymentResult: PaymentResult = {
+      id: payload.resource.id,
+      status: 'SUCCESS',
+      pricePaid: amount,
+      raw: payload.resource,
+    }
+
+    /* ================= ENQUEUE JOB ================= */
+    await paymentJobModel.findOneAndUpdate(
+      {
+        orderId,
+        providerReference: paymentResult.id,
+      },
+      {
+        orderId,
+        providerReference: paymentResult.id,
+        paymentMethod: PaymentMethod.PayPal,
+        paymentData: paymentResult,
+        status: 'PENDING',
+        attempts: 0,
+        correlationId: payload.id,
+      },
+      { upsert: true, session }
+    )
+
+    await session.commitTransaction()
   } catch (err) {
-    console.error('PayPal webhook error:', err)
-    return NextResponse.json({ message: 'Webhook error' }, { status: 500 })
+    await session.abortTransaction()
+    console.error('[PayPalWebhook] Transaction failed', {
+      eventId: payload.id,
+      orderId,
+    })
+  } finally {
+    session.endSession()
   }
+
+  /* ================= SOCKET NOTIFY (BEST EFFORT) ================= */
+  emitPaymentEvent(orderId.toString(), {
+    provider: 'paypal',
+    status: 'PENDING',
+  })
+
+  /* ================= ACK ================= */
+  return NextResponse.json({ received: true })
 }

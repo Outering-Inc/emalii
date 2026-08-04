@@ -1,5 +1,5 @@
 //import { PaymentMethod, PaymentResult, ReconciliationResult, ReconciliationStatus } from './type'
-import { verifyPayPalPayment } from '../paypal/payment-verification'
+import { verifyPayPalPayment } from '../paypal/verify-payment'
 import { verifyStripePayment } from '../stripe/payment-verification'
 import { verifyMpesaPayment } from '../mpesa/payment-verification'
 import { PaymentMethod, PaymentResult, ReconciliationResult, ReconciliationStatus } from '../reconciliation/type'

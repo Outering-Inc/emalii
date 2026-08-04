@@ -7,44 +7,86 @@ import { z } from 'zod'
 import { connectToDatabase } from '@/src/lib/db/dbConnect'
 import MpesaTransaction from '@/src/lib/db/models/mpesaModel'
 import MpesaCheckoutMapping from '@/src/lib/db/models/mpesaCheckout.model'
+import paymentJobModel from '@/src/lib/db/models/paymentJobModel'
 
 import { validateCallback } from '@/src/lib/payments/mpesa/validateCallback'
 import type { ParsedMpesaCallback } from '@/src/lib/payments/mpesa/validateCallback'
 
-import { reconcileOrderPayment } from '@/src/lib/payments/orchestrator/reconciliation-orchestrator'
-import { PaymentMethod, PaymentResult } from '@/src/lib/payments/reconciliation/type'
-
-// 🔔 Socket (real-time notifications, no logic change)
+import { PaymentMethod } from '@/src/lib/payments/reconciliation/type'
 import { getSocketServer } from '@/src/lib/socket/server'
-import paymentJobModel from '@/src/lib/db/models/paymentJobModel'
 
-// ----------------------
-// Optional metadata schema
-// ----------------------
+import { isSafaricomIp } from '@/src/lib/security/isSafaricomIp'
+import { verifyMpesaSignature } from '@/src/lib/security/mpesaSignature'
+
+/* ---------------- Metadata schema ---------------- */
 const callbackSchema = z.object({
   user: z.string().optional(),
   orderId: z.string().optional(),
 })
 
-// ----------------------
-// Mpesa Callback Entry Point
-// ----------------------
+/* ---------------- Callback Entry ---------------- */
 export async function POST(req: Request) {
   await connectToDatabase()
 
   try {
-    const body = await req.json()
+    /* =========================
+       0️⃣ Security Layer (NEW)
+    ========================== */
+
+    // Get client IP
+    const forwarded = req.headers.get('x-forwarded-for')
+    const ip = forwarded?.split(',')[0] || null
+
+    if (!isSafaricomIp(ip)) {
+      console.warn('[MpesaCallback] Invalid IP:', ip)
+
+      // 🔥 Amazon rule: ALWAYS ACK
+      return NextResponse.json({
+        ResultCode: 0,
+        ResultDesc: 'Accepted',
+      })
+    }
+
+    // Read RAW body for signature verification
+    const rawBody = await req.text()
+
+    const signature = req.headers.get('x-mpesa-signature')
+
+    const isValidSignature = verifyMpesaSignature(
+      rawBody,
+      signature,
+      process.env.MPESA_WEBHOOK_SECRET!
+    )
+
+    if (!isValidSignature) {
+      console.warn('[MpesaCallback] Invalid signature')
+
+      // 🔥 Always ACK
+      return NextResponse.json({
+        ResultCode: 0,
+        ResultDesc: 'Accepted',
+      })
+    }
+
+    // Parse JSON AFTER signature verification
+    const body = JSON.parse(rawBody)
     const meta = callbackSchema.safeParse(body)
 
-    // 1️⃣ Validate & normalize Mpesa payload
+    /* =========================
+       1️⃣ Validate & normalize callback
+    ========================== */
+
     const parsed: ParsedMpesaCallback = validateCallback(body)
 
     if (meta.success) {
-      if (meta.data.user) parsed.user = meta.data.user
-      if (meta.data.orderId) parsed.orderId = meta.data.orderId
+      parsed.user ??= meta.data.user
+      parsed.orderId ??= meta.data.orderId
     }
 
-    // 2️⃣ Resolve order/user via checkout mapping (SOURCE OF TRUTH)
+    /* =========================
+       2️⃣ Resolve order via checkout mapping
+    ========================== */
+
     const mapping = await MpesaCheckoutMapping.findOne({
       checkoutRequestId: parsed.checkoutRequestID,
     })
@@ -55,13 +97,13 @@ export async function POST(req: Request) {
     }
 
     if (!parsed.orderId) {
-      return NextResponse.json(
-        { error: 'Order not found for callback' },
-        { status: 404 }
-      )
+      return NextResponse.json({ ResultCode: 0, ResultDesc: 'Accepted' })
     }
 
-    // 3️⃣ Persist Mpesa transaction (IDEMPOTENT)
+    /* =========================
+       3️⃣ Persist Mpesa transaction
+    ========================== */
+
     const transaction = await MpesaTransaction.findOneAndUpdate(
       { checkoutRequestId: parsed.checkoutRequestID },
       {
@@ -76,76 +118,59 @@ export async function POST(req: Request) {
         status: parsed.resultCode === 0 ? 'SUCCESS' : 'FAILED',
         user: parsed.user ? new mongoose.Types.ObjectId(parsed.user) : undefined,
         orderId: new mongoose.Types.ObjectId(parsed.orderId),
-        paymentData: parsed, // normalized callback snapshot
+        paymentData: parsed,
       },
       { upsert: true, new: true }
     )
 
-    // 🔔 REAL-TIME NOTIFICATION
+    /* =========================
+       4️⃣ Emit real-time socket
+    ========================== */
+
     const io = getSocketServer()
     io?.emit(`mpesa:${parsed.checkoutRequestID}`, {
-      status: transaction.status, // SUCCESS | FAILED
+      status: transaction.status,
     })
 
-    // 4️⃣ ONLY reconcile successful payments
-    if (parsed.resultCode === 0 && transaction.paymentData) {
-      const paymentResult: PaymentResult = {
-        id: parsed.mpesaReceiptNumber,
-        status: 'SUCCESS',
-        pricePaid: parsed.amount,
-        raw: parsed,
-      }
+    /* =========================
+       5️⃣ Enqueue payment job
+    ========================== */
 
-      const reconciliation = await reconcileOrderPayment(
-        PaymentMethod.Mpesa,
-        paymentResult,
-        parsed.amount
+    if (parsed.resultCode === 0 && parsed.mpesaReceiptNumber) {
+      await paymentJobModel.findOneAndUpdate(
+        {
+          orderId: parsed.orderId,
+          providerReference: parsed.mpesaReceiptNumber,
+        },
+        {
+          orderId: parsed.orderId,
+          providerReference: parsed.mpesaReceiptNumber,
+          paymentMethod: PaymentMethod.Mpesa,
+          paymentData: {
+            id: parsed.mpesaReceiptNumber,
+            status: 'SUCCESS',
+            pricePaid: parsed.amount,
+            raw: parsed,
+          },
+          status: 'PENDING',
+        },
+        { upsert: true }
       )
-
-      // 5️⃣ Finalize order if reconciliation matched
-      if (reconciliation.status === 'MATCHED') {
-
-        // 5️⃣ Add payment job to queue for async processing (e.g. send receipt, update order state)
-          await paymentJobModel.findOneAndUpdate(
-            {
-              orderId: parsed.orderId,
-              providerReference: paymentResult.id,
-            },
-            {
-              orderId: parsed.orderId,
-              providerReference: paymentResult.id,
-              paymentMethod: PaymentMethod.Mpesa,
-              paymentData: paymentResult,
-              status: 'PENDING',
-            },
-            { upsert: true }
-          )
-
-
-        // ✅ Auto-sync paymentState for REFUNDED, REVERSED, DISPUTED (example)
-        // You can trigger refunds or disputes here if needed
-        // const order = await OrderModel.findById(parsed.orderId)
-        // if (order && someConditionForRefund) {
-        //   order.paymentState = PaymentState.REFUNDED
-        //   order.isPaid = false
-        //   await order.save()
-        // }
-      }
     }
 
-    // 6️⃣ Always ACK Mpesa (CRITICAL)
+    /* =========================
+       6️⃣ ALWAYS ACK PROVIDER
+    ========================== */
+
     return NextResponse.json({
       ResultCode: 0,
       ResultDesc: 'Accepted',
-      data: {
-        checkoutRequestId: parsed.checkoutRequestID,
-        status: transaction.status,
-      },
     })
-  } catch (error) {
-    console.error('Mpesa callback error:', error)
 
-    // 🔒 Still ACK Mpesa even on internal error
+  } catch (err) {
+    console.error('[MpesaCallback]', err)
+
+    // 🔥 Amazon rule — NEVER fail webhook
     return NextResponse.json({
       ResultCode: 0,
       ResultDesc: 'Accepted',

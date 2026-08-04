@@ -16,9 +16,15 @@ export const PAYMENT_TRANSITIONS: Record<PaymentState, PaymentState[]> = {
     PaymentState.FAILED,
   ],
 
+  // ✅ REQUIRED FIX
+  [PaymentState.PROCESSING]: [
+    PaymentState.CAPTURED,
+    PaymentState.FAILED,
+  ],
+
   [PaymentState.CAPTURED]: [
     PaymentState.REFUNDED,
-    PaymentState.DISPUTED, // 🆕 real-world scenario
+    PaymentState.DISPUTED,
   ],
 
   [PaymentState.DISPUTED]: [

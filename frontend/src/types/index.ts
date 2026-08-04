@@ -22,6 +22,7 @@ import {
 import { z } from "zod";
 
 
+
 // ------------------ Generic App Data ------------------
 export type Data = {
   settings: SettingInput[]
@@ -79,7 +80,7 @@ export type OrderList = OrderInput & {
   itemsPrice?: number
   discountPrice?: number
   taxPrice?: number
-  shippingPrice?: number
+  shippingPrice?: number 
 }
 
 export type OrderItem = z.infer<typeof OrderItemSchema>
@@ -89,6 +90,7 @@ export type ShippingAddress = z.infer<typeof ShippingAddressSchema>
 
 // ------------------ Products ------------------
 export type ProductInput = z.infer<typeof ProductInputSchema> & {
+   _id?: string      // optional Mongo support
   categorySlug?: string
   tagsSlug?: string[]
   subcategory?: string

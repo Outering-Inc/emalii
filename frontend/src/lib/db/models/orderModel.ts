@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { OrderInput } from '@/src/types'
 import { Document, Model, model, models, Schema } from 'mongoose'
 import { PaymentState } from '@/src/lib/payments/state-machine/paymentState'
@@ -6,32 +7,44 @@ export interface Order extends Document, OrderInput {
   _id: string
   createdAt: Date
   updatedAt: Date
-  isPaid: boolean
+
+  paymentMethod: 'MPESA' | 'STRIPE' | 'PAYPAL' | 'CASH'
   paymentState: PaymentState
 
+  isPaid: boolean
+  paidAt?: Date
+
+  /* ✅ SINGLE SOURCE OF PAYMENT ID */
+  paymentReference?: {
+    provider: 'MPESA' | 'STRIPE' | 'PAYPAL' | 'CASH'
+    transactionId: string
+    status?: string
+    raw?: any
+  }
+
+  /* ⚠️ OPTIONAL (legacy / debugging only) */
   mpesaTransactionId?: string
   mpesaPaymentStatus?: string
+  stripeTransactionId?: string
+  paypalTransactionId?: string
+
+  isDelivered: boolean
+  deliveredAt?: Date
 }
 
 const orderSchema = new Schema<Order>(
   {
     user: {
-      type: Schema.Types.ObjectId as unknown as typeof String,
+      type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+      index: true,
     },
 
     items: [
       {
-        product: {
-          type: Schema.Types.ObjectId,
-          ref: 'Product',
-          required: true,
-        },
-        variantId: {
-          type: Schema.Types.ObjectId,
-          required: true,
-        },
+        product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
+        variantId: { type: Schema.Types.ObjectId, required: true },
         clientId: { type: String, required: true },
         name: { type: String, required: true },
         slug: { type: String, required: true },
@@ -40,8 +53,8 @@ const orderSchema = new Schema<Order>(
         price: { type: Number, required: true },
         countInStock: { type: Number, required: true },
         quantity: { type: Number, required: true },
-        size: { type: String },
-        color: { type: String },
+        size: String,
+        color: String,
       },
     ],
 
@@ -57,12 +70,11 @@ const orderSchema = new Schema<Order>(
 
     expectedDeliveryDate: { type: Date, required: true },
 
-    paymentMethod: { type: String, required: true },
-
-    paymentResult: {
-      id: String,
-      status: String,
-      email_address: String,
+    paymentMethod: {
+      type: String,
+      enum: ['MPESA', 'STRIPE', 'PAYPAL', 'CASH'],
+      required: true,
+      index: true,
     },
 
     paymentState: {
@@ -72,32 +84,43 @@ const orderSchema = new Schema<Order>(
       index: true,
     },
 
+    /* ✅ NORMALIZED TRANSACTION */
+    paymentReference: {
+      provider: {
+        type: String,
+        enum: ['MPESA', 'STRIPE', 'PAYPAL', 'CASH'],
+      },
+      transactionId: {
+        type: String,
+        index: true,
+      },
+      status: String,
+      raw: Schema.Types.Mixed,
+    },
+
     itemsPrice: { type: Number, required: true },
     shippingPrice: { type: Number, required: true },
     taxPrice: { type: Number, required: true },
     totalPrice: { type: Number, required: true },
 
-    // 🔒 Derived flags (AUTO-SYNCED)
-    isPaid: { type: Boolean, required: true, default: false },
-    paidAt: { type: Date },
+    isPaid: { type: Boolean, required: true, default: false, index: true },
+    paidAt: Date,
 
-    isDelivered: { type: Boolean, required: true, default: false },
-    deliveredAt: { type: Date },
+    isDelivered: { type: Boolean, required: true, default: false, index: true },
+    deliveredAt: Date,
 
-    mpesaTransactionId: { type: String },
-    mpesaPaymentStatus: { type: String },
+    /* ⚠️ Legacy */
+    mpesaTransactionId: String,
+    mpesaPaymentStatus: String,
+    stripeTransactionId: String,
+    paypalTransactionId: String,
 
     createdAt: { type: Date, default: Date.now },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 )
 
-
-// ===================================================
-// 🔥 AUTO-SYNC LOGIC (SOURCE OF TRUTH = paymentState)
-// ===================================================
+/* 🔥 STATE MACHINE SYNC */
 orderSchema.pre('save', function (next) {
   if (!this.isModified('paymentState')) return next()
 
@@ -111,13 +134,6 @@ orderSchema.pre('save', function (next) {
     case PaymentState.REVERSED:
       this.isPaid = false
       this.paidAt = undefined
-      break
-
-    case PaymentState.DISPUTED:
-      // money might be held → preserve isPaid
-      break
-
-    default:
       break
   }
 
